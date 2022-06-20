@@ -1,0 +1,228 @@
+So what does this RNN viz actually look for the simplest case, I ask again?
+
+We have a 2D array of input values, an initial state, and the output is an array of output values.
+
+The RNN has multiple notions of "layers" - there are the actual physical layers which are stacked between each of the time steps:
+
+(state, input) -> layer[0] -> layer[1] -> (new_state, output)
+
+Then there are the time steps themselves
+
+(state[0], input) -> layer[0] -> layer[1] -> (state[1], output[0]) ⏎
+(state[1], input) -> layer[0] -> layer[1] -> (state[2], output[1]) ⏎
+(state[2], input) -> layer[0] -> layer[1] -> (state[3], output[2])
+
+Hmm, maybe this would be a good way to display this thing.  We have timesteps layered top-to-bottom and then layers arrayed left-to-right.
+
+One additional thing to consider is if we want to even have the idea of multiple per-timestep layers at all for the initial version.
+
+(state[0], input) -> layer -> (state[1], output[0]) ⏎
+(state[1], input) -> layer -> (state[2], output[1]) ⏎
+(state[2], input) -> layer -> (state[3], output[2])
+
+state   in
+□       □□
+
+ weights layer0
+  □□□□□□
+ weights layer1
+  □□□□□□
+ weights layer2
+□       □
+state   out
+
+That looks relatively decent I think.  Maybe it would be better to write this out rather than trying to do it with unicode in the text editor.
+
+□  □  □
+□  □
+   □
+□  □  □
+
+Things might get slightly harder if our hidden layers within time steps themselves have states, but I think it can still be represented linearly.
+
+Do we want to add another wrapper component around timesteps?  That way, the timestep will be pretty much the simplest unit that we can tile.
+
+Yeah, I think so.  That will make the final hierarchy:
+ - Timestep
+ - Layer
+ - NodeGroup
+ - Node
+
+Maybe `Layer` should get a different name, idk.  In any case, it represents a set of node groups that are outputs of the previous layer and inputs to the next layer.  I think is shouldn't be too much of an issue to get them lined up as long as we're able to determine an ordering and have clear dependencies between things.
+
+NodeGroup and lower is very simple to impl, just an array of boxes.  Maybe tooltips will be weird with them but I really don't think so.
+
+We can have statically known sizes for all of these different entities, so layout shouldn't be too bad.  Drawing connections between things won't be too hard either because we can pretty easily impl APIs to query the positions of inputs/outputs of any given node in a timestep->layer->nodegroup.  It will also simplify things like paging through time steps; we can know exactly which pixels to jump to for a given timestep, what to set the zoom to so the whole thing fits inside the canvas, and stuff like that.
+
+----
+
+The other question I have for these things is what activation function(s) will be appropriate for the various demos.
+
+For some of the simple things like n-ago, linear/no-op activations work just fine.  I've already tested and verified all of that.
+
+How about for a simple if/then kind of thing?
+
+y = state[n-1][0] && x[1]
+state[n][0] = x[0]
+
+Well logical AND is pretty much equivalent to multiplication if we assume that 0 is false and 1 is true.  So that would be pretty trivial.  Pass-through to state is obviously trivial as well.  In order to get the AND working with two inputs, though, how would we represent that?  A weight of 0.5 doesn't really work since 1 hot will give an output of 0.5 which is not what we want.
+
+What if we switch to ReLU activations?  If we use a ReLU with a bias of -1, that will properly represent our AND.
+
+Ooh, we could even have a "double-ended ReLU" that clamps on the positive side as well.  That will make OR much cleaner to implement without having issues with large inputs.  It will give us that non-linearity which is so useful in these things as well.
+
+OK so we have AND.  How would NOT work?
+
+0 -> 1
+1 -> 0
+
+bias of 1 and weight of -1 should work for this right?  yeah I certainly think that will work!
+
+OR is very easy; just weights of 1 for all inputs.  Plus there's no bound on the number of inputs, so we can OR across as many as we want.
+
+How about the dreaded XOR?
+
+1, 0 -> 1
+0, 1 -> 1
+1, 1 -> 0
+0, 0 -> 0
+
+Yeah I think that we may not be able to implement this in a single neuron/single layer.  Maybe... that's fine!
+
+We can definitely impl XOR in terms of NOR(AND(), NOR())  but yeah that does require a second layer.  We can probably work that into the project as an example though.
+
+----
+
+OK what if we tried a different activation function.  This one would output 1 at 0 and 0 at -1 and 1.
+
+Using that activation function, if we set both weights to 1 and have a bias of -1, then we get at truth table like this:
+
+0, 1 -> 1
+1, 0 -> 1
+1, 1 -> 0
+0, 0 -> 0
+
+Sure looks like XOR to me!
+
+OK but can we impl all the other gates with this activation function as well?
+
+AND will work with weights of 1 and bias of -2
+
+OR... or probably doesn't work cleanly in a single layer.  That's very interesting.  With this gate, XOR is possible but OR isn't.  Very interesting indeed.
+
+NOR works, though; weights 1 and bias 0 makes that happen.  This implies NOT works as well.
+
+AND works, weights of 1 and bias of -2.
+
+NAND doesn't work either.
+
+Neither does XNOR
+
+So for the OR and NAND cases, we can have it output the inverse but those don't work.
+
+Can we have the ReLU output XNOR?  No I don't think so; just adding together numbers isn't enough.  There are only two decision points for ReLU (at 0 and 1) but this other function has three (-1, 0, and 1).
+
+Wait a second, it's just |x-1| isn't it but then clamped like ReLU on both ends.
+
+What if we flip it and just do |x|?
+
+AND:  NO                       - no way to differentiate between all on and all off
+NAND: YES for exactly 2 inputs - weights of 1 and bias of -2
+OR:   YES for any # of inputs  - weights of 1 and bias of 0
+NOR:  NO                       - we'd need all the inputs to add up to exactly 0 which we can't do
+XOR:  NO                       - we can't differentiate well enough
+XNOR: YES for exactly 2 inputs - weights of 1 and bias of -1
+
+----
+
+OK I just thought of something.  What if we instead of saturating at 1 at the edges, we have it go back down again?  That will make the activation function oscillatory, like GCU.  I think that may allow us to implement a wider variety of logic gates.
+
+....
+
+I tried this out with a truth table and it doesn't work.  For example, NAND breaks because we lose our property of saturating at the edges which it relied on.
+
+I just thought of another alternative though.  What it we make it saturate on one end but oscillate on the other one? lol
+
+That still doesn't work for AND because the end that saturates is default ON but we need it default OFF.
+
+OK... what about one that saturates at both ends, but one saturates at 0 and the other saturates at 1?  That way, we'll have one side that saturates on and the other that saturates off.
+
+Let's say that the negative side saturates at 0 and the positive side saturates at 1.
+
+x <= -2: 0
+x == -1: 1
+x ==  0: 0
+x >=  1: 1
+
+AND:  YES for any # of inputs  - weights of 1 and bias of -(# inputs + 1)
+NAND: YES for exactly 2 inputs - weights of -1 and bias of 2
+NOT:  YES for exactly 1 input  - weights of 1 and bias of -1
+OR:   YES for any # of inputs  - weights of 1 and bias of 0
+NOR:  YES for any # of inputs  - weights of -1 and bias of -1
+XOR:  YES for exactly 2 inputs - weights of 1 and bias of -2
+XNOR: YES for exactly 2 inputs - weights of -1 and bias of 1
+
+well I think that covers it.  Very cool.  I think gradient descent may find it near impossible to actually make use of these things cleanly, but yeah.
+
+Can we do ternary logic like `state ? x[0] : x[1]`
+
+Well, we can't do that in a single neuron I think.  However, we can do it with multiple neurons:
+ - one neuron does AND(state, x[0])
+ - one neuron does AND(NOT(state), x[1])
+   - This should be achievable with weights of (-1, 1) and bias of -2.  Bias of -2 means that if both inputs are cold, the output is also cold.  Just x[1] hot will be -1 which gives 1 post-activation.  Just state hot saturates to -3 which gives 0 out.  Both hot cancels out and gives -2 -> 0 post-activation.
+ - the results are OR'd together in the next layer
+
+Wait - I wonder if we can actually do this all in a single neuron.
+
+bias: -2
+state weight: -1
+x[0] weight: 2
+x[1] weight: 3
+
+(0, 0, 0) -> 0
+(1, 0, 0) -> 0
+(0, 1, 0) -> 0
+(0, 1, 1) -> 1
+(1, 1, 1) -> 1
+(1, 0, 1) -> 0
+(0, 0, 1) -> 1
+(1, 1, 0) -> 1
+
+Holy shit, I think we can actually implement a proper ternary in a single neuron with this!  That's kinda nuts.
+
+Yeah I verified it in JS and it really does seem to work with this:
+
+```js
+const buildSpecialNeuron = (bias, stateWeight, x0Weight, x1Weight) => (state, x0, x1) => {
+    const activation = (val) => {
+        if (val <= -1) return Math.max(val + 2, 0);
+        if (val <= 0) return -val;
+        return Math.min(val, 1)
+    }
+
+    return activation(bias + stateWeight * state + x0Weight * x0 + x1Weight * x1)
+}
+
+const special = buildSpecialNeuron(-2, -1, 2, 3)
+```
+
+Now, the real test will be whether or not gradient descent can actually use these things.
+
+Another alternative to this is to use multiple activation functions within the same layer.  If you think about it, to implement all these logic gates we need one that can saturate down, one that can saturate up, and one that has a "peak" where everything other than what is basically 0 is off.
+
+Personally, it's very hard for me to imagine gradient descent crossing all of these what are essentially discontinuities in the derivative.  Maybe we could smooth it out, idk if that would help.
+
+We should do some investigation of how easily/well gradient descent actually manages to learn things like ternary, different logic gates, etc. with different configurations.
+
+ * target function
+ * activation function
+ * initialization
+ * learning rate
+ * # of redundant features
+ * compare complex activation function to multiple layers of simpler ones maybe?
+
+It will be interesting to see if nothing else I think.
+
+----
+
+After thinking about this more, I think I want to create a stand-alone blog post for this logic gate and conditional logic neuron.  Seems pretty cool, I can make response plots of various configurations.  Can also do the experiments to see how well gradient descent can figure it out.

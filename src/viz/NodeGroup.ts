@@ -3,8 +3,7 @@
  * and are expected to represent a vector of some kind.
  */
 
-import * as PIXI from 'pixi.js';
-
+import { PIXI } from './pixi';
 import { Node } from './Node';
 
 export class NodeGroup extends PIXI.Container {

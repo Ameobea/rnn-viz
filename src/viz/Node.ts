@@ -1,4 +1,4 @@
-import * as PIXI from 'pixi.js';
+import { PIXI } from './pixi';
 import { NODE_SIZE } from './conf';
 
 export class Node extends PIXI.Graphics {
