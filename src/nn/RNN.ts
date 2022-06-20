@@ -1,7 +1,12 @@
 import type { Sequential } from '@tensorflow/tfjs';
 
-import { tf, CustomRNN } from './tfjs';
-import type { MyRNNLayerArgs, MySimpleRNNCellLayerArgs } from 'src/nn/customRNN';
+import * as tf from '@tensorflow/tfjs';
+import {
+  MyRNN,
+  MySimpleRNNCell,
+  type MyRNNLayerArgs,
+  type MySimpleRNNCellLayerArgs,
+} from 'src/nn/customRNN';
 
 export type RNNLayerDef = Omit<MyRNNLayerArgs, 'cell'> & {
   cell: MySimpleRNNCellLayerArgs[];
@@ -13,9 +18,9 @@ const buildModel = (layers: RNNLayerDef[]): Sequential => {
   const model = tf.sequential();
   for (const layer of layers) {
     model.add(
-      new CustomRNN.MyRNN({
+      new MyRNN({
         ...layer,
-        cell: layer.cell.map(cellDef => new CustomRNN.MySimpleRNNCell(cellDef)),
+        cell: layer.cell.map(cellDef => new MySimpleRNNCell(cellDef)),
       })
     );
   }
