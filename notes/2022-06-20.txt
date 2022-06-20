@@ -1,0 +1,88 @@
+Smooth ameo surface plot:
+
+```js
+option = {
+  tooltip: {},
+  backgroundColor: '#fff',
+  visualMap: {
+    show: false,
+    dimension: 2,
+    min: 0,
+    max: 1,
+    inRange: {
+      color: [
+        '#313695',
+        '#4575b4',
+        '#74add1',
+        '#abd9e9',
+        '#e0f3f8',
+        '#ffffbf',
+        '#fee090',
+        '#fdae61',
+        '#f46d43',
+        '#d73027',
+        '#a50026'
+      ]
+    }
+  },
+  xAxis3D: {
+    type: 'value'
+  },
+  yAxis3D: {
+    type: 'value'
+  },
+  zAxis3D: {
+    type: 'value'
+  },
+  grid3D: {
+    viewControl: {
+      // projection: 'orthographic'
+    }
+  },
+  series: [
+    {
+      type: 'surface',
+      wireframe: {
+        show: false
+      },
+      equation: {
+        x: {
+          step: 0.01,
+          min: 0,
+          max: 1
+        },
+        y: {
+          step: 0.01,
+          min: 0,
+          max: 1
+        },
+        z: function (x, y) {
+          const smoothAmeo = (val) => {
+            if (val <= -2) return 0;
+            else if (val <= -1.5) return 8 * Math.pow(val + 2, 4);
+            else if (val <= -0.5) return -8 * Math.pow(val, 4) + -32 * Math.pow(val, 3) + -48 * Math.pow(val, 2) + -32 * val - 7;
+            else if (val <= 0.5) return 8 * Math.pow(val, 4);
+            else if (val <= 1) return -8 * Math.pow(val, 4) + 32 * Math.pow(val, 3) + -48 * Math.pow(val, 2) + 32 * val - 7;
+            else return 1;
+          };
+
+          const buildSmoothAmeoNeuron = (bias, stateWeight, x0Weight, x1Weight) => (state, x0, x1) => {
+             return smoothAmeo(bias + stateWeight * state + x0Weight * x0 + x1Weight * x1)
+          };
+
+          const neuron = buildSmoothAmeoNeuron(-2, -1, 2, 3);
+          const out = Math.round(neuron(1, x, y));
+          return out;
+        }
+      }
+    }
+  ]
+};
+```
+
+// if (val <= -1) return Math.max(val + 2, 0);
+// else if (val <= 0) return -val;
+// else return Math.min(val, 1)
+
+ameo[x_] := Piecewise[{   {0, x <= -2},   {x + 2, x > -2 && x <= -1},   {-x, x > -1 && x <= 0},   {x, x > 0 && x <= 1},   {1, x > 1} }]
+Plot[ameo[x], {x, -3, 2}]

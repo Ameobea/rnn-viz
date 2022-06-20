@@ -5,6 +5,9 @@ import { Activation } from '@tensorflow/tfjs-layers/dist/activations';
 
 const applyAmeoInner = (x: Tensor<Rank>) =>
   tidy(() => {
+    // if (val <= -1) return Math.max(val + 2, 0);
+    // else if (val <= 0) return -val;
+    // else return Math.min(val, 1)
     const part1Mask = tfc.lessEqual(x, -1);
     const part1 = tfc.maximum(x.add(2), 0);
     const part2Mask = tfc.lessEqual(x, 0);
@@ -43,12 +46,21 @@ const applyAmeo = tfc.customGrad((x, save) => {
 
 export class Ameo extends Activation {
   apply(tensor: Tensor<Rank>, _axis?: number | undefined): Tensor<Rank> {
-    // if (val <= -1) return Math.max(val + 2, 0);
-    // else if (val <= 0) return -val;
-    // else return Math.min(val, 1)
     return applyAmeo(tensor);
   }
 }
+
+const applySoftAmeoInner = (x: Tensor<Rank>) =>
+  tidy(() => {
+    // if (val <= -2) return 0;
+    // else if (val <= -1.5) return 8 * Math.pow(val + 2, 4);
+    // // else if (val <= -1)   return -8 * Math.pow(val, 4) + -32 * Math.pow(val, 3) + -48 * Math.pow(val, 2) + -32 * val - 7;
+    // else if (val <= -0.5) return -8 * Math.pow(val, 4) + -32 * Math.pow(val, 3) + -48 * Math.pow(val, 2) + -32 * val - 7;
+    // else if (val <= 0.5) return 8 * Math.pow(val, 4);
+    // else if (val <= 1) return -8 * Math.pow(val, 4) + 32 * Math.pow(val, 3) + -48 * Math.pow(val, 2) + 32 * val - 7;
+    // else return 1;
+    throw new Error('TODO');
+  });
 
 export class SoftAmeo extends Activation {
   apply(tensor: Tensor<Rank>, axis?: number | undefined): Tensor<Rank> {
