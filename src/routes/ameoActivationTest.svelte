@@ -2,10 +2,17 @@
   import { onMount } from 'svelte';
 
   onMount(async () => {
-    const { Ameo, tfc } = await import('../nn/ameoActivation');
+    const { Ameo, SoftLeakyAmeo, tfc } = await import('../nn/ameoActivation');
     const ameo = new Ameo();
     const ameoGrad = tfc.grad(x => ameo.apply(x));
-    const input = tfc.tensor1d([-3, -2, -1.5, -1, -0.5, 0, 0.5, 1, 2, 3]);
+    const min = -1.2;
+    const max = 1.2;
+    const input = tfc.tensor1d(
+      new Array(200).fill(0).map((_, i) => {
+        const x = min + ((max - min) * i) / 199;
+        return x;
+      })
+    );
     console.log('input:', Array.from(input.dataSync()));
     const output = ameo.apply(input, undefined);
     console.log('output:', Array.from(output.dataSync()));
