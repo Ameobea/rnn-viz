@@ -3,6 +3,8 @@
 
   import { onMount } from 'svelte';
 
+  let canvas: HTMLCanvasElement | null = null;
+
   onMount(async () => {
     const maxSequenceLength = 8;
     const def: RNNDefinition = [
@@ -24,12 +26,16 @@
       },
     ];
     const { RNNViz } = await import('src/viz/RNNViz');
-    const viz = new RNNViz(def);
-    console.log(viz);
+    if (!canvas) {
+      throw new Error('Expected canvas to be mounted by now');
+    }
+    const viz = new RNNViz(canvas, def);
   });
 </script>
 
-<div class="root">TODO</div>
+<div class="root">
+  <canvas bind:this={canvas} />
+</div>
 
 <style lang="css">
   .root {

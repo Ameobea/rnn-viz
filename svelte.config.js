@@ -24,6 +24,12 @@ const config = {
           src: resolve('./src'),
         },
       },
+      optimizeDeps: {
+        include: ['echarts'],
+      },
+      ssr: {
+        noExternal: ['echarts'].filter(Boolean),
+      },
     },
     floc: true,
   },

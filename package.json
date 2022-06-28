@@ -33,7 +33,12 @@
     "@sentry/tracing": "^7.1.1",
     "@sveltejs/adapter-static": "^1.0.0-next.34",
     "@tensorflow/tfjs": "^3.18.0",
+    "@types/echarts": "^4.9.15",
+    "@types/three": "^0.141.0",
+    "echarts": "^5.3.3",
     "pixi-viewport": "^4.34.4",
-    "pixi.js": "^6.4.2"
+    "pixi.js": "^6.4.2",
+    "three": "^0.141.0",
+    "three-spritetext": "^1.6.5"
   }
 }

@@ -76,10 +76,10 @@ export class AmeoTestbed {
     const activation = this.buildActivation();
 
     for (let i = 0; i < attempts; i++) {
-      const weights = tf.tensor1d(this.initializeWeights()).variable(true);
-      // const weights = tf.tensor1d([0.3636, 1.28, 1.6]).variable(true);
-      const bias = tf.scalar(this.initializeWeights()[0]).variable(true);
-      // const bias = tf.scalar(-0.28).variable(true);
+      // const weights = tf.tensor1d(this.initializeWeights()).variable(true);
+      const weights = tf.tensor1d([0.2, -0.26, -0.27]).variable(true);
+      // const bias = tf.scalar(this.initializeWeights()[0]).variable(true);
+      const bias = tf.scalar(0.39).variable(true);
       console.log('Initial weights:', Array.from(weights.dataSync()));
       console.log('Initial bias:', bias.dataSync()[0]);
 
@@ -87,24 +87,28 @@ export class AmeoTestbed {
       const loss = (x: tf.Tensor, y: tf.Tensor): tf.Scalar => x.sub(y).square().mean();
 
       for (let j = 0; j < this.params.iterations; j++) {
-        const cost = optimizer.minimize(() => {
-          const oneExampleLoss = () => {
-            const input = new Array(this.params.inputSize).fill(0).map(() => randomBool());
-            const expected = tf.scalar(this.params.targetFunction(input) ? 1 : -1);
-            const actual = f(tf.tensor1d(input.map(b => (b ? 1 : -1))));
-            // console.log('Input:', input);
-            // console.log('Expected:', Array.from(expected.dataSync()));
-            // console.log('Actual:', Array.from(actual.dataSync()));
-            return loss(actual, expected);
-          };
+        const cost = optimizer.minimize(
+          () => {
+            const oneExampleLoss = () => {
+              const input = new Array(this.params.inputSize).fill(0).map(() => randomBool());
+              const expected = tf.scalar(this.params.targetFunction(input) ? 1 : -1);
+              const actual = f(tf.tensor1d(input.map(b => (b ? 1 : -1))));
+              // console.log('Input:', input);
+              // console.log('Expected:', Array.from(expected.dataSync()));
+              // console.log('Actual:', Array.from(actual.dataSync()));
+              return loss(actual, expected);
+            };
 
-          let totalLoss: tf.Scalar | null = null;
-          for (let exampleIx = 0; exampleIx < this.params.batchSize; exampleIx++) {
-            const exampleLoss = oneExampleLoss();
-            totalLoss = totalLoss ? (totalLoss.add(exampleLoss) as tf.Scalar) : exampleLoss;
-          }
-          return totalLoss!.div(this.params.batchSize);
-        }, true);
+            let totalLoss: tf.Scalar | null = null;
+            for (let exampleIx = 0; exampleIx < this.params.batchSize; exampleIx++) {
+              const exampleLoss = oneExampleLoss();
+              totalLoss = totalLoss ? (totalLoss.add(exampleLoss) as tf.Scalar) : exampleLoss;
+            }
+            return totalLoss!.div(this.params.batchSize);
+          },
+          true,
+          [weights, bias]
+        );
         console.log('Cost:', +cost!.dataSync()[0].toFixed(3));
       }
 

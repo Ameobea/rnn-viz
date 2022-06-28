@@ -16,15 +16,48 @@
     const allTrueButOneOrNotAll = (vals: boolean[]) =>
       allTrueButOne(vals) || vals.every(val => !val);
     const tern = ([a, b, c]: boolean[]) => (a ? b : c);
-    const targetFunction = (vals: boolean[]) => allTrueButOneOrNotAll(vals) || tern(vals);
+    // const targetFunction = (vals: boolean[]) => allTrueButOneOrNotAll(vals) || tern(vals);
+
+    const repro = ([a, b, c]: boolean[]) => {
+      // [
+      //   ((false, false, false), false),
+      //   ((false, false, true), false),
+      //   ((false, true, false), false),
+      //   ((false, true, true), true),
+      //   ((true, false, false), true),
+      //   ((true, false, true), false),
+      //   ((true, true, false), false),
+      //   ((true, true, true), false)
+      // ]
+      switch (`${a}-${b}-${c}`) {
+        case 'false-false-false':
+          return false;
+        case 'false-false-true':
+          return false;
+        case 'false-true-false':
+          return false;
+        case 'false-true-true':
+          return true;
+        case 'true-false-false':
+          return true;
+        case 'true-false-true':
+          return false;
+        case 'true-true-false':
+          return false;
+        case 'true-true-true':
+          return false;
+        default:
+          throw new Error(`Unhandled: ${a}-${b}-${c}`);
+      }
+    };
 
     const testbed = new AmeoTestbed({
       inputSize: 3,
-      targetFunction,
-      learningRate: 0.1,
+      targetFunction: repro,
+      learningRate: 0.01,
       initialization: { type: 'random', scale: 0.3 },
-      iterations: 200,
-      batchSize: 4,
+      iterations: 1000,
+      batchSize: 2,
       variant: 'softLeakyAmeo',
     });
     const res = testbed.run(1);

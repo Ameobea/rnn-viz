@@ -57,8 +57,8 @@ export class RNNViz {
   }
 
   private handleResize = (canvas: HTMLCanvasElement) => {
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
     console.log('Resizing: ', { width, height });
     this.app.renderer.resize(width, height);
     this.container.resize(width, height);
