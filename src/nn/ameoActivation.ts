@@ -275,3 +275,47 @@ export class SoftLeakyAmeo extends Activation {
     return this.applyInner(tensor.mul(1.5).sub(0.5)).sub(0.5).mul(2);
   }
 }
+
+const mkApplyInterpolatedAmeo = (factor: number, leakyness: number) => {
+  const applySoftLeakyAmeo = mkApplySoftLeakyAmeo(leakyness);
+
+  return tfc.customGrad((x, save) => {
+    const tensor = x as Tensor<Rank>;
+    (save as GradSaveFunc)([tensor]);
+
+    const y0Mix = factor;
+    const y1Mix = 1 - factor;
+
+    const y0 = applyAmeoInner(tensor).mul(y0Mix);
+    const y1 = applySoftLeakyAmeo(tensor).mul(y1Mix);
+    const y = y0.add(y1);
+
+    return {
+      value: y,
+      gradFunc: (dy, saved) => {
+        const grad0: Tensor<Rank> = ameoGrad(dy, saved[0]).mul(y0Mix);
+        const grad1: Tensor<Rank> = softLeakyAmeoGrad(dy, saved[0], leakyness).mul(y1Mix);
+        return grad0.add(grad1);
+      },
+    };
+  });
+};
+
+/**
+ * Interpolation between Ameo and SoftLeakyAmeo
+ */
+export class InterpolatedAmeo extends Activation {
+  private applyInner: (tensor: Tensor<Rank>) => Tensor<Rank>;
+
+  constructor(factor: number, leakyness: number) {
+    if (factor < 0 || factor > 1) {
+      throw new Error('`factor` must be between 0 and 1');
+    }
+    super();
+    this.applyInner = mkApplyInterpolatedAmeo(factor, leakyness);
+  }
+
+  apply(tensor: Tensor<Rank>, _axis?: number | undefined): Tensor<Rank> {
+    return this.applyInner(tensor.mul(1.5).sub(0.5)).sub(0.5).mul(2);
+  }
+}

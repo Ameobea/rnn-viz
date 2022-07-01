@@ -57,6 +57,10 @@ fn scaled_shifted_soft_leaky_ameo_activation(x: f32) -> f32 {
     (y - 0.5) * 2.
 }
 
+fn gcu(x: f32) -> f32 {
+    x * x.cos()
+}
+
 static mut VOXEL_COMPUTE_SCRATCH: *mut Vec<bool> = std::ptr::null_mut();
 
 // Could do a lot better with bitflags for this
@@ -96,10 +100,11 @@ pub fn compute_voxel_positions(
             let y = DOMAIN[0] + i_y as f32 * voxel_size;
             for i_x in 0..resolution {
                 let x = DOMAIN[0] + i_x as f32 * voxel_size;
-                let activation_fn = scaled_shifted_ameo_activation;
+                // let activation_fn = scaled_shifted_ameo_activation;
                 // let activation_fn = scaled_shifted_soft_leaky_ameo_activation;
+                let activation_fn = gcu;
                 let value = activation_fn(weight_x * x + weight_y * y + weight_z * z + bias);
-                if value > 0.95 || value < -0.95 {
+                if value > 0.95 {
                     scratch[i_z * resolution * resolution + i_y * resolution + i_x] = true;
                 }
             }

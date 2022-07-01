@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 
   onMount(async () => {
-    const { AmeoTestbed } = await import('../nn/ameoTestbed');
+    const { AmeoTestbed, formatTestbedRunResult } = await import('../nn/ameoTestbed');
 
     // const targetFunction = ([cond, ifTrue, ifFalse]: boolean[]) => (cond ? ifTrue : ifFalse);
     // const targetFunction = ([a, b, c]: number[]) => (a && b ? c : 0);
@@ -51,15 +51,19 @@
       }
     };
 
+    const attempts = 100;
     const testbed = new AmeoTestbed({
-      inputSize: 3,
-      targetFunction: repro,
-      learningRate: 0.01,
-      initialization: { type: 'random', scale: 0.3 },
+      inputSize: 2,
+      targetFunction: tern,
+      learningRate: 0.35,
+      initialization: { type: 'random', scale: 0.6 },
       iterations: 1000,
       batchSize: 2,
-      variant: 'softLeakyAmeo',
+      variant: 'ameo',
+      perfectCostThreshold: 0.0025,
+      optimizer: 'adam',
     });
-    const res = testbed.run(1);
+    const res = testbed.run(attempts);
+    console.log(formatTestbedRunResult(res));
   });
 </script>
