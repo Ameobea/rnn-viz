@@ -51,16 +51,16 @@
       }
     };
 
-    const attempts = 100;
+    const attempts = 50;
     const testbed = new AmeoTestbed({
-      inputSize: 2,
+      inputSize: 3,
       targetFunction: tern,
-      learningRate: 0.35,
-      initialization: { type: 'random', scale: 0.6 },
-      iterations: 1000,
-      batchSize: 2,
-      variant: 'ameo',
-      perfectCostThreshold: 0.0025,
+      learningRate: 0.5,
+      initialization: { type: 'random', scale: 2 },
+      iterations: 2000,
+      batchSize: 1,
+      variant: 'softLeakyAmeo',
+      perfectCostThreshold: 0.15 * 0.15,
       optimizer: 'adam',
     });
     const res = testbed.run(attempts);

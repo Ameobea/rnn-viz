@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+#[cfg(feature = "z3-support")]
 use z3::ast::{Ast, Bool, Float, Real};
 
 fn ameo_activation(x: f32) -> f32 {
@@ -15,10 +18,11 @@ fn ameo_activation(x: f32) -> f32 {
 }
 
 fn scaled_shifted_ameo_activation(x: f32) -> f32 {
-    let y = ameo_activation(1.5 * x - 0.5);
+    let y = ameo_activation(0.5 * x - 0.5);
     (y - 0.5) * 2.
 }
 
+#[cfg(feature = "z3-support")]
 fn between<'a>(
     ctx: &'a z3::Context,
     min_exclusive: Option<i32>,
@@ -35,6 +39,7 @@ fn between<'a>(
     }
 }
 
+#[cfg(feature = "z3-support")]
 fn z3_ameo_activation<'a>(
     ctx: &'a z3::Context,
     x: Real<'a>,
@@ -88,6 +93,7 @@ fn gen_3_input_truth_table(
     truth_table
 }
 
+#[cfg(feature = "z3-support")]
 fn sum<'a>(ctx: &'a z3::Context, vals: &[Real<'a>]) -> Real<'a> {
     let mut sum = Real::from_real(ctx, 0, 1);
     println!("vals: {:?}", vals);
@@ -97,10 +103,12 @@ fn sum<'a>(ctx: &'a z3::Context, vals: &[Real<'a>]) -> Real<'a> {
     sum
 }
 
+#[cfg(feature = "z3-support")]
 fn bool_to_real<'a>(ctx: &'a z3::Context, val: bool) -> Real<'a> {
     Real::from_real(ctx, if val { 1 } else { -1 }, 1)
 }
 
+#[cfg(feature = "z3-support")]
 fn solve_z3() {
     let z3_conf = z3::Config::new();
     let ctx = z3::Context::new(&z3_conf);
@@ -167,18 +175,21 @@ fn solve_z3() {
 }
 
 fn valid_vals() -> impl Iterator<Item = f32> {
-    // let numerators = 0..=64;
-    let numerators = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    // // let numerators = 0..=64;
+    // let numerators = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    //     .into_iter()
+    //     .flat_map(|v| [v, v * 2]);
+    // // let denominators = 1..=48;
+    // let denominators = [1, 2, 3].into_iter();
+    // numerators.flat_map(move |n| {
+    //     denominators
+    //         .clone()
+    //         .map(move |d| n as f32 / d as f32)
+    //         .flat_map(|f| [f, -f])
+    // })
+    [-4, -3, -2, -1, 0, 1, 2, 3, 4]
         .into_iter()
-        .flat_map(|v| [v, v * 2]);
-    // let denominators = 1..=48;
-    let denominators = [1, 2, 3].into_iter();
-    numerators.flat_map(move |n| {
-        denominators
-            .clone()
-            .map(move |d| n as f32 / d as f32)
-            .flat_map(|f| [f, -f])
-    })
+        .map(|f| f as f32)
 }
 
 fn solve_brute_force(truth_table: &[((bool, bool, bool), bool)]) -> Option<(f32, f32, f32, f32)> {
@@ -222,7 +233,7 @@ fn ternary_or_all_false_or_all_but_one_true(x: bool, y: bool, z: bool) -> bool {
 
 fn sanity() {
     let (x, y, z) = (-1., -1., -1.);
-    let (x_weight, y_weight, z_weight, bias) = (-1. / 3., 1. / 3., 7. / 6., 5. / 6.);
+    let (x_weight, y_weight, z_weight, bias) = (-1., -1., 2., 3.);
     let res = scaled_shifted_ameo_activation(x * x_weight + y * y_weight + z * z_weight + bias);
     assert_eq!(res, 1.);
 
@@ -244,6 +255,155 @@ fn sanity() {
             }
         }
     }
+}
+
+fn build_all_3_input_truth_tables() -> Vec<[((bool, bool, bool), bool); 8]> {
+    let mut tables = Vec::new();
+
+    for v_0 in [false, true] {
+        for v_1 in [false, true] {
+            for v_2 in [false, true] {
+                for v_3 in [false, true] {
+                    for v_4 in [false, true] {
+                        for v_5 in [false, true] {
+                            for v_6 in [false, true] {
+                                for v_7 in [false, true] {
+                                    let truth_table = [
+                                        ((false, false, false), v_0),
+                                        ((false, false, true), v_1),
+                                        ((false, true, false), v_2),
+                                        ((false, true, true), v_3),
+                                        ((true, false, false), v_4),
+                                        ((true, false, true), v_5),
+                                        ((true, true, false), v_6),
+                                        ((true, true, true), v_7),
+                                    ];
+                                    tables.push(truth_table);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    tables
+}
+
+fn solve_all_3_input_truth_tables() {
+    let mut step_ix = 0;
+    let mut no_solution_count = 0;
+    for truth_table in build_all_3_input_truth_tables() {
+        match solve_brute_force(&truth_table) {
+            Some((x_weight, y_weight, z_weight, bias)) => {
+                println!("[{step_ix}]: x_weight: {x_weight}, y_weight: {y_weight}, z_weight: {z_weight}, bias: {bias}")
+            }
+            None => {
+                println!("[{step_ix}] No Solution: {:?}", truth_table);
+                no_solution_count += 1;
+            }
+        };
+
+        step_ix += 1;
+    }
+
+    println!("No solution for {}/{} cases", no_solution_count, step_ix);
+}
+
+/// Works backwards, figuring out which truth table is represented by all integer-valued parameters in a range.
+fn solve_all_3_input_truth_tables_reverse() {
+    let param_range = -5..=5;
+
+    let mut counts_by_truth_table: HashMap<[((bool, bool, bool), bool); 8], usize> = HashMap::new();
+
+    let mut total_attempts = 0usize;
+    let mut no_solution_count = 0usize;
+    for x_weight in param_range.clone() {
+        for y_weight in param_range.clone() {
+            for z_weight in param_range.clone() {
+                'outer: for bias in param_range.clone() {
+                    total_attempts += 1;
+
+                    let mut truth_table = [
+                        ((false, false, false), false),
+                        ((false, false, true), false),
+                        ((false, true, false), false),
+                        ((false, true, true), false),
+                        ((true, false, false), false),
+                        ((true, false, true), false),
+                        ((true, true, false), false),
+                        ((true, true, true), false),
+                    ];
+
+                    let mut step_ix = 0;
+                    for x in [false, true] {
+                        for y in [false, true] {
+                            for z in [false, true] {
+                                let x = if x { 1. } else { -1. } * x_weight as f32;
+                                let y = if y { 1. } else { -1. } * y_weight as f32;
+                                let z = if z { 1. } else { -1. } * z_weight as f32;
+
+                                let actual =
+                                    scaled_shifted_ameo_activation(x + y + z + bias as f32);
+                                let actual = if (actual - 1.).abs() < 1e-6 {
+                                    true
+                                } else if (actual + 1.).abs() < 1e-6 {
+                                    false
+                                } else {
+                                    no_solution_count += 1;
+                                    continue 'outer;
+                                };
+                                truth_table[step_ix].1 = actual;
+                                step_ix += 1;
+                            }
+                        }
+                    }
+
+                    counts_by_truth_table
+                        .entry(truth_table)
+                        .and_modify(|count| *count += 1)
+                        .or_insert(1);
+                }
+            }
+        }
+    }
+
+    let mut truth_tables_by_count = HashMap::new();
+    for (truth_table, count) in &counts_by_truth_table {
+        truth_tables_by_count
+            .entry(count)
+            .and_modify(|truth_tables: &mut Vec<[((bool, bool, bool), bool); 8]>| {
+                truth_tables.push(*truth_table)
+            })
+            .or_insert(vec![*truth_table]);
+    }
+
+    let mut truth_tables_by_count_sorted = truth_tables_by_count
+        .into_iter()
+        .map(|(count, truth_tables)| (count, truth_tables.len()))
+        .collect::<Vec<_>>();
+    truth_tables_by_count_sorted.sort_by(|a, b| b.0.cmp(&a.0));
+
+    println!("\n[solution count]: [truth table count]");
+    for (count, truth_tables_count) in truth_tables_by_count_sorted {
+        println!("{}: {}", count, truth_tables_count);
+    }
+
+    println!(
+        "\n\nTotal unique truth tables: {}",
+        counts_by_truth_table.len()
+    );
+
+    println!(
+        "Truth tables with no solution: {}",
+        build_all_3_input_truth_tables().len() - counts_by_truth_table.len()
+    );
+
+    println!(
+        "No valid binary truth table represented for {}/{} cases\n",
+        no_solution_count, total_attempts
+    );
 }
 
 fn main() {
@@ -272,47 +432,6 @@ fn main() {
         x_weight, y_weight, z_weight, bias
     );
 
-    let mut step_ix = 0;
-    let mut no_solution_count = 0;
-    for v_0 in [false, true] {
-        for v_1 in [false, true] {
-            for v_2 in [false, true] {
-                for v_3 in [false, true] {
-                    for v_4 in [false, true] {
-                        for v_5 in [false, true] {
-                            for v_6 in [false, true] {
-                                for v_7 in [false, true] {
-                                    let truth_table = vec![
-                                        ((false, false, false), v_0),
-                                        ((false, false, true), v_1),
-                                        ((false, true, false), v_2),
-                                        ((false, true, true), v_3),
-                                        ((true, false, false), v_4),
-                                        ((true, false, true), v_5),
-                                        ((true, true, false), v_6),
-                                        ((true, true, true), v_7),
-                                    ];
-                                    match solve_brute_force(&truth_table) {
-                                        Some((x_weight, y_weight, z_weight, bias)) => {
-                                            // println!(
-                                            //     "[{step_ix}]: x_weight: {x_weight}, y_weight: {y_weight}, z_weight: {z_weight}, bias: {bias}",
-                                            // )
-                                        }
-                                        None => {
-                                            println!("[{step_ix}] No Solution: {:?}", truth_table);
-                                            no_solution_count += 1;
-                                        }
-                                    };
-
-                                    step_ix += 1;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    println!("No solution for {}/{} cases", no_solution_count, step_ix);
+    // solve_all_3_input_truth_tables();
+    solve_all_3_input_truth_tables_reverse();
 }

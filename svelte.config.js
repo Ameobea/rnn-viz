@@ -1,4 +1,3 @@
-import { resolve } from 'path';
 import adapter from '@sveltejs/adapter-static';
 import preprocess from 'svelte-preprocess';
 
@@ -14,22 +13,6 @@ const config = {
     prerender: {
       concurrency: 6,
       default: true,
-    },
-    vite: {
-      build: {
-        sourcemap: true,
-      },
-      resolve: {
-        alias: {
-          src: resolve('./src'),
-        },
-      },
-      optimizeDeps: {
-        include: ['echarts'],
-      },
-      ssr: {
-        noExternal: ['echarts'].filter(Boolean),
-      },
     },
     floc: true,
   },

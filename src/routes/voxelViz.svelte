@@ -3,10 +3,10 @@
   import type { VoxelPlot3D } from '../viz/VoxelPlot3D/VoxelPlot3D';
   let canvas: HTMLCanvasElement | null = null;
 
-  let xWeight = -1 / 3;
-  let yWeight = 1;
-  let zWeight = 2 / 3;
-  let bias = -1 / 3;
+  let xWeight = 0.7067233920097351;
+  let yWeight = 0.7426995038986206;
+  let zWeight = -1.2776010036468506;
+  let bias = 0.2680431008338928;
 
   let viz: VoxelPlot3D | null = null;
   $: if (viz) {

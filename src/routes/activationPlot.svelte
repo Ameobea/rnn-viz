@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import type { EChartOption } from 'echarts';
+  import type { EChartsOption } from 'echarts';
 
   type VariantParams =
     | { type: 'single'; smooth: boolean; leaky: boolean }
@@ -44,15 +44,15 @@
   const scaleAndShiftActivationFunction =
     (fn: (x: number) => number): ((x: number) => number) =>
     (x: number) => {
-      const y = fn(1.5 * x - 0.5);
+      const y = fn(0.5 * x - 0.5);
       return (y - 0.5) * 2;
     };
 
   const buildActivationSeries = (
     params: VariantParams,
     ameoActivationMod: typeof import('../nn/ameoActivation') | null
-  ): EChartOption['series'] => {
-    const activationFn =
+  ): EChartsOption['series'] => {
+    const [activationFn, activationGradFn] =
       params.type === 'interpolated'
         ? (() => {
             if (!ameoActivationMod) {
@@ -60,24 +60,85 @@
             }
 
             const activation = new ameoActivationMod.InterpolatedAmeo(params.factor, 0.05);
-            return (x: number) =>
-              activation.apply(ameoActivationMod.tfc.tensor1d([x])).dataSync()[0];
+            return [
+              (x: number) => activation.apply(ameoActivationMod.tfc.tensor1d([x])).dataSync()[0],
+              (x: number) =>
+                ameoActivationMod.tfc
+                  .grad((x: Tensor<Rank>) => activation.apply(x))(
+                    ameoActivationMod.tfc.tensor1d([x])
+                  )
+                  .dataSync()[0],
+            ];
           })()
-        : scaleAndShiftActivationFunction(
-            params.smooth
-              ? mkSmoothAmeo(params.leaky ? 0.05 : null)
-              : mkAmeo(params.leaky ? 0.05 : null)
-          );
+        : (() => {
+            if (ameoActivationMod) {
+              if (!params.smooth && !params.leaky) {
+                const activation = new ameoActivationMod.Ameo();
+                return [
+                  (x: number) =>
+                    activation.apply(ameoActivationMod.tfc.tensor1d([x])).dataSync()[0],
+                  (x: number) =>
+                    ameoActivationMod.tfc
+                      .grad(activation.apply)(ameoActivationMod.tfc.tensor1d([x]))
+                      .dataSync()[0],
+                ];
+              }
+
+              if (params.leaky && !params.smooth) {
+                const activation = new ameoActivationMod.LeakyAmeo(0.05);
+                return [
+                  (x: number) =>
+                    activation.apply(ameoActivationMod.tfc.tensor1d([x])).dataSync()[0],
+                  (x: number) =>
+                    ameoActivationMod.tfc
+                      .grad((x: Tensor<Rank>) => activation.apply(x))(
+                        ameoActivationMod.tfc.tensor1d([x])
+                      )
+                      .dataSync()[0],
+                ];
+              }
+
+              const activation = new ameoActivationMod.SoftLeakyAmeo(params.leaky ? 0.05 : null);
+              return [
+                (x: number) => activation.apply(ameoActivationMod.tfc.tensor1d([x])).dataSync()[0],
+                (x: number) =>
+                  ameoActivationMod.tfc
+                    .grad((x: Tensor<Rank>) => activation.apply(x))(
+                      ameoActivationMod.tfc.tensor1d([x])
+                    )
+                    .dataSync()[0],
+              ];
+            }
+
+            return [
+              scaleAndShiftActivationFunction(
+                params.smooth
+                  ? mkSmoothAmeo(params.leaky ? 0.05 : null)
+                  : mkAmeo(params.leaky ? 0.05 : null)
+              ),
+              undefined,
+            ];
+          })();
 
     const pointCount = 250;
-    const range = [-1.5, 1.5];
+    const range = [-4, 4];
 
     const data = new Array(pointCount).fill(null).map((_, i: number) => {
       const x = range[0] + ((range[1] - range[0]) * i) / (pointCount - 1);
       const y = activationFn(x);
       return [x, y];
     });
-    return [{ data, type: 'line', symbol: 'none' }];
+    const gradData = activationGradFn
+      ? new Array(pointCount).fill(null).map((_, i: number) => {
+          const x = range[0] + ((range[1] - range[0]) * i) / (pointCount - 1);
+          const y = activationGradFn(x);
+          return [x, y];
+        })
+      : null;
+    return [
+      { data, type: 'line', symbol: 'none' },
+      gradData ? { data: gradData, type: 'line', symbol: 'none' } : { data: [], type: 'line' },
+    ];
   };
 </script>
 
@@ -86,10 +147,11 @@
   import { LineChart } from 'echarts/charts.js';
   import { GridComponent } from 'echarts/components.js';
   import { SVGRenderer } from 'echarts/renderers.js';
-  echarts.use([LineChart, GridComponent, SVGRenderer]);
-
   import { onMount } from 'svelte';
-  import type { ECBasicOption } from 'echarts/types/dist/shared';
+
+  import type { Rank, Tensor } from '@tensorflow/tfjs';
+
+  echarts.use([LineChart, GridComponent, SVGRenderer]);
 
   let variant: VariantParams = { type: 'single', smooth: false, leaky: false };
   let ameoActivationMod: typeof import('../nn/ameoActivation') | null = null;
@@ -117,32 +179,29 @@
       ameoActivationMod = mod;
     });
 
-    const option: ECBasicOption = {
+    const option: EChartsOption = {
       backgroundColor: '#040404',
       xAxis: {
+        splitNumber: 6,
         type: 'value',
         splitLine: {
           lineStyle: {
             opacity: 0.1,
           },
         },
-        min: -1.5,
-        max: 1.5,
-        axisLabel: {
-          showMinLabel: false,
-          showMaxLabel: false,
-          interval: 1 / 3,
-        },
+        min: -4,
+        max: 4,
       },
       yAxis: {
+        splitNumber: 8,
         type: 'value',
         splitLine: {
           lineStyle: {
             opacity: 0.1,
           },
         },
-        min: -1.5,
-        max: 1.5,
+        min: -5.5,
+        max: 5.5,
         axisLabel: {
           showMinLabel: false,
           showMaxLabel: false,
@@ -186,12 +245,13 @@
     on:change={evt => handleChange({ type: 'single', leaky: evt.currentTarget.checked })}
   />
   {#if ameoActivationMod}
-    <label for="leaky-checkbox">Interpolation Factor</label>
+    <label for="leaky-checkbox">Interpolated</label>
     <input
       type="checkbox"
       id="leaky-checkbox"
       checked={variant.type === 'interpolated'}
-      on:change={() => handleChange({ type: 'interpolated' })}
+      on:change={evt =>
+        handleChange({ type: evt.currentTarget.checked ? 'interpolated' : 'single' })}
     />
     {#if variant.type === 'interpolated'}
       <label for="interpolation-factor-slider">Interpolation Factor</label>
@@ -216,6 +276,6 @@
 
   .activation-plot-chart {
     width: 500px;
-    height: 300px;
+    height: 400px;
   }
 </style>

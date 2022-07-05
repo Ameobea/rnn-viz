@@ -23,7 +23,7 @@ fn ameo_activation(x: f32) -> f32 {
 }
 
 fn scaled_shifted_ameo_activation(x: f32) -> f32 {
-    let y = ameo_activation(1.5 * x - 0.5);
+    let y = ameo_activation(0.5 * x - 0.5);
     (y - 0.5) * 2.
 }
 
@@ -53,7 +53,7 @@ fn soft_leaky_ameo(x: f32) -> f32 {
 }
 
 fn scaled_shifted_soft_leaky_ameo_activation(x: f32) -> f32 {
-    let y = soft_leaky_ameo(1.5 * x - 0.5);
+    let y = soft_leaky_ameo(0.5 * x - 0.5);
     (y - 0.5) * 2.
 }
 
@@ -101,10 +101,10 @@ pub fn compute_voxel_positions(
             for i_x in 0..resolution {
                 let x = DOMAIN[0] + i_x as f32 * voxel_size;
                 // let activation_fn = scaled_shifted_ameo_activation;
-                // let activation_fn = scaled_shifted_soft_leaky_ameo_activation;
-                let activation_fn = gcu;
+                let activation_fn = scaled_shifted_soft_leaky_ameo_activation;
+                // let activation_fn = gcu;
                 let value = activation_fn(weight_x * x + weight_y * y + weight_z * z + bias);
-                if value > 0.95 {
+                if value > 0. {
                     scratch[i_z * resolution * resolution + i_y * resolution + i_x] = true;
                 }
             }

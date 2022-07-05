@@ -1,10 +1,10 @@
 import * as tf from '@tensorflow/tfjs';
 import type { Activation } from '@tensorflow/tfjs-layers/dist/activations';
 
-import { Ameo, SoftAmeo, SoftLeakyAmeo } from './ameoActivation';
+import { Ameo, InterpolatedAmeo, LeakyAmeo, SoftAmeo, SoftLeakyAmeo } from './ameoActivation';
 import { GCUActivation } from './gcuActivation';
 
-type Initialization = { type: 'zeroes' } | { type: 'random'; scale: number };
+type Initialization = { type: 'zeroes' } | { type: 'random' | 'randomPositive'; scale: number };
 
 interface AmeoTestbedParams {
   inputSize: number;
@@ -13,7 +13,7 @@ interface AmeoTestbedParams {
   initialization: Initialization;
   iterations: number;
   batchSize: number;
-  variant: 'ameo' | 'softAmeo' | 'softLeakyAmeo' | 'gcu';
+  variant: 'ameo' | 'leakyAmeo' | 'softAmeo' | 'softLeakyAmeo' | 'interpolatedAmeo' | 'gcu';
   perfectCostThreshold: number;
   optimizer: 'sgd' | 'adam';
 }
@@ -77,6 +77,10 @@ export class AmeoTestbed {
         const scale = this.params.initialization.scale;
         return new Array(this.params.inputSize).fill(0).map(() => (Math.random() * 2 - 1) * scale);
       }
+      case 'randomPositive': {
+        const scale = this.params.initialization.scale;
+        return new Array(this.params.inputSize).fill(0).map(() => (Math.random() * 2 - 1) * scale);
+      }
       default: {
         throw new Error(`Unknown initialization type: ${(this.params.initialization as any).type}`);
       }
@@ -93,6 +97,9 @@ export class AmeoTestbed {
       case 'ameo': {
         return new Ameo();
       }
+      case 'leakyAmeo': {
+        return new LeakyAmeo(0.05);
+      }
       case 'softAmeo': {
         return new SoftAmeo();
       }
@@ -101,6 +108,9 @@ export class AmeoTestbed {
       }
       case 'gcu': {
         return new GCUActivation();
+      }
+      case 'interpolatedAmeo': {
+        return new InterpolatedAmeo(0.15, 0.05);
       }
       default: {
         throw new Error(`Unknown variant: ${(this.params as any).variant}`);
@@ -121,7 +131,7 @@ export class AmeoTestbed {
     const inputsToSearch = cartesianProduct(
       new Array(this.params.inputSize).fill(null).map(() => [false, true])
     );
-    console.log(inputsToSearch);
+    // console.log(inputsToSearch);
 
     let validationRes = ValidationRes.Perfect;
     const costs: number[] = [];
@@ -172,7 +182,8 @@ export class AmeoTestbed {
       // console.log('Initial bias:', bias.dataSync()[0]);
 
       const f = (x: tf.Tensor1D) => activation.apply(x.mul(weights).sum().add(bias));
-      const loss = (x: tf.Tensor, y: tf.Tensor): tf.Scalar => x.sub(y).square().mean();
+      // const loss = (x: tf.Tensor, y: tf.Tensor): tf.Scalar => x.sub(y).square().mean();
+      const loss = (x: tf.Tensor, y: tf.Tensor): tf.Scalar => tf.abs(x.sub(y)).mean();
 
       for (let j = 0; j < this.params.iterations; j++) {
         if (j === 500) {
