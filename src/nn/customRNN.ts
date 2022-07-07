@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
+export * as tf from '@tensorflow/tfjs';
 import { type LayerVariable, type Shape, type Tensor, tidy } from '@tensorflow/tfjs';
 import {
   RNNCell,
@@ -16,12 +17,16 @@ import {
   getExactlyOneShape,
   isArrayOfShapes,
 } from '@tensorflow/tfjs-layers/dist/utils/types_utils';
-import { Activation, getActivation } from '@tensorflow/tfjs-layers/dist/activations';
+import {
+  Activation,
+  getActivation as getActivationInner,
+} from '@tensorflow/tfjs-layers/dist/activations';
 import { assertPositiveInteger } from '@tensorflow/tfjs-layers/dist/utils/generic_utils';
 import type { Kwargs } from '@tensorflow/tfjs-layers/dist/types';
 import type { LayerArgs } from '@tensorflow/tfjs-layers/dist/engine/topology';
 import type { ActivationIdentifier } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config';
 import { nameScope } from '@tensorflow/tfjs-layers/dist/common';
+import { Ameo, InterpolatedAmeo, LeakyAmeo, SoftAmeo, SoftLeakyAmeo } from './ameoActivation';
 
 interface MyStackedRNNCellsArgs extends StackedRNNCellsArgs {
   cells: MySimpleRNNCell[];
@@ -53,6 +58,13 @@ export class MyStackedRNNCells extends StackedRNNCells {
   }
 }
 
+type AmeoActivationIdentifier =
+  | 'ameo'
+  | 'softAmeo'
+  | { type: 'leakyAmeo'; leakyness?: number }
+  | { type: 'softLeakyAmeo'; leakyness?: number }
+  | { type: 'interpolatedAmeo'; factor: number; leakyness?: number };
+
 export interface MySimpleRNNCellLayerArgs extends LayerArgs {
   /**
    * stateSize: Positive integer, size of state vector passed between
@@ -68,13 +80,13 @@ export interface MySimpleRNNCellLayerArgs extends LayerArgs {
    * Default: hyperbolic tangent ('tanh').
    * If you pass `null`,  'linear' activation will be applied.
    */
-  recurrentActivation?: ActivationIdentifier;
+  recurrentActivation?: ActivationIdentifier | AmeoActivationIdentifier;
   /**
    * Activation function to use for the output tree.
    * Default: hyperbolic tangent ('tanh').
    * If you pass `null`,  'linear' activation will be applied.
    */
-  outputActivation?: ActivationIdentifier;
+  outputActivation?: ActivationIdentifier | AmeoActivationIdentifier | null;
   /**
    * Whether the recursive tree uses a bias vector.
    */
@@ -98,6 +110,34 @@ export interface MySimpleRNNCellLayerArgs extends LayerArgs {
    */
   biasInitializer?: InitializerIdentifier | Initializer;
 }
+
+const getActivation = (id: ActivationIdentifier | AmeoActivationIdentifier): Activation => {
+  if (typeof id !== 'object' && id !== 'ameo' && id !== 'softAmeo') {
+    return getActivationInner(id);
+  }
+
+  if (typeof id === 'object') {
+    switch (id.type) {
+      case 'leakyAmeo':
+        return new LeakyAmeo(id.leakyness);
+      case 'softLeakyAmeo':
+        return new SoftLeakyAmeo(id.leakyness);
+      case 'interpolatedAmeo':
+        return new InterpolatedAmeo(id.factor, id.leakyness);
+      default:
+        throw new Error(`Unhandled activation identifier: ${id}`);
+    }
+  }
+
+  switch (id) {
+    case 'ameo':
+      return new Ameo();
+    case 'softAmeo':
+      return new SoftAmeo();
+    default:
+      throw new Error(`Unhandled activation identifier: ${id}`);
+  }
+};
 
 export class MySimpleRNNCell extends RNNCell {
   /** @nocollapse */
@@ -130,6 +170,7 @@ export class MySimpleRNNCell extends RNNCell {
     this.recurrentActivation = getActivation(
       args.recurrentActivation == null ? this.DEFAULT_ACTIVATION : args.recurrentActivation
     );
+    console.log(this.recurrentActivation);
     this.outputActivation = getActivation(
       args.outputActivation == null ? this.DEFAULT_ACTIVATION : args.outputActivation
     );
@@ -238,6 +279,7 @@ export interface MyRNNLayerArgs extends RNNLayerArgs {
   cell: MySimpleRNNCell | MySimpleRNNCell[];
 
   trainableInitialState?: boolean;
+  initialStateInitializer?: InitializerIdentifier;
   initialStateActivation?: ActivationIdentifier | null;
 }
 
@@ -246,6 +288,7 @@ export class MyRNN extends tf.RNN {
   public readonly cell: RNNCell;
 
   readonly trainableInitialState: boolean;
+  readonly initialStateInitializer: InitializerIdentifier;
   readonly initialStateActivation: Activation | null;
 
   public initialStateValues?: LayerVariable | LayerVariable[];
@@ -261,6 +304,7 @@ export class MyRNN extends tf.RNN {
     });
 
     this.trainableInitialState = args.trainableInitialState || false;
+    this.initialStateInitializer = args.initialStateInitializer || 'glorotNormal';
     this.initialStateActivation = args.initialStateActivation
       ? getActivation(args.initialStateActivation)
       : null;
@@ -275,7 +319,7 @@ export class MyRNN extends tf.RNN {
           `initial_state_weights${i == null ? '' : `_${i}`}`,
           [stateSize],
           undefined,
-          getInitializer('glorotNormal'),
+          getInitializer(this.initialStateInitializer),
           undefined,
           true
         );

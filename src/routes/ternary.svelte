@@ -55,11 +55,11 @@
     const testbed = new AmeoTestbed({
       inputSize: 3,
       targetFunction: tern,
-      learningRate: 0.5,
-      initialization: { type: 'random', scale: 2 },
+      learningRate: 0.8,
+      initialization: { type: 'random', min: -2.5, max: 1.5, scale: 1.5 },
       iterations: 2000,
-      batchSize: 1,
-      variant: 'softLeakyAmeo',
+      batchSize: 2,
+      variant: 'interpolatedAmeo',
       perfectCostThreshold: 0.15 * 0.15,
       optimizer: 'adam',
     });

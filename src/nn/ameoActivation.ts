@@ -233,7 +233,7 @@ tfc.registerGradient({
 export class LeakyAmeo extends Activation {
   leakyness: Tensor<Rank>;
 
-  constructor(leakyness: number) {
+  constructor(leakyness = 0.05) {
     super();
     this.leakyness = tfc.tensor1d([leakyness]);
   }
@@ -627,9 +627,9 @@ export class SoftLeakyAmeo extends Activation {
 export class InterpolatedAmeo extends Activation {
   // private applyInner: (tensor: Tensor<Rank>) => Tensor<Rank>;
   private factor: number;
-  private leakyness: number;
+  private leakyness: number | undefined;
 
-  constructor(factor: number, leakyness: number) {
+  constructor(factor: number, leakyness?: number) {
     if (factor < 0 || factor > 1) {
       throw new Error('`factor` must be between 0 and 1');
     }
@@ -652,7 +652,7 @@ export class InterpolatedAmeo extends Activation {
     const y1: Tensor<Rank> = (
       engine().runKernel('softLeakyAmeo', {
         a: tensor.mul(0.5).sub(0.5),
-        b: tfc.scalar(this.leakyness),
+        b: tfc.scalar(this.leakyness ?? 0.05),
       }) as Tensor<Rank>
     ).mul(y1Mix);
     return y0.add(y1).sub(0.5).mul(2);

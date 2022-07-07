@@ -187,15 +187,18 @@ fn valid_vals() -> impl Iterator<Item = f32> {
     //         .map(move |d| n as f32 / d as f32)
     //         .flat_map(|f| [f, -f])
     // })
-    [-4, -3, -2, -1, 0, 1, 2, 3, 4]
-        .into_iter()
-        .map(|f| f as f32)
+    [
+        -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1., -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4.,
+        4.5,
+    ]
+    .into_iter()
 }
 
 fn solve_brute_force(truth_table: &[((bool, bool, bool), bool)]) -> Option<(f32, f32, f32, f32)> {
     let mut valid_vals = valid_vals().collect::<Vec<_>>();
     valid_vals.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap());
     valid_vals.dedup();
+    // println!("valid vals: {:?}", valid_vals);
 
     for &z_weight in &valid_vals {
         for &y_weight in &valid_vals {
@@ -432,6 +435,6 @@ fn main() {
         x_weight, y_weight, z_weight, bias
     );
 
-    // solve_all_3_input_truth_tables();
-    solve_all_3_input_truth_tables_reverse();
+    solve_all_3_input_truth_tables();
+    // solve_all_3_input_truth_tables_reverse();
 }
