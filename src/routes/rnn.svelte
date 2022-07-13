@@ -93,15 +93,15 @@
     model.add(rnn);
     console.log(cell0.losses);
     // model.add(tf.layers.dense({ units: 8, activation: 'tanh' }));
-    // model.add(
-    //   tf.layers.dense({
-    //     units: outputDim,
-    //     activation: 'linear',
-    //     kernelInitializer: 'glorotNormal',
-    //     useBias: false,
-    //     // kernelRegularizer: new QuantizationRegularizer(quantizationInterval, quantizationIntensity),
-    //   })
-    // );
+    model.add(
+      tf.layers.dense({
+        units: outputDim,
+        activation: 'linear',
+        kernelInitializer: 'glorotNormal',
+        useBias: false,
+        // kernelRegularizer: new QuantizationRegularizer(quantizationInterval, quantizationIntensity),
+      })
+    );
     model.summary();
     model.compile({
       loss: tf.losses.absoluteDifference,
@@ -160,45 +160,7 @@
       return { inputsTensor, expectedTensor };
     };
 
-    const f = (batchSize = 8, print = false) => {
-      const batches = [];
-      for (let i = 0; i < batchSize; i++) {
-        batches.push(oneBatchExamples());
-      }
-
-      const inputsTensor = tf.stack(batches.map(b => b.inputsTensor));
-      const expectedTensor = tf.stack(batches.map(b => b.expectedTensor));
-
-      const actual = model.apply(inputsTensor) as Tensor<Rank>;
-      if (print) {
-        actual.print();
-      }
-
-      // const loss = tf.losses.meanSquaredError(expectedTensor, actual);
-      const loss = tf.losses.absoluteDifference(
-        expectedTensor,
-        actual,
-        undefined,
-        tf.Reduction.MEAN
-      );
-      return loss as Tensor<Rank.R0>;
-    };
-    // f();
-
     for (let i = 0; i < 8000; i++) {
-      // if (i < 100) {
-      //   // optimizer = tf.train.adam(0.08);
-      // } else if (i === 500) {
-      //   const weights = await optimizer.getWeights();
-      //   optimizer = tf.train.adam(0.02);
-      //   optimizer.setWeights(weights);
-      // }
-
-      // const loss = (optimizer.minimize(() => f(1), true)! as Tensor<Rank>).dataSync()[0];
-      // console.log(loss);
-      // if (loss < 0.002 || isNaN(loss)) {
-      //   break;
-      // }
       const { inputsTensor, expectedTensor } = oneBatchExamples();
       await model.fit(inputsTensor, expectedTensor, {
         batchSize: 1,

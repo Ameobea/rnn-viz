@@ -40,6 +40,7 @@
     "pixi-viewport": "^4.34.4",
     "pixi.js": "^6.4.2",
     "three": "^0.142.0",
-    "three-spritetext": "^1.6.5"
+    "three-spritetext": "^1.6.5",
+    "uplot": "^1.6.22"
   }
 }

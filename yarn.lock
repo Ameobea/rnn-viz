@@ -1918,6 +1918,11 @@ typescript@*, typescript@^4.7.4:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.7.4.tgz#1a88596d1cf47d59507a1bcdfb5b9dfe4d488235"
   integrity sha512-C0WQT0gezHuw6AdY1M2jxUO83Rjf0HP7Sk1DtXj6j1EwkQNZrHAg2XPWlq62oqEhYvONq5pkC2Y9oPljWToLmQ==
 
+uplot@^1.6.22:
+  version "1.6.22"
+  resolved "https://registry.yarnpkg.com/uplot/-/uplot-1.6.22.tgz#28a136c7c5fce92ce5e25f38f19314a029bec390"
+  integrity sha512-2jtSb/YHUgtmIUn0+QJjf7ggcJicb5PKe7ijBiRDTPsG/f8F/MFayZ+g6/0kATNkDyF/qQsHJDmCp6cxncg1EQ==
+
 uri-js@^4.2.2:
   version "4.4.1"
   resolved "https://registry.yarnpkg.com/uri-js/-/uri-js-4.4.1.tgz#9b1a52595225859e55f669d928f88c6c57f2a77e"
