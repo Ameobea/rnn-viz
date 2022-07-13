@@ -14,6 +14,11 @@ import {
   type InitializerIdentifier,
 } from '@tensorflow/tfjs-layers/dist/initializers';
 import {
+  getRegularizer,
+  Regularizer,
+  type RegularizerIdentifier,
+} from '@tensorflow/tfjs-layers/dist/regularizers';
+import {
   getExactlyOneShape,
   isArrayOfShapes,
 } from '@tensorflow/tfjs-layers/dist/utils/types_utils';
@@ -26,7 +31,10 @@ import type { Kwargs } from '@tensorflow/tfjs-layers/dist/types';
 import type { LayerArgs } from '@tensorflow/tfjs-layers/dist/engine/topology';
 import type { ActivationIdentifier } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config';
 import { nameScope } from '@tensorflow/tfjs-layers/dist/common';
+import { deserialize } from '@tensorflow/tfjs-layers/dist/layers/serialization';
+
 import { Ameo, InterpolatedAmeo, LeakyAmeo, SoftAmeo, SoftLeakyAmeo } from './ameoActivation';
+import { GCUActivation } from './gcuActivation';
 
 interface MyStackedRNNCellsArgs extends StackedRNNCellsArgs {
   cells: MySimpleRNNCell[];
@@ -56,11 +64,21 @@ export class MyStackedRNNCells extends StackedRNNCells {
     );
     this.built = true;
   }
+
+  public calculateLosses() {
+    return this.cells.flatMap(cell => cell.calculateLosses());
+  }
 }
+MyStackedRNNCells.className = 'MyStackedRNNCells';
+tf.serialization.registerClass(MyStackedRNNCells);
 
 type AmeoActivationIdentifier =
   | 'ameo'
+  | { type: 'ameo' }
   | 'softAmeo'
+  | 'gcu'
+  | { type: 'gcu' }
+  | { type: 'softAmeo' }
   | { type: 'leakyAmeo'; leakyness?: number }
   | { type: 'softLeakyAmeo'; leakyness?: number }
   | { type: 'interpolatedAmeo'; factor: number; leakyness?: number };
@@ -109,21 +127,39 @@ export interface MySimpleRNNCellLayerArgs extends LayerArgs {
    * Initializer for the bias vector.
    */
   biasInitializer?: InitializerIdentifier | Initializer;
+  /**
+   * Regularizer function applied to the `kernel` weights matrix.
+   */
+  kernelRegularizer?: RegularizerIdentifier | Regularizer;
+  /**
+   * Regularizer function applied to the `recurrent_kernel` weights matrix.
+   */
+  recurrentRegularizer?: RegularizerIdentifier | Regularizer;
+  /**
+   * Regularizer function applied to the bias vector.
+   */
+  biasRegularizer?: RegularizerIdentifier | Regularizer;
 }
 
 const getActivation = (id: ActivationIdentifier | AmeoActivationIdentifier): Activation => {
-  if (typeof id !== 'object' && id !== 'ameo' && id !== 'softAmeo') {
+  if (typeof id !== 'object' && id !== 'ameo' && id !== 'softAmeo' && id !== 'gcu') {
     return getActivationInner(id);
   }
 
   if (typeof id === 'object') {
     switch (id.type) {
+      case 'ameo':
+        return new Ameo();
+      case 'softAmeo':
+        return new SoftAmeo();
       case 'leakyAmeo':
         return new LeakyAmeo(id.leakyness);
       case 'softLeakyAmeo':
         return new SoftLeakyAmeo(id.leakyness);
       case 'interpolatedAmeo':
         return new InterpolatedAmeo(id.factor, id.leakyness);
+      case 'gcu':
+        return new GCUActivation();
       default:
         throw new Error(`Unhandled activation identifier: ${id}`);
     }
@@ -134,6 +170,8 @@ const getActivation = (id: ActivationIdentifier | AmeoActivationIdentifier): Act
       return new Ameo();
     case 'softAmeo':
       return new SoftAmeo();
+    case 'gcu':
+      return new GCUActivation();
     default:
       throw new Error(`Unhandled activation identifier: ${id}`);
   }
@@ -152,6 +190,10 @@ export class MySimpleRNNCell extends RNNCell {
   readonly kernelInitializer: Initializer;
   readonly recurrentInitializer: Initializer;
   readonly biasInitializer: Initializer;
+
+  readonly kernelRegularizer: Regularizer | null;
+  readonly recurrentRegularizer: Regularizer | null;
+  readonly biasRegularizer: Regularizer | null;
 
   outputTree: LayerVariable | null = null;
   outputBias: LayerVariable | null = null;
@@ -185,19 +227,26 @@ export class MySimpleRNNCell extends RNNCell {
     );
 
     this.biasInitializer = getInitializer(args.biasInitializer || this.DEFAULT_BIAS_INITIALIZER);
+    this.kernelRegularizer = args.kernelRegularizer ? getRegularizer(args.kernelRegularizer) : null;
+    this.recurrentRegularizer = args.recurrentRegularizer
+      ? getRegularizer(args.recurrentRegularizer)
+      : null;
+    this.biasRegularizer = args.biasRegularizer ? getRegularizer(args.biasRegularizer) : null;
 
     this.stateSize = args.stateSize;
     // assertPositiveInteger(this.stateSize, `stateSize`);
   }
 
   build(inputShape: Shape | Shape[]): void {
+    console.log(this.biasRegularizer, this.kernelRegularizer, this.recurrentRegularizer);
+
     inputShape = getExactlyOneShape(inputShape) as Shape;
     this.outputTree = this.addWeight(
       'output_tree',
       [inputShape[inputShape.length - 1]! + this.stateSize, this.outputDim],
       undefined,
       this.kernelInitializer,
-      undefined,
+      this.kernelRegularizer ?? undefined,
       true
     );
     if (this.useOutputBias) {
@@ -206,7 +255,7 @@ export class MySimpleRNNCell extends RNNCell {
         [this.outputDim],
         undefined,
         this.biasInitializer,
-        undefined,
+        this.biasRegularizer ?? undefined,
         true
       );
     } else {
@@ -218,7 +267,7 @@ export class MySimpleRNNCell extends RNNCell {
       [inputShape[inputShape.length - 1]! + this.stateSize, this.stateSize],
       undefined,
       this.recurrentInitializer,
-      undefined,
+      this.recurrentRegularizer ?? undefined,
       true
     );
     if (this.useRecurrentBias) {
@@ -227,7 +276,7 @@ export class MySimpleRNNCell extends RNNCell {
         [this.stateSize],
         undefined,
         this.biasInitializer,
-        undefined,
+        this.biasRegularizer ?? undefined,
         true
       );
     } else {
@@ -285,7 +334,7 @@ export interface MyRNNLayerArgs extends RNNLayerArgs {
 
 export class MyRNN extends tf.RNN {
   private outputDim: number;
-  public readonly cell: RNNCell;
+  public readonly cell: MyStackedRNNCells;
 
   readonly trainableInitialState: boolean;
   readonly initialStateInitializer: InitializerIdentifier;
@@ -425,4 +474,41 @@ export class MyRNN extends tf.RNN {
     // Porting Note: In TypeScript, `this` is always an instance of `Layer`.
     return this.cell.trainableWeights.concat(this.initialStateValues ?? []);
   }
+
+  getConfig() {
+    const baseConfig = super.getConfig();
+    const config: Record<string, any> = {
+      returnSequences: this.returnSequences,
+      returnState: this.returnState,
+      goBackwards: this.goBackwards,
+      stateful: this.stateful,
+      unroll: this.unroll,
+    };
+    const cellConfig = this.cell.getConfig();
+    if (this.getClassName() === MyRNN.className) {
+      config['cell'] = {
+        className: this.cell.getClassName(),
+        config: cellConfig,
+      };
+    }
+    // this order is necessary, to prevent cell name from replacing layer name
+    return Object.assign({}, cellConfig, baseConfig, config);
+  }
+
+  static fromConfig(
+    cls: tf.serialization.SerializableConstructor<any>,
+    config: Record<string, any>,
+    customObjects = {}
+  ) {
+    const cellConfig: tf.serialization.ConfigDict = config['cell'];
+    const cell = deserialize(cellConfig, customObjects);
+    return new cls(Object.assign(config, { cell }) as MyRNNLayerArgs);
+  }
+
+  calculateLosses() {
+    return this.cell.calculateLosses();
+  }
 }
+
+MyRNN.className = 'MyRNN';
+tf.serialization.registerClass(MyRNN);

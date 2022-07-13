@@ -8,6 +8,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 wasm-bindgen = { version = "=0.2.81" }
+getrandom = { version = "0.2", features = ["js"] }
+rand = { version = "0.8" }
+rand_pcg = "0.3"
 
 [profile.release]
 lto = true

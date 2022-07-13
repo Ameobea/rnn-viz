@@ -1,5 +1,7 @@
 use wasm_bindgen::prelude::*;
 
+mod training_data;
+
 const DOMAIN: [f32; 2] = [-1.0, 1.0];
 
 #[wasm_bindgen]
