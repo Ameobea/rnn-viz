@@ -168,13 +168,18 @@
     );
   }
 
-  onMount(() => {
+  onMount(async () => {
     if (!chartContainer) {
       throw new Error('Chart container ref not set');
     }
 
     // TODO: Gate to be only for some dev mode or something, probably
+    const engine = await import('../engineComp/engine').then(async engine => {
+      await engine.default();
+      return engine;
+    });
     import('../nn/ameoActivation').then(mod => {
+      // mod.setWasmEngine(engine);
       mod.tfc.setBackend('cpu');
       ameoActivationMod = mod;
     });

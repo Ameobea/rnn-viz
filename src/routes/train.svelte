@@ -22,9 +22,14 @@
     const { tf } = await import('../nn/customRNN');
     const { GCUActivation } = await import('src/nn/gcuActivation');
     const ameoActivationModule = await import('../nn/ameoActivation');
+    ameoActivationModule.setWasmEngine(engine);
     tf.setBackend('cpu');
 
-    const initializer = tf.initializers.randomNormal({ mean: 0, stddev: 0.1 });
+    const seed = 93205.3;
+    const seed2 = 0x9352;
+    engine.seed_rng(seed, seed2);
+    const mkInitializer = (i: number) =>
+      tf.initializers.randomNormal({ mean: 0, stddev: 0.1, seed: seed + i });
     const buildActivation = () => new ameoActivationModule.InterpolatedAmeo(0.25);
     // const buildActivation = () => new GCUActivation();
     // const buildActivation = null as any;
@@ -35,8 +40,8 @@
       units: 24,
       useBias: true,
       activation: 'tanh',
-      kernelInitializer: initializer,
-      biasInitializer: initializer,
+      kernelInitializer: mkInitializer(0),
+      biasInitializer: mkInitializer(1),
     });
     if (buildActivation) (layer1 as any).activation = buildActivation();
     model.add(layer1);
@@ -45,8 +50,8 @@
       units: 12,
       useBias: true,
       activation: 'tanh',
-      kernelInitializer: initializer,
-      biasInitializer: initializer,
+      kernelInitializer: mkInitializer(2),
+      biasInitializer: mkInitializer(3),
     });
     if (buildActivation) (layer2 as any).activation = buildActivation();
     model.add(layer2);
@@ -55,18 +60,17 @@
       units: outputDim,
       useBias: true,
       activation: 'tanh',
-      kernelInitializer: initializer,
-      biasInitializer: initializer,
+      kernelInitializer: mkInitializer(4),
+      biasInitializer: mkInitializer(5),
     });
     if (buildActivation) (layer3 as any).activation = buildActivation();
     model.add(layer3);
 
-    const optimizer = tf.train.adam(0.0015);
     model.summary();
     model.compile({
       // loss: tf.losses.absoluteDifference,
       loss: tf.losses.meanSquaredError,
-      optimizer,
+      optimizer: tf.train.adam(0.0025),
     });
 
     const oneBatchExamples = (batchSize: number) => {
@@ -92,6 +96,12 @@
     };
 
     for (let epoch = 0; epoch < epochs; epoch++) {
+      if (stopped) break;
+
+      if (epoch === 2000) {
+        model.optimizer = tf.train.adam(0.0005);
+      }
+
       const { inputsTensor, expectedTensor } = oneBatchExamples(batchSize);
       const history = await model.fit(inputsTensor, expectedTensor, {
         batchSize,
@@ -99,13 +109,16 @@
       });
 
       const loss = history.history.loss[0] as number;
-      console.log(loss);
+      if (Number.isNaN(loss)) {
+        throw new Error('NaN loss');
+      }
+      // console.log(loss);
       losses.update(l => [...l, loss]);
 
-      const validationData = oneBatchExamples(batchSize);
-      const preds = (
+      const validationData = oneBatchExamples(batchSize * 2);
+      const preds = (await (
         (await model.predict(validationData.inputsTensor)) as Tensor<Rank>
-      ).dataSync() as Float32Array;
+      ).data()) as Float32Array;
       const expecteds = validationData.expectedTensor.dataSync() as Float32Array;
 
       let successCount = 0;
@@ -119,7 +132,7 @@
       const validationAccuracy = successCount / batchSize;
       accuracies.update(a => [...a, validationAccuracy]);
 
-      await new Promise(r => setTimeout(r, 0));
+      if (epoch % 5 === 0) await new Promise(r => setTimeout(r, 0));
     }
 
     model.weights.forEach(w => {
