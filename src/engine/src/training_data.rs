@@ -41,28 +41,34 @@ pub fn wrapping_unsigned_8_bit_add(batch_size: usize) -> Vec<f32> {
     let b = rng.gen::<u8>();
     let y = a.wrapping_add(b);
 
-    // iterate over the bits of a
-    for i in 0..bits_per_u8 {
-      let bit = (a >> i) & 1;
-      // 0 -> -1, 1 -> 1
-      let val = if bit == 0 { -1. } else { 1. };
-      vals.push(val);
-    }
-    for i in 0..bits_per_u8 {
-      let bit = (b >> i) & 1;
-      // 0 -> -1, 1 -> 1
-      let val = if bit == 0 { -1. } else { 1. };
-      vals.push(val);
-    }
-    for i in 0..bits_per_u8 {
-      let bit = (y >> i) & 1;
-      // 0 -> -1, 1 -> 1
-      let val = if bit == 0 { -1. } else { 1. };
-      vals.push(val);
+    vals.extend(u8_to_bits(a));
+    vals.extend(u8_to_bits(b));
+    vals.extend(u8_to_bits(y));
+  }
+
+  vals
+}
+
+#[wasm_bindgen]
+pub fn wrapping_unsigned_8_bit_add_full_validation() -> Vec<f32> {
+  let bits_per_u8 = 8;
+  let mut vals = Vec::with_capacity(256 * 256 * bits_per_u8 * 3);
+
+  for a in 0..=255u8 {
+    for b in 0..=255u8 {
+      let y = a.wrapping_add(b);
+
+      vals.extend(u8_to_bits(a));
+      vals.extend(u8_to_bits(b));
+      vals.extend(u8_to_bits(y));
     }
   }
 
   vals
+}
+
+fn u8_to_bits(val: u8) -> impl Iterator<Item = f32> {
+  (0..8).map(move |i| if (val >> i) & 1 == 0 { -1. } else { 1. })
 }
 
 #[wasm_bindgen]
@@ -77,25 +83,9 @@ pub fn saturating_unsigned_8_bit_add(batch_size: usize) -> Vec<f32> {
     let b = rng.gen::<u8>();
     let y = a.saturating_add(b);
 
-    // iterate over the bits of a
-    for i in 0..bits_per_u8 {
-      let bit = (a >> i) & 1;
-      // 0 -> -1, 1 -> 1
-      let val = if bit == 0 { -1. } else { 1. };
-      vals.push(val);
-    }
-    for i in 0..bits_per_u8 {
-      let bit = (b >> i) & 1;
-      // 0 -> -1, 1 -> 1
-      let val = if bit == 0 { -1. } else { 1. };
-      vals.push(val);
-    }
-    for i in 0..bits_per_u8 {
-      let bit = (y >> i) & 1;
-      // 0 -> -1, 1 -> 1
-      let val = if bit == 0 { -1. } else { 1. };
-      vals.push(val);
-    }
+    vals.extend(u8_to_bits(a));
+    vals.extend(u8_to_bits(b));
+    vals.extend(u8_to_bits(y));
   }
 
   vals
@@ -106,13 +96,7 @@ pub fn eight_bit_unsigned_binary_count(seq_len: usize) -> Vec<f32> {
   let mut vals = Vec::with_capacity(seq_len * 8);
 
   for i in 0..seq_len {
-    let i = i as u8;
-    for bit_ix in 0..8 {
-      let bit = (i >> bit_ix) & 1;
-      // 0 -> -1, 1 -> 1
-      let val = if bit == 0 { -1. } else { 1. };
-      vals.push(val);
-    }
+    vals.extend(u8_to_bits(i as u8));
   }
 
   vals

@@ -6,12 +6,19 @@
 </script>
 
 <script lang="ts">
-  import type { Rank, Tensor } from '@tensorflow/tfjs';
+  import LossPlot from 'src/components/LossPlot.svelte';
 
   import { onMount } from 'svelte';
+  import { writable } from 'svelte/store';
 
-  const quantizationInterval = 1 / 8;
-  const quantizationIntensity = 0.05;
+  let losses = writable([] as number[]);
+  let accuracies = writable([] as number[]);
+
+  const seqLen = 64;
+  const inputDim = 1;
+  const outputDim = 1;
+  const batchSize = 128;
+  const epochs = 1000;
 
   onMount(async () => {
     const engine = await import('../engineComp/engine').then(async engine => {
@@ -24,68 +31,41 @@
 
     // const initializer = tf.initializers.randomUniform({ minval: -1.5, maxval: 1.5 });
     // const initializer = tf.initializers.leCunUniform({});
-    const initializer = tf.initializers.randomNormal({ mean: 0, stddev: 0.1 });
-    const activation = { type: 'interpolatedAmeo' as const, factor: 0.25 };
-    // const activation = 'gcu';
+    const initializer = tf.initializers.randomNormal({ mean: 0, stddev: 0.4 });
+    const activation = { type: 'interpolatedAmeo' as const, factor: 0.1, leakyness: 1 };
+    // const activation = 'linear';
 
-    const seqLen = 64;
-    const inputDim = 16;
-    const outputDim = 8;
     const rnn = new mod.MyRNN({
       cell: [
         new mod.MySimpleRNNCell({
-          stateSize: 1,
-          outputDim: 16,
+          stateSize: 4,
+          outputDim: 1,
           outputActivation: activation,
-          recurrentActivation: 'linear',
-          // outputActivation: { type: 'leakyAmeo' },
-          // recurrentActivation: { type: 'leakyAmeo' },
-          // outputActivation: 'tanh',
-          // recurrentActivation: 'tanh',
-          // recurrentActivation: 'linear',
+          recurrentActivation: activation,
           useOutputBias: true,
           useRecurrentBias: true,
           biasInitializer: initializer,
           recurrentInitializer: initializer,
           kernelInitializer: initializer,
-          // kernelRegularizer: new QuantizationRegularizer(
-          //   quantizationInterval,
-          //   quantizationIntensity
-          // ),
-          // recurrentRegularizer: new QuantizationRegularizer(
-          //   quantizationInterval,
-          //   quantizationIntensity
-          // ),
-          // biasRegularizer: new QuantizationRegularizer(quantizationInterval, quantizationIntensity),
         }),
-        new mod.MySimpleRNNCell({
-          stateSize: 1,
-          outputDim: 8,
-          outputActivation: activation,
-          recurrentActivation: 'linear',
-          useOutputBias: true,
-          useRecurrentBias: true,
-          biasInitializer: initializer,
-          recurrentInitializer: initializer,
-          kernelInitializer: initializer,
-          // kernelRegularizer: new QuantizationRegularizer(
-          //   quantizationInterval,
-          //   quantizationIntensity
-          // ),
-          // recurrentRegularizer: new QuantizationRegularizer(
-          //   quantizationInterval,
-          //   quantizationIntensity
-          // ),
-          // biasRegularizer: new QuantizationRegularizer(quantizationInterval, quantizationIntensity),
-        }),
+        // new mod.MySimpleRNNCell({
+        //   stateSize: 1,
+        //   outputDim: 8,
+        //   outputActivation: activation,
+        //   recurrentActivation: 'linear',
+        //   useOutputBias: true,
+        //   useRecurrentBias: true,
+        //   biasInitializer: initializer,
+        //   recurrentInitializer: initializer,
+        //   kernelInitializer: initializer,
+        // }),
       ],
       inputShape: [seqLen, inputDim],
-      trainableInitialState: false,
+      trainableInitialState: true,
       initialStateActivation: null,
       returnSequences: true,
       returnState: false,
       initialStateInitializer: 'glorotNormal',
-      // batchSize: 1,
     });
     const cell0 = rnn.cell.cells[0];
 
@@ -93,88 +73,78 @@
     model.add(rnn);
     console.log(cell0.losses);
     // model.add(tf.layers.dense({ units: 8, activation: 'tanh' }));
-    model.add(
-      tf.layers.dense({
-        units: outputDim,
-        activation: 'linear',
-        kernelInitializer: 'glorotNormal',
-        useBias: false,
-        // kernelRegularizer: new QuantizationRegularizer(quantizationInterval, quantizationIntensity),
-      })
-    );
+    // model.add(
+    //   tf.layers.dense({
+    //     units: outputDim,
+    //     activation: 'linear',
+    //     kernelInitializer: 'glorotNormal',
+    //     useBias: false,
+    //   })
+    // );
     model.summary();
     model.compile({
-      loss: tf.losses.absoluteDifference,
-      optimizer: tf.train.adam(0.0015),
+      loss: tf.losses.meanSquaredError,
+      optimizer: tf.train.adam(0.01),
     });
 
-    let optimizer = tf.train.adam(0.0015);
-    // const optimizer = tf.train.sgd(0.001);
-
-    // const reg = new QuantizationRegularizer(quantizationInterval, quantizationIntensity);
-    // const x = tf.tensor1d([0, 1 / 3, -1 / 3, 3, 6, -2, 0]);
-    // reg.apply(x).print();
-    // const x2 = tf.tensor1d([1 / 6]);
-    // reg.apply(x2).print();
-    // const x3 = tf.tensor1d([1 / 6]);
-    // reg.apply(x3).print();
-    // throw new Error();
-
     const oneBatchExamples = () => {
-      // const inputs = new Array(seqLen).fill(null).map(randomBoolInput);
-      // const inputs = new Array(seqLen * inputDim).fill(0);
-      // const expected = inputs.map((v, i) => {
-      //   // if (i === 0) {
-      //   //   return 0;
-      //   // }
-
-      //   // return xor(inputs[i - 1], v);
-      //   // return i % 2 === 0 ? 1 : -1;
-      //   return Math.sin((i / 8) * Math.PI);
-      // });
-
-      // const expected = engine.eight_bit_unsigned_binary_count(seqLen);
-
-      const vals = engine.wrapping_unsigned_8_bit_add(seqLen);
-      const inputs = new Float32Array((vals.length / 3) * 2);
-      const expected = new Float32Array(vals.length / 3);
-
-      for (let seqIx = 0; seqIx < seqLen; seqIx += 1) {
-        let offset = seqIx * (8 * 3);
-        for (let j = 0; j < 8 * 2; j++) {
-          inputs[seqIx * 16 + j] = vals[offset + j];
+      let count = 1;
+      const inputs = [1];
+      const outputs = [-1];
+      for (let i = 1; i < seqLen; i++) {
+        if (count === 0) {
+          inputs.push(1);
+          outputs.push(-1);
+          count += 1;
+          continue;
+        } else if (count > 6) {
+          inputs.push(-1);
+          outputs.push(-1);
+          count -= 1;
+          continue;
         }
-        offset += 8 * 2;
-        for (let j = 0; j < 8; j++) {
-          expected[seqIx * 8 + j] = vals[offset + j];
+
+        if (Math.random() > 0.7) {
+          inputs.push(1);
+          outputs.push(-1);
+          count += 1;
+        } else {
+          inputs.push(-1);
+          count -= 1;
+          outputs.push(count === 0 ? 1 : -1);
         }
       }
 
-      // console.log(inputs, expected);
-
-      const inputsTensor = tf.tensor(inputs, [1, seqLen, inputDim]);
-      // inputsTensor.print();
-      const expectedTensor = tf.tensor(expected, [1, seqLen, outputDim]);
-      // expectedTensor.print();
-
-      return { inputsTensor, expectedTensor };
+      return { inputs, outputs };
     };
 
-    for (let i = 0; i < 8000; i++) {
-      const { inputsTensor, expectedTensor } = oneBatchExamples();
-      await model.fit(inputsTensor, expectedTensor, {
-        batchSize: 1,
+    for (let i = 0; i < epochs; i++) {
+      const inputBatches: number[][] = [];
+      const outputBatches: number[][] = [];
+      for (let i = 0; i < batchSize; i++) {
+        const { inputs, outputs } = oneBatchExamples();
+        // console.log(inputs, outputs);
+        inputBatches.push(inputs);
+        outputBatches.push(outputs);
+      }
+
+      const inputsTensor = tf.tensor(inputBatches, [batchSize, seqLen, inputDim]);
+      const expectedsTensor = tf.tensor(outputBatches, [batchSize, seqLen, outputDim]);
+
+      await model.fit(inputsTensor, expectedsTensor, {
+        batchSize,
         epochs: 1,
         callbacks: {
           onBatchEnd: async (batch, logs) => {
-            if (logs) console.log(logs.loss);
+            if (logs) {
+              console.log(logs.loss);
+              losses.update(l => [...l, logs.loss]);
+            }
           },
         },
       });
 
-      // if (i > 1000 && loss > 0.43) {
-      //   break;
-      // }
+      await new Promise(resolve => setTimeout(resolve, 0));
     }
 
     model.weights.forEach(w => {
@@ -183,16 +153,7 @@
     });
 
     // model.save('downloads://rnn');
-
-    // f(1, true);
   });
 </script>
 
-<div class="root">TODO</div>
-
-<style lang="css">
-  .root {
-    display: flex;
-    flex-direction: column;
-  }
-</style>
+<LossPlot iters={epochs} losses={$losses} accuracies={$accuracies} />

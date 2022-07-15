@@ -672,7 +672,11 @@ tfc.registerKernel({
     const $dtype = x.dtype;
 
     if (wasmEngine) {
-      const ys = wasmEngine.apply_batch_soft_leaky_ameo(leakynessVals[0], xVals);
+      const ys = wasmEngine.apply_batch_fused_interpolated_ameo(
+        factorVals[0],
+        leakynessVals[0],
+        xVals
+      );
       return backend.makeTensorInfo(x.shape, $dtype, ys);
     }
 
