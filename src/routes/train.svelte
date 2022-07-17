@@ -25,7 +25,7 @@
     ameoActivationModule.setWasmEngine(engine);
     tf.setBackend('cpu');
 
-    const seed = 93205.3;
+    const seed = 9770010118.3333;
     const seed2 = 0x9352;
     engine.seed_rng(seed, seed2);
     const mkInitializer = (i: number) =>
@@ -42,18 +42,20 @@
       activation: 'tanh',
       kernelInitializer: mkInitializer(0),
       biasInitializer: mkInitializer(1),
+      // kernelRegularizer: new QuantizationRegularizer(0.1, 0.002),
     });
     if (buildActivation) (layer1 as any).activation = buildActivation();
     model.add(layer1);
 
     const layer2 = tf.layers.dense({
-      units: 12,
+      units: 10,
       useBias: true,
       activation: 'tanh',
       kernelInitializer: mkInitializer(2),
       biasInitializer: mkInitializer(3),
+      // kernelRegularizer: new QuantizationRegularizer(0.1, 0.002),
     });
-    if (buildActivation) (layer2 as any).activation = buildActivation();
+    // if (buildActivation) (layer2 as any).activation = buildActivation();
     model.add(layer2);
 
     const layer3 = tf.layers.dense({
@@ -62,8 +64,11 @@
       activation: 'tanh',
       kernelInitializer: mkInitializer(4),
       biasInitializer: mkInitializer(5),
+      // kernelInitializer: tf.initializers.randomNormal({ mean: 0, stddev: 0.08, seed: seed + 10 }),
+      // biasInitializer: tf.initializers.randomNormal({ mean: 0, stddev: 0.08, seed: seed + 10 }),
+      // kernelRegularizer: new QuantizationRegularizer(0.1, 0.002),
     });
-    if (buildActivation) (layer3 as any).activation = buildActivation();
+    // if (buildActivation) (layer3 as any).activation = buildActivation();
     model.add(layer3);
 
     model.summary();
@@ -76,7 +81,7 @@
         lastPreds = preds.clone().variable();
         return tf.losses.meanSquaredError(labels, preds);
       },
-      optimizer: tf.train.adam(0.0025),
+      optimizer: tf.train.adam(0.01),
     });
 
     const oneBatchExamples = (batchSize: number, validate = false) => {
@@ -108,7 +113,7 @@
     for (let epoch = 0; epoch < epochs; epoch++) {
       if (stopped) break;
 
-      if (epoch === 2000) {
+      if (epoch === 1100) {
         model.optimizer = tf.train.adam(0.0005);
       }
 
