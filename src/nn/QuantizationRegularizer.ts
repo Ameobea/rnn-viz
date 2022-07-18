@@ -16,7 +16,7 @@ export class QuantizationRegularizer extends Regularizer {
       const xQuantized = x.div(this.quantizationInterval);
       const xQuantizedRounded = xQuantized.round();
       const xQuantizationError = xQuantized.sub(xQuantizedRounded);
-      const xQuantizationErrorSquared = xQuantizationError.square();
+      const xQuantizationErrorSquared = xQuantizationError.abs();
       const xQuantizationErrorSquaredMean = xQuantizationErrorSquared.mean() as Scalar;
       return xQuantizationErrorSquaredMean.mul(this.intensity);
     });

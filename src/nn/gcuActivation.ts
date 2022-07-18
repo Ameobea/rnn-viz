@@ -6,3 +6,9 @@ export class GCUActivation extends Activation {
     return tensor.cos().mul(tensor);
   }
 }
+
+export class SineActivation extends Activation {
+  apply(tensor: Tensor<Rank>, _axis?: number | undefined): Tensor<Rank> {
+    return tensor.sin();
+  }
+}
