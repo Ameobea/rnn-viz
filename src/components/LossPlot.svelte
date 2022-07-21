@@ -8,14 +8,12 @@
 
   let uPlotInst: UPlot | null = null;
 
-  $: {
-    if (uPlotInst) {
-      uPlotInst.setData([
-        new Array<number>(iters).fill(0).map((_, i) => i),
-        losses,
-        accuracies.map(x => x * 100),
-      ]);
-    }
+  $: if (uPlotInst) {
+    uPlotInst.setData([
+      new Array<number>(iters).fill(0).map((_, i) => i),
+      losses,
+      accuracies.map(x => x * 100),
+    ]);
   }
 
   const renderChart = (containerNode: HTMLElement) => {

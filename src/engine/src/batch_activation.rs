@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-fn apply_soft_leaky_ameo(leakyness: f32, mut x: f32) -> f32 {
+pub(crate) fn apply_soft_leaky_ameo(leakyness: f32, mut x: f32) -> f32 {
   x *= 0.5;
   x -= 0.5;
 
@@ -30,7 +30,7 @@ pub fn apply_batch_soft_leaky_ameo(leakyness: f32, xs: &[f32]) -> Vec<f32> {
   out
 }
 
-fn apply_soft_leaky_ameo_grad(leakyness: f32, mut x: f32) -> f32 {
+pub fn apply_soft_leaky_ameo_grad(leakyness: f32, mut x: f32) -> f32 {
   x *= 0.5;
   x -= 0.5;
 
@@ -58,7 +58,7 @@ pub fn apply_batch_soft_leaky_ameo_grad(leakyness: f32, xs: &[f32]) -> Vec<f32> 
   out
 }
 
-fn apply_ameo(mut x: f32) -> f32 {
+pub(crate) fn apply_ameo(mut x: f32) -> f32 {
   x *= 0.5;
   x -= 0.5;
 

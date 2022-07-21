@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 mod batch_activation;
+mod linear_separability;
 mod training_data;
 
 const DOMAIN: [f32; 2] = [-1.0, 1.0];
