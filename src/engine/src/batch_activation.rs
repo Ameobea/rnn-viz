@@ -85,6 +85,50 @@ fn apply_ameo_grad(mut x: f32) -> f32 {
   }
 }
 
+pub(crate) fn apply_leaky_ameo(mut x: f32, leakyness: f32) -> f32 {
+  x *= 0.5;
+  x -= 0.5;
+
+  let y = if x <= -2. {
+    leakyness * (x + 2.)
+  } else if x <= -1. {
+    (x + 2.).max(0.)
+  } else if x <= 0. {
+    -x
+  } else if x <= 1. {
+    x
+  } else {
+    leakyness * (x - 1.) + 1.
+  };
+  (y - 0.5) * 2.
+}
+
+fn apply_leaky_ameo_grad(mut x: f32, leakyness: f32) -> f32 {
+  x *= 0.5;
+  x -= 0.5;
+
+  if x <= -2. {
+    leakyness
+  } else if (x <= -1. && x > -2.) || (x <= 1. && x > 0.) {
+    1.
+  } else if x <= 0. {
+    -1.
+  } else if x <= 1. {
+    0.
+  } else {
+    leakyness
+  }
+}
+
+pub(crate) fn apply_interpolated_ameo(factor: f32, leakyness: f32, x: f32) -> f32 {
+  let xmix = factor;
+  let ymix = 1. - xmix;
+
+  let ameo_y = apply_ameo(x);
+  let soft_leaky_ameo_y = apply_soft_leaky_ameo(leakyness, x);
+  xmix * ameo_y + ymix * soft_leaky_ameo_y
+}
+
 #[wasm_bindgen]
 pub fn apply_batch_fused_interpolated_ameo(factor: f32, leakyness: f32, xs: &[f32]) -> Vec<f32> {
   let xmix = factor;
@@ -92,7 +136,7 @@ pub fn apply_batch_fused_interpolated_ameo(factor: f32, leakyness: f32, xs: &[f3
 
   let mut out = Vec::with_capacity(xs.len());
   for x in xs.iter() {
-    let ameo_y = apply_ameo(*x);
+    let ameo_y = apply_leaky_ameo(*x, leakyness);
     let soft_leaky_ameo_y = apply_soft_leaky_ameo(leakyness, *x);
     out.push(xmix * ameo_y + ymix * soft_leaky_ameo_y);
   }
@@ -111,7 +155,7 @@ pub fn apply_batch_fused_interpolated_ameo_grad(
 
   let mut out = Vec::with_capacity(xs.len());
   for (i, x) in xs.iter().enumerate() {
-    let ameo_grad_y = apply_ameo_grad(*x);
+    let ameo_grad_y = apply_leaky_ameo_grad(*x, leakyness);
     let soft_leaky_ameo_grad_y = apply_soft_leaky_ameo_grad(leakyness, *x);
     out.push((xmix * ameo_grad_y + ymix * soft_leaky_ameo_grad_y) * dys[i]);
   }

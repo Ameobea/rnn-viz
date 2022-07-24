@@ -33,7 +33,7 @@
     engine.seed_rng(seed, seed2);
     const mkInitializer = (i: number) =>
       tf.initializers.randomNormal({ mean: 0, stddev: 0.1, seed: seed + i });
-    const buildActivation = () => new ameoActivationModule.InterpolatedAmeo(0.1);
+    const buildActivation = () => new ameoActivationModule.InterpolatedAmeo(0.1, 0.005);
     // const buildActivation = () => new GCUActivation();
     // const buildActivation = () => new SineActivation();
     // const buildActivation = null as any;
@@ -154,7 +154,7 @@
           for (let varIx = 0; varIx < weightsForLayer.length; varIx += 1)
             for (let weightIx = 0; weightIx < weightsForLayer[varIx][1].length; weightIx++) {
               const weight = weightsForLayer[varIx][1][weightIx];
-              if (Math.abs(weight) < 0.025) {
+              if (Math.abs(weight) < threshold) {
                 truncatedCount += 1;
                 weightsForLayer[varIx][1][weightIx] = 0;
                 continue;

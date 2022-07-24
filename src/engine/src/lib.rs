@@ -31,6 +31,10 @@ fn scaled_shifted_ameo_activation(x: f32) -> f32 {
   (y - 0.5) * 2.
 }
 
+fn scaled_shifted_gaussian(x: f32) -> f32 {
+  std::f32::consts::E.powf(-x * x) * 2. - 1.
+}
+
 // if (val <= -2)           return leakyness * (val + 2);
 // else if (val <= -1.5)    return 8 * Math.pow(val + 2, 4);
 // // else if (val <= -1)   return -8 * Math.pow(val, 4) + -32 * Math.pow(val, 3) + -48 * Math.pow(val, 2) + -32 * val - 7;
@@ -106,7 +110,7 @@ pub fn compute_voxel_positions(
         let x = DOMAIN[0] + i_x as f32 * voxel_size;
         // let activation_fn = scaled_shifted_ameo_activation;
         let activation_fn = scaled_shifted_soft_leaky_ameo_activation;
-        // let activation_fn = gcu;
+        // let activation_fn = scaled_shifted_gaussian;
         let value = activation_fn(weight_x * x + weight_y * y + weight_z * z + bias);
         if value > 0. {
           scratch[i_z * resolution * resolution + i_y * resolution + i_x] = true;
