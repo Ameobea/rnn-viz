@@ -206,7 +206,7 @@
 
   echarts.use([LineChart, GridComponent, SVGRenderer, LegendComponent]);
 
-  let variant: VariantParams = { type: 'interpolated', factor: 1 };
+  let variant: VariantParams = { type: 'interpolated', factor: 1, leaky: true };
   let ameoActivationMod: typeof import('../nn/ameoActivation') | null = null;
   let engine: typeof import('../engineComp/engine') | null = null;
   let chartContainer: HTMLDivElement | null = null;

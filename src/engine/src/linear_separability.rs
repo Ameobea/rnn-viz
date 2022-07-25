@@ -46,10 +46,10 @@ pub fn plot_classification(
   let decision_boundary = (negative_target_value + positive_target_value) / 2.;
   let decision_range = positive_target_value - negative_target_value;
 
-  for x_ix in 0..size {
-    let x = range[0] + (range[1] - range[0]) * x_ix as f32 / (size - 1) as f32;
-    for y_ix in 0..size {
-      let y = range[0] + (range[1] - range[0]) * y_ix as f32 / (size - 1) as f32;
+  for y_ix in 0..size {
+    let y = range[0] + (range[1] - range[0]) * y_ix as f32 / (size - 1) as f32;
+    for x_ix in 0..size {
+      let x = range[0] + (range[1] - range[0]) * x_ix as f32 / (size - 1) as f32;
 
       let sum = x_weight * x + y_weight * y + bias;
       let activated = activation_from_id(function_id)(sum);
