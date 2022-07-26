@@ -38,7 +38,7 @@ export class VoxelPlot3D {
       0.1,
       1000
     );
-    this.camera.position.set(3, 3, 3);
+    this.camera.position.set(2, 1.8, 1.6);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({
@@ -69,7 +69,7 @@ export class VoxelPlot3D {
     // }
 
     this.scene.add(this.voxelContainer);
-    this.scene.add(new THREE.AxesHelper(5));
+    // this.scene.add(new THREE.AxesHelper(5));
 
     this.canvasResizeObserver = new ResizeObserver(_entries => {
       this.handleResize(canvas);
@@ -150,18 +150,7 @@ export class VoxelPlot3D {
       return;
     }
 
-    // const voxelPositions = this.engine.compute_voxel_positions(
-    //   -1 / 3,
-    //   1 / 3,
-    //   7 / 6,
-    //   5 / 6,
-    //   RESOLUTION
-    // );
     const voxelPositions = this.engine.compute_voxel_positions(
-      // -1 / 3,
-      // 1,
-      // 2 / 3,
-      // -1 / 3,
       this.params.xWeight,
       this.params.yWeight,
       this.params.zWeight,

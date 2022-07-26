@@ -282,7 +282,7 @@
 <style lang="css">
   :global(html) {
     overflow: hidden;
-    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Open Sans', 'PT Sans', 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
 
   .root {
@@ -292,7 +292,7 @@
   }
 
   label {
-    font-family: sans-serif;
+    font-family: 'Open Sans', 'PT Sans', 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
 
   .sliders-container {
@@ -312,7 +312,7 @@
   .truth-table-controls th {
     border: 1px solid #ccc;
     text-align: center;
-    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Open Sans', 'PT Sans', 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     width: 6px;
     padding: 3px 0;
     user-select: none;

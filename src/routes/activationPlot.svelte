@@ -206,6 +206,27 @@
 
   echarts.use([LineChart, GridComponent, SVGRenderer, LegendComponent]);
 
+  function rnn(initialState: number[], inputs: number[][]): number[][] {
+    function rnnStep(state: number[], input: number[]): [number[], number[]] {
+      const combined = [...state, ...input];
+
+      const newState = applyRecurrentTree(combined);
+      const output = applyOutputTree(combined);
+      return [newState, output];
+    }
+
+    type Acc = [number[], number[][]];
+
+    const [_finalState, outputs] = inputs.reduce(
+      ([state, outputs]: Acc, input) => {
+        const [newState, output] = rnnStep(state, input);
+        return [newState, [...outputs, output]];
+      },
+      [initialState, []] as Acc
+    );
+    return outputs;
+  }
+
   let variant: VariantParams = { type: 'interpolated', factor: 1, leaky: true };
   let ameoActivationMod: typeof import('../nn/ameoActivation') | null = null;
   let engine: typeof import('../engineComp/engine') | null = null;
@@ -375,7 +396,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Open Sans', 'PT Sans', 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
 
   .activation-plot-chart {

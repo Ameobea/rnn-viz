@@ -194,7 +194,10 @@ fn valid_vals() -> impl Iterator<Item = f32> {
     .into_iter()
 }
 
-fn solve_brute_force(truth_table: &[((bool, bool, bool), bool)]) -> Option<(f32, f32, f32, f32)> {
+fn solve_brute_force(
+    truth_table: &[((bool, bool, bool), bool)],
+    accept_imperfect: bool,
+) -> Option<(f32, f32, f32, f32)> {
     let mut valid_vals = valid_vals().collect::<Vec<_>>();
     valid_vals.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap());
     valid_vals.dedup();
@@ -208,16 +211,66 @@ fn solve_brute_force(truth_table: &[((bool, bool, bool), bool)]) -> Option<(f32,
                         let x = if *x { 1. } else { -1. };
                         let y = if *y { 1. } else { -1. };
                         let z = if *z { 1. } else { -1. };
-                        let x = x_weight * x;
-                        let y = y_weight * y;
-                        let z = z_weight * z;
-                        let expected = if *expected { 1. } else { -1. };
-                        let actual = scaled_shifted_ameo_activation(x + y + z + bias);
-                        if (actual - expected).abs() > 1e-6 {
+                        let x_in = x_weight * x;
+                        let y_in = y_weight * y;
+                        let z_in = z_weight * z;
+                        let expected: f32 = if *expected { 1. } else { -1. };
+                        let actual = scaled_shifted_ameo_activation(x_in + y_in + z_in + bias);
+
+                        if accept_imperfect {
+                            if actual == 0. || actual.signum() != expected.signum() {
+                                continue 'outer;
+                            }
+                        } else if (actual - expected).abs() > 1e-6 {
                             continue 'outer;
                         }
                     }
                     return Some((x_weight, y_weight, z_weight, bias));
+                }
+            }
+        }
+    }
+
+    None
+}
+
+fn solve_brute_force_4(
+    truth_table: &[((bool, bool, bool, bool), bool)],
+    accept_imperfect: bool,
+) -> Option<(f32, f32, f32, f32, f32)> {
+    let mut valid_vals = valid_vals().collect::<Vec<_>>();
+    valid_vals.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap());
+    valid_vals.dedup();
+    // println!("valid vals: {:?}", valid_vals);
+
+    for &w_weight in &valid_vals {
+        for &z_weight in &valid_vals {
+            for &y_weight in &valid_vals {
+                for &x_weight in &valid_vals {
+                    'outer: for &bias in &valid_vals {
+                        for ((x, y, z, w), expected) in truth_table {
+                            let x = if *x { 1. } else { -1. };
+                            let y = if *y { 1. } else { -1. };
+                            let z = if *z { 1. } else { -1. };
+                            let w = if *w { 1. } else { -1. };
+                            let x_in = x_weight * x;
+                            let y_in = y_weight * y;
+                            let z_in = z_weight * z;
+                            let w_in = w_weight * w;
+                            let expected: f32 = if *expected { 1. } else { -1. };
+                            let actual =
+                                scaled_shifted_ameo_activation(x_in + y_in + z_in + w_in + bias);
+
+                            if accept_imperfect {
+                                if actual == 0. || actual.signum() != expected.signum() {
+                                    continue 'outer;
+                                }
+                            } else if (actual - expected).abs() > 1e-6 {
+                                continue 'outer;
+                            }
+                        }
+                        return Some((x_weight, y_weight, z_weight, w_weight, bias));
+                    }
                 }
             }
         }
@@ -260,6 +313,22 @@ fn sanity() {
     }
 }
 
+fn sanity2() {
+    let truth_table = [
+        ((false, false, false), false),
+        ((false, false, true), false),
+        ((false, true, false), false),
+        ((false, true, true), true),
+        ((true, false, false), true),
+        ((true, false, true), false),
+        ((true, true, false), false),
+        ((true, true, true), false),
+    ];
+
+    let sol = solve_brute_force(&truth_table, true).expect("no solution");
+    println!("sol: {:?}", sol);
+}
+
 fn build_all_3_input_truth_tables() -> Vec<[((bool, bool, bool), bool); 8]> {
     let mut tables = Vec::new();
 
@@ -294,24 +363,296 @@ fn build_all_3_input_truth_tables() -> Vec<[((bool, bool, bool), bool); 8]> {
     tables
 }
 
+fn build_all_4_input_truth_tables() -> Vec<[((bool, bool, bool, bool), bool); 16]> {
+    let mut tables = Vec::new();
+
+    for v_0 in [false, true] {
+        for v_1 in [false, true] {
+            for v_2 in [false, true] {
+                for v_3 in [false, true] {
+                    for v_4 in [false, true] {
+                        for v_5 in [false, true] {
+                            for v_6 in [false, true] {
+                                for v_7 in [false, true] {
+                                    for v_8 in [false, true] {
+                                        for v_9 in [false, true] {
+                                            for v_10 in [false, true] {
+                                                for v_11 in [false, true] {
+                                                    for v_12 in [false, true] {
+                                                        for v_13 in [false, true] {
+                                                            for v_14 in [false, true] {
+                                                                for v_15 in [false, true] {
+                                                                    let truth_table = [
+                                                                        (
+                                                                            (
+                                                                                false, false,
+                                                                                false, false,
+                                                                            ),
+                                                                            v_0,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                false, false,
+                                                                                false, true,
+                                                                            ),
+                                                                            v_1,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                false, false, true,
+                                                                                false,
+                                                                            ),
+                                                                            v_2,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                false, false, true,
+                                                                                true,
+                                                                            ),
+                                                                            v_3,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                false, true, false,
+                                                                                false,
+                                                                            ),
+                                                                            v_4,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                false, true, false,
+                                                                                true,
+                                                                            ),
+                                                                            v_5,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                false, true, true,
+                                                                                false,
+                                                                            ),
+                                                                            v_6,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                false, true, true,
+                                                                                true,
+                                                                            ),
+                                                                            v_7,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, false, false,
+                                                                                false,
+                                                                            ),
+                                                                            v_8,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, false, false,
+                                                                                true,
+                                                                            ),
+                                                                            v_9,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, false, true,
+                                                                                false,
+                                                                            ),
+                                                                            v_10,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, false, true,
+                                                                                true,
+                                                                            ),
+                                                                            v_11,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, true, false,
+                                                                                false,
+                                                                            ),
+                                                                            v_12,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, true, false,
+                                                                                true,
+                                                                            ),
+                                                                            v_13,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, true, true,
+                                                                                false,
+                                                                            ),
+                                                                            v_14,
+                                                                        ),
+                                                                        (
+                                                                            (
+                                                                                true, true, true,
+                                                                                true,
+                                                                            ),
+                                                                            v_15,
+                                                                        ),
+                                                                    ];
+                                                                    tables.push(truth_table);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    tables
+}
+
+fn fmt_bool(b: bool) -> &'static str {
+    if b {
+        "T"
+    } else {
+        "F"
+    }
+}
+
 fn solve_all_3_input_truth_tables() {
     let mut step_ix = 0;
     let mut no_solution_count = 0;
+    let mut imperfect_solution_count = 0;
     for truth_table in build_all_3_input_truth_tables() {
-        match solve_brute_force(&truth_table) {
+        if let Some((x_weight, y_weight, z_weight, bias)) = solve_brute_force(&truth_table, false) {
+            println!("[{step_ix}]: x_weight: {x_weight}, y_weight: {y_weight}, z_weight: {z_weight}, bias: {bias}");
+            step_ix += 1;
+            continue;
+        }
+
+        // No perfect solution with integer-valued weights; try to find linearly separable
+        match solve_brute_force(&truth_table, true) {
             Some((x_weight, y_weight, z_weight, bias)) => {
-                println!("[{step_ix}]: x_weight: {x_weight}, y_weight: {y_weight}, z_weight: {z_weight}, bias: {bias}")
+                imperfect_solution_count += 1;
+                println!("[{step_ix}] {{NON_PERFECT}}: x_weight: {x_weight}, y_weight: {y_weight}, z_weight: {z_weight}, bias: {bias}");
+                println!(
+                    "  {:?}",
+                    truth_table
+                        .into_iter()
+                        .map(|(i, o)| format!(
+                            "{}{}{}: {}",
+                            fmt_bool(i.0),
+                            fmt_bool(i.1),
+                            fmt_bool(i.2),
+                            fmt_bool(o)
+                        ))
+                        .collect::<Vec<_>>()
+                );
             }
             None => {
-                println!("[{step_ix}] No Solution: {:?}", truth_table);
+                println!(
+                    "[{step_ix}] No Solution: {:?}",
+                    truth_table
+                        .into_iter()
+                        .map(|(i, o)| format!(
+                            "{}{}{}: {}",
+                            fmt_bool(i.0),
+                            fmt_bool(i.1),
+                            fmt_bool(i.2),
+                            fmt_bool(o)
+                        ))
+                        .collect::<Vec<_>>()
+                );
                 no_solution_count += 1;
             }
-        };
+        }
 
         step_ix += 1;
     }
 
-    println!("No solution for {}/{} cases", no_solution_count, step_ix);
+    println!("\nNo solution for {}/{} cases", no_solution_count, step_ix);
+    println!(
+        "Imperfect solution for {}/{} cases",
+        imperfect_solution_count, step_ix
+    );
+    println!(
+        "Perfect solution for {}/{} cases",
+        step_ix - no_solution_count - imperfect_solution_count,
+        step_ix
+    );
+}
+
+fn solve_all_4_input_truth_tables() {
+    let mut step_ix = 0;
+    let mut no_solution_count = 0;
+    let mut imperfect_solution_count = 0;
+    for truth_table in build_all_4_input_truth_tables() {
+        if let Some((x_weight, y_weight, z_weight, w_weight, bias)) =
+            solve_brute_force_4(&truth_table, false)
+        {
+            println!("[{step_ix}]: x_weight: {x_weight}, y_weight: {y_weight}, z_weight: {z_weight}, w_weight: {w_weight}, bias: {bias}");
+            step_ix += 1;
+            continue;
+        }
+
+        // No perfect solution with integer-valued weights; try to find linearly separable
+        match solve_brute_force_4(&truth_table, true) {
+            Some((x_weight, y_weight, z_weight, w_weight, bias)) => {
+                imperfect_solution_count += 1;
+                println!("[{step_ix}] {{NON_PERFECT}}: x_weight: {x_weight}, y_weight: {y_weight}, z_weight: {z_weight}, w_weight: {w_weight}, bias: {bias}");
+                println!(
+                    "  {:?}",
+                    truth_table
+                        .into_iter()
+                        .map(|(i, o)| format!(
+                            "{}{}{}{}: {}",
+                            fmt_bool(i.0),
+                            fmt_bool(i.1),
+                            fmt_bool(i.2),
+                            fmt_bool(i.3),
+                            fmt_bool(o)
+                        ))
+                        .collect::<Vec<_>>()
+                );
+            }
+            None => {
+                println!(
+                    "[{step_ix}] No Solution: {:?}",
+                    truth_table
+                        .into_iter()
+                        .map(|(i, o)| format!(
+                            "{}{}{}{}: {}",
+                            fmt_bool(i.0),
+                            fmt_bool(i.1),
+                            fmt_bool(i.2),
+                            fmt_bool(i.3),
+                            fmt_bool(o)
+                        ))
+                        .collect::<Vec<_>>()
+                );
+                no_solution_count += 1;
+            }
+        }
+
+        step_ix += 1;
+    }
+
+    println!("\nNo solution for {}/{} cases", no_solution_count, step_ix);
+    println!(
+        "Imperfect solution for {}/{} cases",
+        imperfect_solution_count, step_ix
+    );
+    println!(
+        "Perfect solution for {}/{} cases",
+        step_ix - no_solution_count - imperfect_solution_count,
+        step_ix
+    );
 }
 
 /// Works backwards, figuring out which truth table is represented by all integer-valued parameters in a range.
@@ -410,6 +751,7 @@ fn solve_all_3_input_truth_tables_reverse() {
 }
 
 fn main() {
+    sanity2();
     sanity();
 
     let ternary_conditional = |x: bool, y: bool, z: bool| -> bool {
@@ -421,7 +763,7 @@ fn main() {
     };
     let truth_table = gen_3_input_truth_table(ternary_conditional);
     let (x_weight, y_weight, z_weight, bias) =
-        solve_brute_force(&truth_table).expect("No Solution");
+        solve_brute_force(&truth_table, false).expect("No Solution");
     println!(
         "ternary: x_weight: {}, y_weight: {}, z_weight: {}, bias: {}",
         x_weight, y_weight, z_weight, bias
@@ -429,12 +771,13 @@ fn main() {
 
     let truth_table = gen_3_input_truth_table(ternary_or_all_false_or_all_but_one_true);
     let (x_weight, y_weight, z_weight, bias) =
-        solve_brute_force(&truth_table).expect("No Solution");
+        solve_brute_force(&truth_table, false).expect("No Solution");
     println!(
         "ternary_or_all_false_or_all_but_one_true: x_weight: {}, y_weight: {}, z_weight: {}, bias: {}",
         x_weight, y_weight, z_weight, bias
     );
 
-    solve_all_3_input_truth_tables();
+    // solve_all_3_input_truth_tables();
+    solve_all_4_input_truth_tables();
     // solve_all_3_input_truth_tables_reverse();
 }
