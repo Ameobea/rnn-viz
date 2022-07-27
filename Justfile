@@ -1,6 +1,7 @@
 set dotenv-load := true
 
 run:
+  just build-wasm
   bun run dev --port 3040
 
 build-wasm:
