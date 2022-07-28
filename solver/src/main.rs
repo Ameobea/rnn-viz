@@ -1,7 +1,14 @@
+#![feature(box_syntax)]
+
 use std::collections::HashMap;
 
+use rand_distr::{Distribution, Normal};
 #[cfg(feature = "z3-support")]
 use z3::ast::{Ast, Bool, Float, Real};
+
+use crate::boolean::compute_boolean_complexities;
+
+mod boolean;
 
 fn ameo_activation(x: f32) -> f32 {
     if x <= -2. {
@@ -750,6 +757,40 @@ fn solve_all_3_input_truth_tables_reverse() {
     );
 }
 
+fn binary_boolean_function_distributions() {
+    let iters = 100_000;
+    let mut counts_by_output: HashMap<[bool; 4], usize> = HashMap::new();
+
+    let distr = Normal::new(0., 10.).unwrap();
+    let init_weight = || distr.sample(&mut rand::thread_rng()) as f32;
+
+    for _ in 0..iters {
+        let x_weight = init_weight();
+        let y_weight = init_weight();
+        let bias = init_weight();
+
+        let mut i = 0usize;
+        let mut outputs = [false; 4];
+        for y in [-1., 1.] {
+            for x in [-1., 1.] {
+                let output = scaled_shifted_ameo_activation(x * x_weight + y * y_weight + bias);
+                outputs[i] = if output > 0. { true } else { false };
+                i += 1;
+            }
+        }
+
+        counts_by_output
+            .entry(outputs)
+            .and_modify(|count| *count += 1)
+            .or_insert(1);
+    }
+
+    println!("\n[output]: [count]");
+    for (output, count) in &counts_by_output {
+        println!("{:?}: {}", output, count);
+    }
+}
+
 fn main() {
     sanity2();
     sanity();
@@ -778,6 +819,9 @@ fn main() {
     );
 
     // solve_all_3_input_truth_tables();
-    solve_all_4_input_truth_tables();
+    // solve_all_4_input_truth_tables();
     // solve_all_3_input_truth_tables_reverse();
+    // binary_boolean_function_distributions();
+
+    compute_boolean_complexities(3);
 }
