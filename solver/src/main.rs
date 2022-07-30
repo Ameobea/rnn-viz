@@ -2,13 +2,20 @@
 
 use std::collections::HashMap;
 
+use itertools::Itertools;
+use nanoserde::SerJson;
+use rand::Rng;
 use rand_distr::{Distribution, Normal};
 #[cfg(feature = "z3-support")]
 use z3::ast::{Ast, Bool, Float, Real};
 
-use crate::boolean::compute_boolean_complexities;
+use crate::{
+    boolean::{binary_to_dec, compute_boolean_complexities, paper_repro},
+    three_input_complexities::THREE_INPUT_BOOLEAN_COMPLEXITIES,
+};
 
 mod boolean;
+mod three_input_complexities;
 
 fn ameo_activation(x: f32) -> f32 {
     if x <= -2. {
@@ -757,25 +764,30 @@ fn solve_all_3_input_truth_tables_reverse() {
     );
 }
 
-fn binary_boolean_function_distributions() {
-    let iters = 100_000;
-    let mut counts_by_output: HashMap<[bool; 4], usize> = HashMap::new();
+fn binary_boolean_function_distributions(iters: usize) -> Vec<usize> {
+    let mut counts_by_output: HashMap<[bool; 8], usize> = HashMap::new();
 
-    let distr = Normal::new(0., 10.).unwrap();
+    let distr = Normal::new(0., 5.).unwrap();
     let init_weight = || distr.sample(&mut rand::thread_rng()) as f32;
+    // let init_weight = || rand::thread_rng().gen_range((-5.)..5.) as f32;
 
     for _ in 0..iters {
         let x_weight = init_weight();
         let y_weight = init_weight();
+        let z_weight = init_weight();
         let bias = init_weight();
 
         let mut i = 0usize;
-        let mut outputs = [false; 4];
-        for y in [-1., 1.] {
-            for x in [-1., 1.] {
-                let output = scaled_shifted_ameo_activation(x * x_weight + y * y_weight + bias);
-                outputs[i] = if output > 0. { true } else { false };
-                i += 1;
+        let mut outputs = [false; 8];
+        for z in [-1., 1.] {
+            for y in [-1., 1.] {
+                for x in [-1., 1.] {
+                    let output = scaled_shifted_ameo_activation(
+                        x * x_weight + y * y_weight + z * z_weight + bias,
+                    );
+                    outputs[i] = if output > 0. { true } else { false };
+                    i += 1;
+                }
             }
         }
 
@@ -785,10 +797,77 @@ fn binary_boolean_function_distributions() {
             .or_insert(1);
     }
 
+    let mut counts_by_output_sorted = counts_by_output
+        .iter()
+        .map(|(outputs, count)| (outputs, count))
+        .collect::<Vec<_>>();
+    counts_by_output_sorted.sort_unstable_by_key(|(_outputs, count)| *count);
+
     println!("\n[output]: [count]");
-    for (output, count) in &counts_by_output {
+    for (output, count) in &counts_by_output_sorted {
         println!("{:?}: {}", output, count);
     }
+
+    let mut out = counts_by_output.into_iter().collect_vec();
+    out.sort_unstable_by_key(|(outputs, _count)| binary_to_dec(outputs));
+    out.into_iter().map(|(_outputs, count)| count).collect()
+}
+
+fn convert_formula(formula: &str) -> String {
+    formula.replace("*", " & ").replace("+", " | ")
+}
+
+fn compare_complexities_to_distribution() {
+    let total_distr_samples = 100_000_000;
+    let distrs = binary_boolean_function_distributions(total_distr_samples);
+    // let complexities = compute_boolean_complexities(3);
+    let complexities = THREE_INPUT_BOOLEAN_COMPLEXITIES;
+
+    assert_eq!(distrs.len(), complexities.len());
+
+    let inputs = (0..3)
+        .map(|_| [false, true].into_iter())
+        .multi_cartesian_product()
+        .collect_vec();
+    let output_count = inputs.len();
+    // all possible permutations of [bool; output_count]
+    let outputs = (0..output_count)
+        .map(|_| [false, true].into_iter())
+        .multi_cartesian_product()
+        .collect_vec();
+    assert_eq!(outputs.len(), complexities.len());
+
+    let formulas = include_str!("./3_input_bool_minimal.txt")
+        .split("\n")
+        .filter(|s| !s.is_empty())
+        .collect_vec();
+    assert_eq!(formulas.len(), outputs.len());
+
+    #[derive(SerJson)]
+    struct FunctionStats {
+        pub number: u64,
+        pub complexity: u8,
+        pub sample_count: usize,
+        pub area_fraction: f64,
+        pub truth_table: Vec<bool>,
+        pub formula: String,
+    }
+
+    let mut all_stats = Vec::new();
+
+    println!("\n\n\n");
+    for i in 0..outputs.len() {
+        all_stats.push(FunctionStats {
+            number: binary_to_dec(&outputs[i]),
+            complexity: complexities[i],
+            sample_count: distrs[i],
+            area_fraction: distrs[i] as f64 / total_distr_samples as f64,
+            truth_table: outputs[i].to_vec(),
+            formula: convert_formula(formulas[i]),
+        });
+    }
+
+    println!("{}", SerJson::serialize_json(&all_stats));
 }
 
 fn main() {
@@ -821,7 +900,8 @@ fn main() {
     // solve_all_3_input_truth_tables();
     // solve_all_4_input_truth_tables();
     // solve_all_3_input_truth_tables_reverse();
-    // binary_boolean_function_distributions();
 
-    compute_boolean_complexities(3);
+    // paper_repro();
+
+    compare_complexities_to_distribution();
 }

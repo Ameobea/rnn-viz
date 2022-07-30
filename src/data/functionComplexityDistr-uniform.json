@@ -1,0 +1,2050 @@
+[
+  {
+    "number": 0,
+    "complexity": 1,
+    "sample_count": 1496221,
+    "area_fraction": 0.01496221,
+    "truth_table": [false, false, false, false, false, false, false, false],
+    "formula": "!c & c"
+  },
+  {
+    "number": 1,
+    "complexity": 2,
+    "sample_count": 643885,
+    "area_fraction": 0.00643885,
+    "truth_table": [false, false, false, false, false, false, false, true],
+    "formula": "!c & !b & !a"
+  },
+  {
+    "number": 2,
+    "complexity": 2,
+    "sample_count": 644818,
+    "area_fraction": 0.00644818,
+    "truth_table": [false, false, false, false, false, false, true, false],
+    "formula": "!c & !b & a"
+  },
+  {
+    "number": 3,
+    "complexity": 1,
+    "sample_count": 1157941,
+    "area_fraction": 0.01157941,
+    "truth_table": [false, false, false, false, false, false, true, true],
+    "formula": "!c & !b"
+  },
+  {
+    "number": 4,
+    "complexity": 2,
+    "sample_count": 645197,
+    "area_fraction": 0.00645197,
+    "truth_table": [false, false, false, false, false, true, false, false],
+    "formula": "!c & b & !a"
+  },
+  {
+    "number": 5,
+    "complexity": 1,
+    "sample_count": 1158635,
+    "area_fraction": 0.01158635,
+    "truth_table": [false, false, false, false, false, true, false, true],
+    "formula": "!c & !a"
+  },
+  {
+    "number": 6,
+    "complexity": 4,
+    "sample_count": 163349,
+    "area_fraction": 0.00163349,
+    "truth_table": [false, false, false, false, false, true, true, false],
+    "formula": "(b & !a | !b & a) & !c"
+  },
+  {
+    "number": 7,
+    "complexity": 2,
+    "sample_count": 645675,
+    "area_fraction": 0.00645675,
+    "truth_table": [false, false, false, false, false, true, true, true],
+    "formula": "(!b | !a) & !c"
+  },
+  {
+    "number": 8,
+    "complexity": 2,
+    "sample_count": 644312,
+    "area_fraction": 0.00644312,
+    "truth_table": [false, false, false, false, true, false, false, false],
+    "formula": "!c & b & a"
+  },
+  {
+    "number": 9,
+    "complexity": 4,
+    "sample_count": 163039,
+    "area_fraction": 0.00163039,
+    "truth_table": [false, false, false, false, true, false, false, true],
+    "formula": "(b | !a) & (!b | a) & !c"
+  },
+  {
+    "number": 10,
+    "complexity": 1,
+    "sample_count": 1159022,
+    "area_fraction": 0.01159022,
+    "truth_table": [false, false, false, false, true, false, true, false],
+    "formula": "!c & a"
+  },
+  {
+    "number": 11,
+    "complexity": 2,
+    "sample_count": 643640,
+    "area_fraction": 0.0064364,
+    "truth_table": [false, false, false, false, true, false, true, true],
+    "formula": "(!b | a) & !c"
+  },
+  {
+    "number": 12,
+    "complexity": 1,
+    "sample_count": 1158066,
+    "area_fraction": 0.01158066,
+    "truth_table": [false, false, false, false, true, true, false, false],
+    "formula": "!c & b"
+  },
+  {
+    "number": 13,
+    "complexity": 2,
+    "sample_count": 644310,
+    "area_fraction": 0.0064431,
+    "truth_table": [false, false, false, false, true, true, false, true],
+    "formula": "(b | !a) & !c"
+  },
+  {
+    "number": 14,
+    "complexity": 2,
+    "sample_count": 643181,
+    "area_fraction": 0.00643181,
+    "truth_table": [false, false, false, false, true, true, true, false],
+    "formula": "(b | a) & !c"
+  },
+  {
+    "number": 15,
+    "complexity": 0,
+    "sample_count": 1497683,
+    "area_fraction": 0.01497683,
+    "truth_table": [false, false, false, false, true, true, true, true],
+    "formula": "!c"
+  },
+  {
+    "number": 16,
+    "complexity": 2,
+    "sample_count": 644548,
+    "area_fraction": 0.00644548,
+    "truth_table": [false, false, false, true, false, false, false, false],
+    "formula": "c & !b & !a"
+  },
+  {
+    "number": 17,
+    "complexity": 1,
+    "sample_count": 1160146,
+    "area_fraction": 0.01160146,
+    "truth_table": [false, false, false, true, false, false, false, true],
+    "formula": "!b & !a"
+  },
+  {
+    "number": 18,
+    "complexity": 4,
+    "sample_count": 163130,
+    "area_fraction": 0.0016313,
+    "truth_table": [false, false, false, true, false, false, true, false],
+    "formula": "(c & !a | !c & a) & !b"
+  },
+  {
+    "number": 19,
+    "complexity": 2,
+    "sample_count": 644103,
+    "area_fraction": 0.00644103,
+    "truth_table": [false, false, false, true, false, false, true, true],
+    "formula": "(!c | !a) & !b"
+  },
+  {
+    "number": 20,
+    "complexity": 4,
+    "sample_count": 163091,
+    "area_fraction": 0.00163091,
+    "truth_table": [false, false, false, true, false, true, false, false],
+    "formula": "(c & !b | !c & b) & !a"
+  },
+  {
+    "number": 21,
+    "complexity": 2,
+    "sample_count": 643727,
+    "area_fraction": 0.00643727,
+    "truth_table": [false, false, false, true, false, true, false, true],
+    "formula": "(!c | !b) & !a"
+  },
+  {
+    "number": 22,
+    "complexity": 7,
+    "sample_count": 20398,
+    "area_fraction": 0.00020398,
+    "truth_table": [false, false, false, true, false, true, true, false],
+    "formula": "(c & !b & !a | (b | a) & !c) & (!b | !a)"
+  },
+  {
+    "number": 23,
+    "complexity": 4,
+    "sample_count": 1159926,
+    "area_fraction": 0.01159926,
+    "truth_table": [false, false, false, true, false, true, true, true],
+    "formula": "(!c | !b) & !a | !c & !b"
+  },
+  {
+    "number": 24,
+    "complexity": 5,
+    "sample_count": 8996,
+    "area_fraction": 0.00008996,
+    "truth_table": [false, false, false, true, true, false, false, false],
+    "formula": "c & !b & !a | !c & b & a"
+  },
+  {
+    "number": 25,
+    "complexity": 4,
+    "sample_count": 20397,
+    "area_fraction": 0.00020397,
+    "truth_table": [false, false, false, true, true, false, false, true],
+    "formula": "!c & b & a | !b & !a"
+  },
+  {
+    "number": 26,
+    "complexity": 4,
+    "sample_count": 20367,
+    "area_fraction": 0.00020367,
+    "truth_table": [false, false, false, true, true, false, true, false],
+    "formula": "c & !b & !a | !c & a"
+  },
+  {
+    "number": 27,
+    "complexity": 3,
+    "sample_count": 163220,
+    "area_fraction": 0.0016322,
+    "truth_table": [false, false, false, true, true, false, true, true],
+    "formula": "!b & !a | !c & a"
+  },
+  {
+    "number": 28,
+    "complexity": 4,
+    "sample_count": 20324,
+    "area_fraction": 0.00020324,
+    "truth_table": [false, false, false, true, true, true, false, false],
+    "formula": "c & !b & !a | !c & b"
+  },
+  {
+    "number": 29,
+    "complexity": 3,
+    "sample_count": 162391,
+    "area_fraction": 0.00162391,
+    "truth_table": [false, false, false, true, true, true, false, true],
+    "formula": "(!c | !b) & (b | !a)"
+  },
+  {
+    "number": 30,
+    "complexity": 5,
+    "sample_count": 9118,
+    "area_fraction": 0.00009118,
+    "truth_table": [false, false, false, true, true, true, true, false],
+    "formula": "c & !b & !a | (b | a) & !c"
+  },
+  {
+    "number": 31,
+    "complexity": 2,
+    "sample_count": 644658,
+    "area_fraction": 0.00644658,
+    "truth_table": [false, false, false, true, true, true, true, true],
+    "formula": "!b & !a | !c"
+  },
+  {
+    "number": 32,
+    "complexity": 2,
+    "sample_count": 644418,
+    "area_fraction": 0.00644418,
+    "truth_table": [false, false, true, false, false, false, false, false],
+    "formula": "c & !b & a"
+  },
+  {
+    "number": 33,
+    "complexity": 4,
+    "sample_count": 163322,
+    "area_fraction": 0.00163322,
+    "truth_table": [false, false, true, false, false, false, false, true],
+    "formula": "(c | !a) & (!c | a) & !b"
+  },
+  {
+    "number": 34,
+    "complexity": 1,
+    "sample_count": 1159645,
+    "area_fraction": 0.01159645,
+    "truth_table": [false, false, true, false, false, false, true, false],
+    "formula": "!b & a"
+  },
+  {
+    "number": 35,
+    "complexity": 2,
+    "sample_count": 644275,
+    "area_fraction": 0.00644275,
+    "truth_table": [false, false, true, false, false, false, true, true],
+    "formula": "(!c | a) & !b"
+  },
+  {
+    "number": 36,
+    "complexity": 5,
+    "sample_count": 9083,
+    "area_fraction": 0.00009083,
+    "truth_table": [false, false, true, false, false, true, false, false],
+    "formula": "c & !b & a | !c & b & !a"
+  },
+  {
+    "number": 37,
+    "complexity": 4,
+    "sample_count": 20651,
+    "area_fraction": 0.00020651,
+    "truth_table": [false, false, true, false, false, true, false, true],
+    "formula": "c & !b & a | !c & !a"
+  },
+  {
+    "number": 38,
+    "complexity": 4,
+    "sample_count": 20563,
+    "area_fraction": 0.00020563,
+    "truth_table": [false, false, true, false, false, true, true, false],
+    "formula": "!c & b & !a | !b & a"
+  },
+  {
+    "number": 39,
+    "complexity": 3,
+    "sample_count": 163639,
+    "area_fraction": 0.00163639,
+    "truth_table": [false, false, true, false, false, true, true, true],
+    "formula": "(!b | !a) & (!c | a)"
+  },
+  {
+    "number": 40,
+    "complexity": 4,
+    "sample_count": 163312,
+    "area_fraction": 0.00163312,
+    "truth_table": [false, false, true, false, true, false, false, false],
+    "formula": "(c & !b | !c & b) & a"
+  },
+  {
+    "number": 41,
+    "complexity": 7,
+    "sample_count": 20416,
+    "area_fraction": 0.00020416,
+    "truth_table": [false, false, true, false, true, false, false, true],
+    "formula": "(c & !b & a | (b | !a) & !c) & (!b | a)"
+  },
+  {
+    "number": 42,
+    "complexity": 2,
+    "sample_count": 644130,
+    "area_fraction": 0.0064413,
+    "truth_table": [false, false, true, false, true, false, true, false],
+    "formula": "(!c | !b) & a"
+  },
+  {
+    "number": 43,
+    "complexity": 4,
+    "sample_count": 1159034,
+    "area_fraction": 0.01159034,
+    "truth_table": [false, false, true, false, true, false, true, true],
+    "formula": "(!c & !b | a) & (!c | !b)"
+  },
+  {
+    "number": 44,
+    "complexity": 4,
+    "sample_count": 20567,
+    "area_fraction": 0.00020567,
+    "truth_table": [false, false, true, false, true, true, false, false],
+    "formula": "c & !b & a | !c & b"
+  },
+  {
+    "number": 45,
+    "complexity": 5,
+    "sample_count": 9214,
+    "area_fraction": 0.00009214,
+    "truth_table": [false, false, true, false, true, true, false, true],
+    "formula": "c & !b & a | (b | !a) & !c"
+  },
+  {
+    "number": 46,
+    "complexity": 3,
+    "sample_count": 164243,
+    "area_fraction": 0.00164243,
+    "truth_table": [false, false, true, false, true, true, true, false],
+    "formula": "(!c | !b) & (b | a)"
+  },
+  {
+    "number": 47,
+    "complexity": 2,
+    "sample_count": 645009,
+    "area_fraction": 0.00645009,
+    "truth_table": [false, false, true, false, true, true, true, true],
+    "formula": "!b & a | !c"
+  },
+  {
+    "number": 48,
+    "complexity": 1,
+    "sample_count": 1158415,
+    "area_fraction": 0.01158415,
+    "truth_table": [false, false, true, true, false, false, false, false],
+    "formula": "c & !b"
+  },
+  {
+    "number": 49,
+    "complexity": 2,
+    "sample_count": 644373,
+    "area_fraction": 0.00644373,
+    "truth_table": [false, false, true, true, false, false, false, true],
+    "formula": "(c | !a) & !b"
+  },
+  {
+    "number": 50,
+    "complexity": 2,
+    "sample_count": 644101,
+    "area_fraction": 0.00644101,
+    "truth_table": [false, false, true, true, false, false, true, false],
+    "formula": "(c | a) & !b"
+  },
+  {
+    "number": 51,
+    "complexity": 0,
+    "sample_count": 1495982,
+    "area_fraction": 0.01495982,
+    "truth_table": [false, false, true, true, false, false, true, true],
+    "formula": "!b"
+  },
+  {
+    "number": 52,
+    "complexity": 4,
+    "sample_count": 20245,
+    "area_fraction": 0.00020245,
+    "truth_table": [false, false, true, true, false, true, false, false],
+    "formula": "!c & b & !a | c & !b"
+  },
+  {
+    "number": 53,
+    "complexity": 3,
+    "sample_count": 163502,
+    "area_fraction": 0.00163502,
+    "truth_table": [false, false, true, true, false, true, false, true],
+    "formula": "c & !b | !c & !a"
+  },
+  {
+    "number": 54,
+    "complexity": 5,
+    "sample_count": 9178,
+    "area_fraction": 0.00009178,
+    "truth_table": [false, false, true, true, false, true, true, false],
+    "formula": "!c & b & !a | (c | a) & !b"
+  },
+  {
+    "number": 55,
+    "complexity": 2,
+    "sample_count": 644322,
+    "area_fraction": 0.00644322,
+    "truth_table": [false, false, true, true, false, true, true, true],
+    "formula": "!c & !a | !b"
+  },
+  {
+    "number": 56,
+    "complexity": 4,
+    "sample_count": 20150,
+    "area_fraction": 0.0002015,
+    "truth_table": [false, false, true, true, true, false, false, false],
+    "formula": "!c & b & a | c & !b"
+  },
+  {
+    "number": 57,
+    "complexity": 5,
+    "sample_count": 9130,
+    "area_fraction": 0.0000913,
+    "truth_table": [false, false, true, true, true, false, false, true],
+    "formula": "!c & b & a | (c | !a) & !b"
+  },
+  {
+    "number": 58,
+    "complexity": 3,
+    "sample_count": 162954,
+    "area_fraction": 0.00162954,
+    "truth_table": [false, false, true, true, true, false, true, false],
+    "formula": "c & !b | !c & a"
+  },
+  {
+    "number": 59,
+    "complexity": 2,
+    "sample_count": 644339,
+    "area_fraction": 0.00644339,
+    "truth_table": [false, false, true, true, true, false, true, true],
+    "formula": "!c & a | !b"
+  },
+  {
+    "number": 60,
+    "complexity": 3,
+    "sample_count": 33463,
+    "area_fraction": 0.00033463,
+    "truth_table": [false, false, true, true, true, true, false, false],
+    "formula": "c & !b | !c & b"
+  },
+  {
+    "number": 61,
+    "complexity": 4,
+    "sample_count": 20523,
+    "area_fraction": 0.00020523,
+    "truth_table": [false, false, true, true, true, true, false, true],
+    "formula": "(b | !a) & !c | c & !b"
+  },
+  {
+    "number": 62,
+    "complexity": 4,
+    "sample_count": 20447,
+    "area_fraction": 0.00020447,
+    "truth_table": [false, false, true, true, true, true, true, false],
+    "formula": "(b | a) & !c | c & !b"
+  },
+  {
+    "number": 63,
+    "complexity": 1,
+    "sample_count": 1157660,
+    "area_fraction": 0.0115766,
+    "truth_table": [false, false, true, true, true, true, true, true],
+    "formula": "!c | !b"
+  },
+  {
+    "number": 64,
+    "complexity": 2,
+    "sample_count": 644716,
+    "area_fraction": 0.00644716,
+    "truth_table": [false, true, false, false, false, false, false, false],
+    "formula": "c & b & !a"
+  },
+  {
+    "number": 65,
+    "complexity": 4,
+    "sample_count": 163805,
+    "area_fraction": 0.00163805,
+    "truth_table": [false, true, false, false, false, false, false, true],
+    "formula": "(c | !b) & (!c | b) & !a"
+  },
+  {
+    "number": 66,
+    "complexity": 5,
+    "sample_count": 8997,
+    "area_fraction": 0.00008997,
+    "truth_table": [false, true, false, false, false, false, true, false],
+    "formula": "!c & !b & a | c & b & !a"
+  },
+  {
+    "number": 67,
+    "complexity": 4,
+    "sample_count": 20354,
+    "area_fraction": 0.00020354,
+    "truth_table": [false, true, false, false, false, false, true, true],
+    "formula": "c & b & !a | !c & !b"
+  },
+  {
+    "number": 68,
+    "complexity": 1,
+    "sample_count": 1158707,
+    "area_fraction": 0.01158707,
+    "truth_table": [false, true, false, false, false, true, false, false],
+    "formula": "b & !a"
+  },
+  {
+    "number": 69,
+    "complexity": 2,
+    "sample_count": 645797,
+    "area_fraction": 0.00645797,
+    "truth_table": [false, true, false, false, false, true, false, true],
+    "formula": "(!c | b) & !a"
+  },
+  {
+    "number": 70,
+    "complexity": 4,
+    "sample_count": 20340,
+    "area_fraction": 0.0002034,
+    "truth_table": [false, true, false, false, false, true, true, false],
+    "formula": "!c & !b & a | b & !a"
+  },
+  {
+    "number": 71,
+    "complexity": 3,
+    "sample_count": 163214,
+    "area_fraction": 0.00163214,
+    "truth_table": [false, true, false, false, false, true, true, true],
+    "formula": "!c & !b | b & !a"
+  },
+  {
+    "number": 72,
+    "complexity": 4,
+    "sample_count": 163249,
+    "area_fraction": 0.00163249,
+    "truth_table": [false, true, false, false, true, false, false, false],
+    "formula": "(c & !a | !c & a) & b"
+  },
+  {
+    "number": 73,
+    "complexity": 7,
+    "sample_count": 20467,
+    "area_fraction": 0.00020467,
+    "truth_table": [false, true, false, false, true, false, false, true],
+    "formula": "(!c & !b & !a | (c | a) & b) & (!c | !a)"
+  },
+  {
+    "number": 74,
+    "complexity": 4,
+    "sample_count": 20559,
+    "area_fraction": 0.00020559,
+    "truth_table": [false, true, false, false, true, false, true, false],
+    "formula": "c & b & !a | !c & a"
+  },
+  {
+    "number": 75,
+    "complexity": 5,
+    "sample_count": 9123,
+    "area_fraction": 0.00009123,
+    "truth_table": [false, true, false, false, true, false, true, true],
+    "formula": "c & b & !a | (!b | a) & !c"
+  },
+  {
+    "number": 76,
+    "complexity": 2,
+    "sample_count": 644368,
+    "area_fraction": 0.00644368,
+    "truth_table": [false, true, false, false, true, true, false, false],
+    "formula": "(!c | !a) & b"
+  },
+  {
+    "number": 77,
+    "complexity": 4,
+    "sample_count": 1158591,
+    "area_fraction": 0.01158591,
+    "truth_table": [false, true, false, false, true, true, false, true],
+    "formula": "(!c | b) & !a | !c & b"
+  },
+  {
+    "number": 78,
+    "complexity": 3,
+    "sample_count": 163782,
+    "area_fraction": 0.00163782,
+    "truth_table": [false, true, false, false, true, true, true, false],
+    "formula": "b & !a | !c & a"
+  },
+  {
+    "number": 79,
+    "complexity": 2,
+    "sample_count": 644916,
+    "area_fraction": 0.00644916,
+    "truth_table": [false, true, false, false, true, true, true, true],
+    "formula": "b & !a | !c"
+  },
+  {
+    "number": 80,
+    "complexity": 1,
+    "sample_count": 1157478,
+    "area_fraction": 0.01157478,
+    "truth_table": [false, true, false, true, false, false, false, false],
+    "formula": "c & !a"
+  },
+  {
+    "number": 81,
+    "complexity": 2,
+    "sample_count": 645072,
+    "area_fraction": 0.00645072,
+    "truth_table": [false, true, false, true, false, false, false, true],
+    "formula": "(c | !b) & !a"
+  },
+  {
+    "number": 82,
+    "complexity": 4,
+    "sample_count": 20491,
+    "area_fraction": 0.00020491,
+    "truth_table": [false, true, false, true, false, false, true, false],
+    "formula": "!c & !b & a | c & !a"
+  },
+  {
+    "number": 83,
+    "complexity": 3,
+    "sample_count": 162859,
+    "area_fraction": 0.00162859,
+    "truth_table": [false, true, false, true, false, false, true, true],
+    "formula": "(c | !b) & (!c | !a)"
+  },
+  {
+    "number": 84,
+    "complexity": 2,
+    "sample_count": 644281,
+    "area_fraction": 0.00644281,
+    "truth_table": [false, true, false, true, false, true, false, false],
+    "formula": "(c | b) & !a"
+  },
+  {
+    "number": 85,
+    "complexity": 0,
+    "sample_count": 1497311,
+    "area_fraction": 0.01497311,
+    "truth_table": [false, true, false, true, false, true, false, true],
+    "formula": "!a"
+  },
+  {
+    "number": 86,
+    "complexity": 5,
+    "sample_count": 9139,
+    "area_fraction": 0.00009139,
+    "truth_table": [false, true, false, true, false, true, true, false],
+    "formula": "!c & !b & a | (c | b) & !a"
+  },
+  {
+    "number": 87,
+    "complexity": 2,
+    "sample_count": 644691,
+    "area_fraction": 0.00644691,
+    "truth_table": [false, true, false, true, false, true, true, true],
+    "formula": "!c & !b | !a"
+  },
+  {
+    "number": 88,
+    "complexity": 4,
+    "sample_count": 20189,
+    "area_fraction": 0.00020189,
+    "truth_table": [false, true, false, true, true, false, false, false],
+    "formula": "!c & b & a | c & !a"
+  },
+  {
+    "number": 89,
+    "complexity": 5,
+    "sample_count": 9008,
+    "area_fraction": 0.00009008,
+    "truth_table": [false, true, false, true, true, false, false, true],
+    "formula": "!c & b & a | (c | !b) & !a"
+  },
+  {
+    "number": 90,
+    "complexity": 3,
+    "sample_count": 33205,
+    "area_fraction": 0.00033205,
+    "truth_table": [false, true, false, true, true, false, true, false],
+    "formula": "c & !a | !c & a"
+  },
+  {
+    "number": 91,
+    "complexity": 4,
+    "sample_count": 20538,
+    "area_fraction": 0.00020538,
+    "truth_table": [false, true, false, true, true, false, true, true],
+    "formula": "(c | !b) & !a | !c & a"
+  },
+  {
+    "number": 92,
+    "complexity": 3,
+    "sample_count": 162934,
+    "area_fraction": 0.00162934,
+    "truth_table": [false, true, false, true, true, true, false, false],
+    "formula": "(c | b) & (!c | !a)"
+  },
+  {
+    "number": 93,
+    "complexity": 2,
+    "sample_count": 644832,
+    "area_fraction": 0.00644832,
+    "truth_table": [false, true, false, true, true, true, false, true],
+    "formula": "!c & b | !a"
+  },
+  {
+    "number": 94,
+    "complexity": 4,
+    "sample_count": 20317,
+    "area_fraction": 0.00020317,
+    "truth_table": [false, true, false, true, true, true, true, false],
+    "formula": "(c | b) & !a | !c & a"
+  },
+  {
+    "number": 95,
+    "complexity": 1,
+    "sample_count": 1157755,
+    "area_fraction": 0.01157755,
+    "truth_table": [false, true, false, true, true, true, true, true],
+    "formula": "!c | !a"
+  },
+  {
+    "number": 96,
+    "complexity": 4,
+    "sample_count": 162779,
+    "area_fraction": 0.00162779,
+    "truth_table": [false, true, true, false, false, false, false, false],
+    "formula": "(b & !a | !b & a) & c"
+  },
+  {
+    "number": 97,
+    "complexity": 7,
+    "sample_count": 20417,
+    "area_fraction": 0.00020417,
+    "truth_table": [false, true, true, false, false, false, false, true],
+    "formula": "(!c & !b & !a | (b | a) & c) & (!b | !a)"
+  },
+  {
+    "number": 98,
+    "complexity": 4,
+    "sample_count": 20343,
+    "area_fraction": 0.00020343,
+    "truth_table": [false, true, true, false, false, false, true, false],
+    "formula": "c & b & !a | !b & a"
+  },
+  {
+    "number": 99,
+    "complexity": 5,
+    "sample_count": 9252,
+    "area_fraction": 0.00009252,
+    "truth_table": [false, true, true, false, false, false, true, true],
+    "formula": "c & b & !a | (!c | a) & !b"
+  },
+  {
+    "number": 100,
+    "complexity": 4,
+    "sample_count": 20199,
+    "area_fraction": 0.00020199,
+    "truth_table": [false, true, true, false, false, true, false, false],
+    "formula": "c & !b & a | b & !a"
+  },
+  {
+    "number": 101,
+    "complexity": 5,
+    "sample_count": 9174,
+    "area_fraction": 0.00009174,
+    "truth_table": [false, true, true, false, false, true, false, true],
+    "formula": "c & !b & a | (!c | b) & !a"
+  },
+  {
+    "number": 102,
+    "complexity": 3,
+    "sample_count": 33048,
+    "area_fraction": 0.00033048,
+    "truth_table": [false, true, true, false, false, true, true, false],
+    "formula": "b & !a | !b & a"
+  },
+  {
+    "number": 103,
+    "complexity": 4,
+    "sample_count": 20577,
+    "area_fraction": 0.00020577,
+    "truth_table": [false, true, true, false, false, true, true, true],
+    "formula": "(!c | b) & !a | !b & a"
+  },
+  {
+    "number": 104,
+    "complexity": 7,
+    "sample_count": 20131,
+    "area_fraction": 0.00020131,
+    "truth_table": [false, true, true, false, true, false, false, false],
+    "formula": "(c & !b & a | (!c | !a) & b) & (c | a)"
+  },
+  {
+    "number": 105,
+    "complexity": 9,
+    "sample_count": 33269,
+    "area_fraction": 0.00033269,
+    "truth_table": [false, true, true, false, true, false, false, true],
+    "formula": "(c | !b) & (!c | b) & !a | (c & !b | !c & b) & a"
+  },
+  {
+    "number": 106,
+    "complexity": 5,
+    "sample_count": 9151,
+    "area_fraction": 0.00009151,
+    "truth_table": [false, true, true, false, true, false, true, false],
+    "formula": "c & b & !a | (!c | !b) & a"
+  },
+  {
+    "number": 107,
+    "complexity": 7,
+    "sample_count": 20497,
+    "area_fraction": 0.00020497,
+    "truth_table": [false, true, true, false, true, false, true, true],
+    "formula": "c & b & !a | (!c | !b) & a | !c & !b"
+  },
+  {
+    "number": 108,
+    "complexity": 5,
+    "sample_count": 9134,
+    "area_fraction": 0.00009134,
+    "truth_table": [false, true, true, false, true, true, false, false],
+    "formula": "c & !b & a | (!c | !a) & b"
+  },
+  {
+    "number": 109,
+    "complexity": 7,
+    "sample_count": 20398,
+    "area_fraction": 0.00020398,
+    "truth_table": [false, true, true, false, true, true, false, true],
+    "formula": "c & !b & a | (!c | !a) & b | !c & !a"
+  },
+  {
+    "number": 110,
+    "complexity": 4,
+    "sample_count": 20490,
+    "area_fraction": 0.0002049,
+    "truth_table": [false, true, true, false, true, true, true, false],
+    "formula": "(!c | !b) & a | b & !a"
+  },
+  {
+    "number": 111,
+    "complexity": 4,
+    "sample_count": 162750,
+    "area_fraction": 0.0016275,
+    "truth_table": [false, true, true, false, true, true, true, true],
+    "formula": "b & !a | !b & a | !c"
+  },
+  {
+    "number": 112,
+    "complexity": 2,
+    "sample_count": 645285,
+    "area_fraction": 0.00645285,
+    "truth_table": [false, true, true, true, false, false, false, false],
+    "formula": "(!b | !a) & c"
+  },
+  {
+    "number": 113,
+    "complexity": 4,
+    "sample_count": 1157350,
+    "area_fraction": 0.0115735,
+    "truth_table": [false, true, true, true, false, false, false, true],
+    "formula": "(c & !b | !a) & (c | !b)"
+  },
+  {
+    "number": 114,
+    "complexity": 3,
+    "sample_count": 163096,
+    "area_fraction": 0.00163096,
+    "truth_table": [false, true, true, true, false, false, true, false],
+    "formula": "c & !a | !b & a"
+  },
+  {
+    "number": 115,
+    "complexity": 2,
+    "sample_count": 644689,
+    "area_fraction": 0.00644689,
+    "truth_table": [false, true, true, true, false, false, true, true],
+    "formula": "c & !a | !b"
+  },
+  {
+    "number": 116,
+    "complexity": 3,
+    "sample_count": 163210,
+    "area_fraction": 0.0016321,
+    "truth_table": [false, true, true, true, false, true, false, false],
+    "formula": "c & !b | b & !a"
+  },
+  {
+    "number": 117,
+    "complexity": 2,
+    "sample_count": 645034,
+    "area_fraction": 0.00645034,
+    "truth_table": [false, true, true, true, false, true, false, true],
+    "formula": "c & !b | !a"
+  },
+  {
+    "number": 118,
+    "complexity": 4,
+    "sample_count": 20390,
+    "area_fraction": 0.0002039,
+    "truth_table": [false, true, true, true, false, true, true, false],
+    "formula": "(c | b) & !a | !b & a"
+  },
+  {
+    "number": 119,
+    "complexity": 1,
+    "sample_count": 1158204,
+    "area_fraction": 0.01158204,
+    "truth_table": [false, true, true, true, false, true, true, true],
+    "formula": "!b | !a"
+  },
+  {
+    "number": 120,
+    "complexity": 5,
+    "sample_count": 9061,
+    "area_fraction": 0.00009061,
+    "truth_table": [false, true, true, true, true, false, false, false],
+    "formula": "!c & b & a | (!b | !a) & c"
+  },
+  {
+    "number": 121,
+    "complexity": 7,
+    "sample_count": 20577,
+    "area_fraction": 0.00020577,
+    "truth_table": [false, true, true, true, true, false, false, true],
+    "formula": "!c & b & a | (!b | !a) & c | !b & !a"
+  },
+  {
+    "number": 122,
+    "complexity": 4,
+    "sample_count": 20585,
+    "area_fraction": 0.00020585,
+    "truth_table": [false, true, true, true, true, false, true, false],
+    "formula": "(!c | !b) & a | c & !a"
+  },
+  {
+    "number": 123,
+    "complexity": 4,
+    "sample_count": 163147,
+    "area_fraction": 0.00163147,
+    "truth_table": [false, true, true, true, true, false, true, true],
+    "formula": "c & !a | !c & a | !b"
+  },
+  {
+    "number": 124,
+    "complexity": 4,
+    "sample_count": 20410,
+    "area_fraction": 0.0002041,
+    "truth_table": [false, true, true, true, true, true, false, false],
+    "formula": "(!b | !a) & c | !c & b"
+  },
+  {
+    "number": 125,
+    "complexity": 4,
+    "sample_count": 163908,
+    "area_fraction": 0.00163908,
+    "truth_table": [false, true, true, true, true, true, false, true],
+    "formula": "c & !b | !c & b | !a"
+  },
+  {
+    "number": 126,
+    "complexity": 5,
+    "sample_count": 9228,
+    "area_fraction": 0.00009228,
+    "truth_table": [false, true, true, true, true, true, true, false],
+    "formula": "c & !b | b & !a | !c & a"
+  },
+  {
+    "number": 127,
+    "complexity": 2,
+    "sample_count": 644209,
+    "area_fraction": 0.00644209,
+    "truth_table": [false, true, true, true, true, true, true, true],
+    "formula": "!c | !b | !a"
+  },
+  {
+    "number": 128,
+    "complexity": 2,
+    "sample_count": 645398,
+    "area_fraction": 0.00645398,
+    "truth_table": [true, false, false, false, false, false, false, false],
+    "formula": "c & b & a"
+  },
+  {
+    "number": 129,
+    "complexity": 5,
+    "sample_count": 9313,
+    "area_fraction": 0.00009313,
+    "truth_table": [true, false, false, false, false, false, false, true],
+    "formula": "!c & !b & !a | c & b & a"
+  },
+  {
+    "number": 130,
+    "complexity": 4,
+    "sample_count": 162516,
+    "area_fraction": 0.00162516,
+    "truth_table": [true, false, false, false, false, false, true, false],
+    "formula": "(c | !b) & (!c | b) & a"
+  },
+  {
+    "number": 131,
+    "complexity": 4,
+    "sample_count": 20439,
+    "area_fraction": 0.00020439,
+    "truth_table": [true, false, false, false, false, false, true, true],
+    "formula": "c & b & a | !c & !b"
+  },
+  {
+    "number": 132,
+    "complexity": 4,
+    "sample_count": 164606,
+    "area_fraction": 0.00164606,
+    "truth_table": [true, false, false, false, false, true, false, false],
+    "formula": "(c | !a) & (!c | a) & b"
+  },
+  {
+    "number": 133,
+    "complexity": 4,
+    "sample_count": 20560,
+    "area_fraction": 0.0002056,
+    "truth_table": [true, false, false, false, false, true, false, true],
+    "formula": "c & b & a | !c & !a"
+  },
+  {
+    "number": 134,
+    "complexity": 7,
+    "sample_count": 20698,
+    "area_fraction": 0.00020698,
+    "truth_table": [true, false, false, false, false, true, true, false],
+    "formula": "(!c & !b & a | (c | !a) & b) & (!c | a)"
+  },
+  {
+    "number": 135,
+    "complexity": 5,
+    "sample_count": 9310,
+    "area_fraction": 0.0000931,
+    "truth_table": [true, false, false, false, false, true, true, true],
+    "formula": "c & b & a | (!b | !a) & !c"
+  },
+  {
+    "number": 136,
+    "complexity": 1,
+    "sample_count": 1157138,
+    "area_fraction": 0.01157138,
+    "truth_table": [true, false, false, false, true, false, false, false],
+    "formula": "b & a"
+  },
+  {
+    "number": 137,
+    "complexity": 4,
+    "sample_count": 20518,
+    "area_fraction": 0.00020518,
+    "truth_table": [true, false, false, false, true, false, false, true],
+    "formula": "!c & !b & !a | b & a"
+  },
+  {
+    "number": 138,
+    "complexity": 2,
+    "sample_count": 644048,
+    "area_fraction": 0.00644048,
+    "truth_table": [true, false, false, false, true, false, true, false],
+    "formula": "(!c | b) & a"
+  },
+  {
+    "number": 139,
+    "complexity": 3,
+    "sample_count": 163223,
+    "area_fraction": 0.00163223,
+    "truth_table": [true, false, false, false, true, false, true, true],
+    "formula": "!c & !b | b & a"
+  },
+  {
+    "number": 140,
+    "complexity": 2,
+    "sample_count": 645121,
+    "area_fraction": 0.00645121,
+    "truth_table": [true, false, false, false, true, true, false, false],
+    "formula": "(!c | a) & b"
+  },
+  {
+    "number": 141,
+    "complexity": 3,
+    "sample_count": 163780,
+    "area_fraction": 0.0016378,
+    "truth_table": [true, false, false, false, true, true, false, true],
+    "formula": "(b | !a) & (!c | a)"
+  },
+  {
+    "number": 142,
+    "complexity": 4,
+    "sample_count": 1158854,
+    "area_fraction": 0.01158854,
+    "truth_table": [true, false, false, false, true, true, true, false],
+    "formula": "(!c & b | a) & (!c | b)"
+  },
+  {
+    "number": 143,
+    "complexity": 2,
+    "sample_count": 644906,
+    "area_fraction": 0.00644906,
+    "truth_table": [true, false, false, false, true, true, true, true],
+    "formula": "b & a | !c"
+  },
+  {
+    "number": 144,
+    "complexity": 4,
+    "sample_count": 163765,
+    "area_fraction": 0.00163765,
+    "truth_table": [true, false, false, true, false, false, false, false],
+    "formula": "(b | !a) & (!b | a) & c"
+  },
+  {
+    "number": 145,
+    "complexity": 4,
+    "sample_count": 20261,
+    "area_fraction": 0.00020261,
+    "truth_table": [true, false, false, true, false, false, false, true],
+    "formula": "c & b & a | !b & !a"
+  },
+  {
+    "number": 146,
+    "complexity": 7,
+    "sample_count": 20348,
+    "area_fraction": 0.00020348,
+    "truth_table": [true, false, false, true, false, false, true, false],
+    "formula": "(c & !b & !a | (!c | b) & a) & (c | !b)"
+  },
+  {
+    "number": 147,
+    "complexity": 5,
+    "sample_count": 9190,
+    "area_fraction": 0.0000919,
+    "truth_table": [true, false, false, true, false, false, true, true],
+    "formula": "c & b & a | (!c | !a) & !b"
+  },
+  {
+    "number": 148,
+    "complexity": 7,
+    "sample_count": 20291,
+    "area_fraction": 0.00020291,
+    "truth_table": [true, false, false, true, false, true, false, false],
+    "formula": "(c & !b & !a | (!c | a) & b) & (c | !a)"
+  },
+  {
+    "number": 149,
+    "complexity": 5,
+    "sample_count": 9172,
+    "area_fraction": 0.00009172,
+    "truth_table": [true, false, false, true, false, true, false, true],
+    "formula": "c & b & a | (!c | !b) & !a"
+  },
+  {
+    "number": 150,
+    "complexity": 9,
+    "sample_count": 33429,
+    "area_fraction": 0.00033429,
+    "truth_table": [true, false, false, true, false, true, true, false],
+    "formula": "(c | !b) & (!c | b) & a | (c & !b | !c & b) & !a"
+  },
+  {
+    "number": 151,
+    "complexity": 7,
+    "sample_count": 20474,
+    "area_fraction": 0.00020474,
+    "truth_table": [true, false, false, true, false, true, true, true],
+    "formula": "c & b & a | (!c | !a) & !b | !c & !a"
+  },
+  {
+    "number": 152,
+    "complexity": 4,
+    "sample_count": 20457,
+    "area_fraction": 0.00020457,
+    "truth_table": [true, false, false, true, true, false, false, false],
+    "formula": "c & !b & !a | b & a"
+  },
+  {
+    "number": 153,
+    "complexity": 3,
+    "sample_count": 33061,
+    "area_fraction": 0.00033061,
+    "truth_table": [true, false, false, true, true, false, false, true],
+    "formula": "(b | !a) & (!b | a)"
+  },
+  {
+    "number": 154,
+    "complexity": 5,
+    "sample_count": 9213,
+    "area_fraction": 0.00009213,
+    "truth_table": [true, false, false, true, true, false, true, false],
+    "formula": "c & !b & !a | (!c | b) & a"
+  },
+  {
+    "number": 155,
+    "complexity": 4,
+    "sample_count": 20437,
+    "area_fraction": 0.00020437,
+    "truth_table": [true, false, false, true, true, false, true, true],
+    "formula": "(!c | b) & a | !b & !a"
+  },
+  {
+    "number": 156,
+    "complexity": 5,
+    "sample_count": 9048,
+    "area_fraction": 0.00009048,
+    "truth_table": [true, false, false, true, true, true, false, false],
+    "formula": "c & !b & !a | (!c | a) & b"
+  },
+  {
+    "number": 157,
+    "complexity": 4,
+    "sample_count": 20359,
+    "area_fraction": 0.00020359,
+    "truth_table": [true, false, false, true, true, true, false, true],
+    "formula": "(!c | !b) & !a | b & a"
+  },
+  {
+    "number": 158,
+    "complexity": 7,
+    "sample_count": 20417,
+    "area_fraction": 0.00020417,
+    "truth_table": [true, false, false, true, true, true, true, false],
+    "formula": "c & !b & !a | (!c | a) & b | !c & a"
+  },
+  {
+    "number": 159,
+    "complexity": 4,
+    "sample_count": 163192,
+    "area_fraction": 0.00163192,
+    "truth_table": [true, false, false, true, true, true, true, true],
+    "formula": "(b | !a) & (!b | a) | !c"
+  },
+  {
+    "number": 160,
+    "complexity": 1,
+    "sample_count": 1159331,
+    "area_fraction": 0.01159331,
+    "truth_table": [true, false, true, false, false, false, false, false],
+    "formula": "c & a"
+  },
+  {
+    "number": 161,
+    "complexity": 4,
+    "sample_count": 20505,
+    "area_fraction": 0.00020505,
+    "truth_table": [true, false, true, false, false, false, false, true],
+    "formula": "!c & !b & !a | c & a"
+  },
+  {
+    "number": 162,
+    "complexity": 2,
+    "sample_count": 644800,
+    "area_fraction": 0.006448,
+    "truth_table": [true, false, true, false, false, false, true, false],
+    "formula": "(c | !b) & a"
+  },
+  {
+    "number": 163,
+    "complexity": 3,
+    "sample_count": 163330,
+    "area_fraction": 0.0016333,
+    "truth_table": [true, false, true, false, false, false, true, true],
+    "formula": "(c | !b) & (!c | a)"
+  },
+  {
+    "number": 164,
+    "complexity": 4,
+    "sample_count": 20430,
+    "area_fraction": 0.0002043,
+    "truth_table": [true, false, true, false, false, true, false, false],
+    "formula": "!c & b & !a | c & a"
+  },
+  {
+    "number": 165,
+    "complexity": 3,
+    "sample_count": 33338,
+    "area_fraction": 0.00033338,
+    "truth_table": [true, false, true, false, false, true, false, true],
+    "formula": "(c | !a) & (!c | a)"
+  },
+  {
+    "number": 166,
+    "complexity": 5,
+    "sample_count": 9121,
+    "area_fraction": 0.00009121,
+    "truth_table": [true, false, true, false, false, true, true, false],
+    "formula": "!c & b & !a | (c | !b) & a"
+  },
+  {
+    "number": 167,
+    "complexity": 4,
+    "sample_count": 20440,
+    "area_fraction": 0.0002044,
+    "truth_table": [true, false, true, false, false, true, true, true],
+    "formula": "(c | !b) & a | !c & !a"
+  },
+  {
+    "number": 168,
+    "complexity": 2,
+    "sample_count": 644623,
+    "area_fraction": 0.00644623,
+    "truth_table": [true, false, true, false, true, false, false, false],
+    "formula": "(c | b) & a"
+  },
+  {
+    "number": 169,
+    "complexity": 5,
+    "sample_count": 9165,
+    "area_fraction": 0.00009165,
+    "truth_table": [true, false, true, false, true, false, false, true],
+    "formula": "!c & !b & !a | (c | b) & a"
+  },
+  {
+    "number": 170,
+    "complexity": 0,
+    "sample_count": 1496207,
+    "area_fraction": 0.01496207,
+    "truth_table": [true, false, true, false, true, false, true, false],
+    "formula": "a"
+  },
+  {
+    "number": 171,
+    "complexity": 2,
+    "sample_count": 646004,
+    "area_fraction": 0.00646004,
+    "truth_table": [true, false, true, false, true, false, true, true],
+    "formula": "!c & !b | a"
+  },
+  {
+    "number": 172,
+    "complexity": 3,
+    "sample_count": 163502,
+    "area_fraction": 0.00163502,
+    "truth_table": [true, false, true, false, true, true, false, false],
+    "formula": "(c | b) & (!c | a)"
+  },
+  {
+    "number": 173,
+    "complexity": 4,
+    "sample_count": 20645,
+    "area_fraction": 0.00020645,
+    "truth_table": [true, false, true, false, true, true, false, true],
+    "formula": "(c | b) & a | !c & !a"
+  },
+  {
+    "number": 174,
+    "complexity": 2,
+    "sample_count": 644953,
+    "area_fraction": 0.00644953,
+    "truth_table": [true, false, true, false, true, true, true, false],
+    "formula": "!c & b | a"
+  },
+  {
+    "number": 175,
+    "complexity": 1,
+    "sample_count": 1159687,
+    "area_fraction": 0.01159687,
+    "truth_table": [true, false, true, false, true, true, true, true],
+    "formula": "!c | a"
+  },
+  {
+    "number": 176,
+    "complexity": 2,
+    "sample_count": 644164,
+    "area_fraction": 0.00644164,
+    "truth_table": [true, false, true, true, false, false, false, false],
+    "formula": "(!b | a) & c"
+  },
+  {
+    "number": 177,
+    "complexity": 3,
+    "sample_count": 163209,
+    "area_fraction": 0.00163209,
+    "truth_table": [true, false, true, true, false, false, false, true],
+    "formula": "(c | !a) & (!b | a)"
+  },
+  {
+    "number": 178,
+    "complexity": 4,
+    "sample_count": 1157807,
+    "area_fraction": 0.01157807,
+    "truth_table": [true, false, true, true, false, false, true, false],
+    "formula": "(c | !b) & a | c & !b"
+  },
+  {
+    "number": 179,
+    "complexity": 2,
+    "sample_count": 644356,
+    "area_fraction": 0.00644356,
+    "truth_table": [true, false, true, true, false, false, true, true],
+    "formula": "c & a | !b"
+  },
+  {
+    "number": 180,
+    "complexity": 5,
+    "sample_count": 9154,
+    "area_fraction": 0.00009154,
+    "truth_table": [true, false, true, true, false, true, false, false],
+    "formula": "!c & b & !a | (!b | a) & c"
+  },
+  {
+    "number": 181,
+    "complexity": 4,
+    "sample_count": 20543,
+    "area_fraction": 0.00020543,
+    "truth_table": [true, false, true, true, false, true, false, true],
+    "formula": "(!c | !b) & !a | c & a"
+  },
+  {
+    "number": 182,
+    "complexity": 7,
+    "sample_count": 20529,
+    "area_fraction": 0.00020529,
+    "truth_table": [true, false, true, true, false, true, true, false],
+    "formula": "!c & b & !a | (!b | a) & c | !b & a"
+  },
+  {
+    "number": 183,
+    "complexity": 4,
+    "sample_count": 163391,
+    "area_fraction": 0.00163391,
+    "truth_table": [true, false, true, true, false, true, true, true],
+    "formula": "(c | !a) & (!c | a) | !b"
+  },
+  {
+    "number": 184,
+    "complexity": 3,
+    "sample_count": 162991,
+    "area_fraction": 0.00162991,
+    "truth_table": [true, false, true, true, true, false, false, false],
+    "formula": "c & !b | b & a"
+  },
+  {
+    "number": 185,
+    "complexity": 4,
+    "sample_count": 20534,
+    "area_fraction": 0.00020534,
+    "truth_table": [true, false, true, true, true, false, false, true],
+    "formula": "(c | b) & a | !b & !a"
+  },
+  {
+    "number": 186,
+    "complexity": 2,
+    "sample_count": 645582,
+    "area_fraction": 0.00645582,
+    "truth_table": [true, false, true, true, true, false, true, false],
+    "formula": "c & !b | a"
+  },
+  {
+    "number": 187,
+    "complexity": 1,
+    "sample_count": 1157953,
+    "area_fraction": 0.01157953,
+    "truth_table": [true, false, true, true, true, false, true, true],
+    "formula": "!b | a"
+  },
+  {
+    "number": 188,
+    "complexity": 4,
+    "sample_count": 20304,
+    "area_fraction": 0.00020304,
+    "truth_table": [true, false, true, true, true, true, false, false],
+    "formula": "(!b | a) & c | !c & b"
+  },
+  {
+    "number": 189,
+    "complexity": 5,
+    "sample_count": 9153,
+    "area_fraction": 0.00009153,
+    "truth_table": [true, false, true, true, true, true, false, true],
+    "formula": "c & !b | !c & !a | b & a"
+  },
+  {
+    "number": 190,
+    "complexity": 4,
+    "sample_count": 163188,
+    "area_fraction": 0.00163188,
+    "truth_table": [true, false, true, true, true, true, true, false],
+    "formula": "c & !b | !c & b | a"
+  },
+  {
+    "number": 191,
+    "complexity": 2,
+    "sample_count": 646066,
+    "area_fraction": 0.00646066,
+    "truth_table": [true, false, true, true, true, true, true, true],
+    "formula": "!c | !b | a"
+  },
+  {
+    "number": 192,
+    "complexity": 1,
+    "sample_count": 1156984,
+    "area_fraction": 0.01156984,
+    "truth_table": [true, true, false, false, false, false, false, false],
+    "formula": "c & b"
+  },
+  {
+    "number": 193,
+    "complexity": 4,
+    "sample_count": 20359,
+    "area_fraction": 0.00020359,
+    "truth_table": [true, true, false, false, false, false, false, true],
+    "formula": "!c & !b & !a | c & b"
+  },
+  {
+    "number": 194,
+    "complexity": 4,
+    "sample_count": 20517,
+    "area_fraction": 0.00020517,
+    "truth_table": [true, true, false, false, false, false, true, false],
+    "formula": "!c & !b & a | c & b"
+  },
+  {
+    "number": 195,
+    "complexity": 3,
+    "sample_count": 33360,
+    "area_fraction": 0.0003336,
+    "truth_table": [true, true, false, false, false, false, true, true],
+    "formula": "(c | !b) & (!c | b)"
+  },
+  {
+    "number": 196,
+    "complexity": 2,
+    "sample_count": 644435,
+    "area_fraction": 0.00644435,
+    "truth_table": [true, true, false, false, false, true, false, false],
+    "formula": "(c | !a) & b"
+  },
+  {
+    "number": 197,
+    "complexity": 3,
+    "sample_count": 163614,
+    "area_fraction": 0.00163614,
+    "truth_table": [true, true, false, false, false, true, false, true],
+    "formula": "c & b | !c & !a"
+  },
+  {
+    "number": 198,
+    "complexity": 5,
+    "sample_count": 9251,
+    "area_fraction": 0.00009251,
+    "truth_table": [true, true, false, false, false, true, true, false],
+    "formula": "!c & !b & a | (c | !a) & b"
+  },
+  {
+    "number": 199,
+    "complexity": 4,
+    "sample_count": 20390,
+    "area_fraction": 0.0002039,
+    "truth_table": [true, true, false, false, false, true, true, true],
+    "formula": "(!b | !a) & !c | c & b"
+  },
+  {
+    "number": 200,
+    "complexity": 2,
+    "sample_count": 645519,
+    "area_fraction": 0.00645519,
+    "truth_table": [true, true, false, false, true, false, false, false],
+    "formula": "(c | a) & b"
+  },
+  {
+    "number": 201,
+    "complexity": 5,
+    "sample_count": 9017,
+    "area_fraction": 0.00009017,
+    "truth_table": [true, true, false, false, true, false, false, true],
+    "formula": "!c & !b & !a | (c | a) & b"
+  },
+  {
+    "number": 202,
+    "complexity": 3,
+    "sample_count": 162991,
+    "area_fraction": 0.00162991,
+    "truth_table": [true, true, false, false, true, false, true, false],
+    "formula": "c & b | !c & a"
+  },
+  {
+    "number": 203,
+    "complexity": 4,
+    "sample_count": 20640,
+    "area_fraction": 0.0002064,
+    "truth_table": [true, true, false, false, true, false, true, true],
+    "formula": "(!b | a) & !c | c & b"
+  },
+  {
+    "number": 204,
+    "complexity": 0,
+    "sample_count": 1494573,
+    "area_fraction": 0.01494573,
+    "truth_table": [true, true, false, false, true, true, false, false],
+    "formula": "b"
+  },
+  {
+    "number": 205,
+    "complexity": 2,
+    "sample_count": 645412,
+    "area_fraction": 0.00645412,
+    "truth_table": [true, true, false, false, true, true, false, true],
+    "formula": "!c & !a | b"
+  },
+  {
+    "number": 206,
+    "complexity": 2,
+    "sample_count": 644755,
+    "area_fraction": 0.00644755,
+    "truth_table": [true, true, false, false, true, true, true, false],
+    "formula": "!c & a | b"
+  },
+  {
+    "number": 207,
+    "complexity": 1,
+    "sample_count": 1157400,
+    "area_fraction": 0.011574,
+    "truth_table": [true, true, false, false, true, true, true, true],
+    "formula": "!c | b"
+  },
+  {
+    "number": 208,
+    "complexity": 2,
+    "sample_count": 644271,
+    "area_fraction": 0.00644271,
+    "truth_table": [true, true, false, true, false, false, false, false],
+    "formula": "(b | !a) & c"
+  },
+  {
+    "number": 209,
+    "complexity": 3,
+    "sample_count": 163217,
+    "area_fraction": 0.00163217,
+    "truth_table": [true, true, false, true, false, false, false, true],
+    "formula": "(c | !b) & (b | !a)"
+  },
+  {
+    "number": 210,
+    "complexity": 5,
+    "sample_count": 9210,
+    "area_fraction": 0.0000921,
+    "truth_table": [true, true, false, true, false, false, true, false],
+    "formula": "!c & !b & a | (b | !a) & c"
+  },
+  {
+    "number": 211,
+    "complexity": 4,
+    "sample_count": 20286,
+    "area_fraction": 0.00020286,
+    "truth_table": [true, true, false, true, false, false, true, true],
+    "formula": "(b | !a) & c | !c & !b"
+  },
+  {
+    "number": 212,
+    "complexity": 4,
+    "sample_count": 1157319,
+    "area_fraction": 0.01157319,
+    "truth_table": [true, true, false, true, false, true, false, false],
+    "formula": "(c & b | !a) & (c | b)"
+  },
+  {
+    "number": 213,
+    "complexity": 2,
+    "sample_count": 644857,
+    "area_fraction": 0.00644857,
+    "truth_table": [true, true, false, true, false, true, false, true],
+    "formula": "c & b | !a"
+  },
+  {
+    "number": 214,
+    "complexity": 7,
+    "sample_count": 20117,
+    "area_fraction": 0.00020117,
+    "truth_table": [true, true, false, true, false, true, true, false],
+    "formula": "!c & !b & a | (b | !a) & c | b & !a"
+  },
+  {
+    "number": 215,
+    "complexity": 4,
+    "sample_count": 163894,
+    "area_fraction": 0.00163894,
+    "truth_table": [true, true, false, true, false, true, true, true],
+    "formula": "(c | !b) & (!c | b) | !a"
+  },
+  {
+    "number": 216,
+    "complexity": 3,
+    "sample_count": 163137,
+    "area_fraction": 0.00163137,
+    "truth_table": [true, true, false, true, true, false, false, false],
+    "formula": "c & !a | b & a"
+  },
+  {
+    "number": 217,
+    "complexity": 4,
+    "sample_count": 20562,
+    "area_fraction": 0.00020562,
+    "truth_table": [true, true, false, true, true, false, false, true],
+    "formula": "(c | !b) & !a | b & a"
+  },
+  {
+    "number": 218,
+    "complexity": 4,
+    "sample_count": 20532,
+    "area_fraction": 0.00020532,
+    "truth_table": [true, true, false, true, true, false, true, false],
+    "formula": "(!c | b) & a | c & !a"
+  },
+  {
+    "number": 219,
+    "complexity": 5,
+    "sample_count": 9374,
+    "area_fraction": 0.00009374,
+    "truth_table": [true, true, false, true, true, false, true, true],
+    "formula": "(c | !b) & (b | !a) | !c & a"
+  },
+  {
+    "number": 220,
+    "complexity": 2,
+    "sample_count": 645020,
+    "area_fraction": 0.0064502,
+    "truth_table": [true, true, false, true, true, true, false, false],
+    "formula": "c & !a | b"
+  },
+  {
+    "number": 221,
+    "complexity": 1,
+    "sample_count": 1159066,
+    "area_fraction": 0.01159066,
+    "truth_table": [true, true, false, true, true, true, false, true],
+    "formula": "b | !a"
+  },
+  {
+    "number": 222,
+    "complexity": 4,
+    "sample_count": 164083,
+    "area_fraction": 0.00164083,
+    "truth_table": [true, true, false, true, true, true, true, false],
+    "formula": "c & !a | !c & a | b"
+  },
+  {
+    "number": 223,
+    "complexity": 2,
+    "sample_count": 643999,
+    "area_fraction": 0.00643999,
+    "truth_table": [true, true, false, true, true, true, true, true],
+    "formula": "!c | b | !a"
+  },
+  {
+    "number": 224,
+    "complexity": 2,
+    "sample_count": 643392,
+    "area_fraction": 0.00643392,
+    "truth_table": [true, true, true, false, false, false, false, false],
+    "formula": "(b | a) & c"
+  },
+  {
+    "number": 225,
+    "complexity": 5,
+    "sample_count": 9191,
+    "area_fraction": 0.00009191,
+    "truth_table": [true, true, true, false, false, false, false, true],
+    "formula": "!c & !b & !a | (b | a) & c"
+  },
+  {
+    "number": 226,
+    "complexity": 3,
+    "sample_count": 163270,
+    "area_fraction": 0.0016327,
+    "truth_table": [true, true, true, false, false, false, true, false],
+    "formula": "(c | !b) & (b | a)"
+  },
+  {
+    "number": 227,
+    "complexity": 4,
+    "sample_count": 20492,
+    "area_fraction": 0.00020492,
+    "truth_table": [true, true, true, false, false, false, true, true],
+    "formula": "(b | a) & c | !c & !b"
+  },
+  {
+    "number": 228,
+    "complexity": 3,
+    "sample_count": 163644,
+    "area_fraction": 0.00163644,
+    "truth_table": [true, true, true, false, false, true, false, false],
+    "formula": "b & !a | c & a"
+  },
+  {
+    "number": 229,
+    "complexity": 4,
+    "sample_count": 20337,
+    "area_fraction": 0.00020337,
+    "truth_table": [true, true, true, false, false, true, false, true],
+    "formula": "(!c | b) & !a | c & a"
+  },
+  {
+    "number": 230,
+    "complexity": 4,
+    "sample_count": 20265,
+    "area_fraction": 0.00020265,
+    "truth_table": [true, true, true, false, false, true, true, false],
+    "formula": "(c | !b) & a | b & !a"
+  },
+  {
+    "number": 231,
+    "complexity": 5,
+    "sample_count": 9082,
+    "area_fraction": 0.00009082,
+    "truth_table": [true, true, true, false, false, true, true, true],
+    "formula": "c & b | !c & !a | !b & a"
+  },
+  {
+    "number": 232,
+    "complexity": 4,
+    "sample_count": 1159900,
+    "area_fraction": 0.011599,
+    "truth_table": [true, true, true, false, true, false, false, false],
+    "formula": "(c | b) & a | c & b"
+  },
+  {
+    "number": 233,
+    "complexity": 7,
+    "sample_count": 20468,
+    "area_fraction": 0.00020468,
+    "truth_table": [true, true, true, false, true, false, false, true],
+    "formula": "!c & !b & !a | (b | a) & c | b & a"
+  },
+  {
+    "number": 234,
+    "complexity": 2,
+    "sample_count": 643633,
+    "area_fraction": 0.00643633,
+    "truth_table": [true, true, true, false, true, false, true, false],
+    "formula": "c & b | a"
+  },
+  {
+    "number": 235,
+    "complexity": 4,
+    "sample_count": 163157,
+    "area_fraction": 0.00163157,
+    "truth_table": [true, true, true, false, true, false, true, true],
+    "formula": "(c | !b) & (!c | b) | a"
+  },
+  {
+    "number": 236,
+    "complexity": 2,
+    "sample_count": 643947,
+    "area_fraction": 0.00643947,
+    "truth_table": [true, true, true, false, true, true, false, false],
+    "formula": "c & a | b"
+  },
+  {
+    "number": 237,
+    "complexity": 4,
+    "sample_count": 162886,
+    "area_fraction": 0.00162886,
+    "truth_table": [true, true, true, false, true, true, false, true],
+    "formula": "(c | !a) & (!c | a) | b"
+  },
+  {
+    "number": 238,
+    "complexity": 1,
+    "sample_count": 1158988,
+    "area_fraction": 0.01158988,
+    "truth_table": [true, true, true, false, true, true, true, false],
+    "formula": "b | a"
+  },
+  {
+    "number": 239,
+    "complexity": 2,
+    "sample_count": 643130,
+    "area_fraction": 0.0064313,
+    "truth_table": [true, true, true, false, true, true, true, true],
+    "formula": "!c | b | a"
+  },
+  {
+    "number": 240,
+    "complexity": 0,
+    "sample_count": 1497316,
+    "area_fraction": 0.01497316,
+    "truth_table": [true, true, true, true, false, false, false, false],
+    "formula": "c"
+  },
+  {
+    "number": 241,
+    "complexity": 2,
+    "sample_count": 646073,
+    "area_fraction": 0.00646073,
+    "truth_table": [true, true, true, true, false, false, false, true],
+    "formula": "!b & !a | c"
+  },
+  {
+    "number": 242,
+    "complexity": 2,
+    "sample_count": 644703,
+    "area_fraction": 0.00644703,
+    "truth_table": [true, true, true, true, false, false, true, false],
+    "formula": "!b & a | c"
+  },
+  {
+    "number": 243,
+    "complexity": 1,
+    "sample_count": 1157906,
+    "area_fraction": 0.01157906,
+    "truth_table": [true, true, true, true, false, false, true, true],
+    "formula": "c | !b"
+  },
+  {
+    "number": 244,
+    "complexity": 2,
+    "sample_count": 644156,
+    "area_fraction": 0.00644156,
+    "truth_table": [true, true, true, true, false, true, false, false],
+    "formula": "b & !a | c"
+  },
+  {
+    "number": 245,
+    "complexity": 1,
+    "sample_count": 1157986,
+    "area_fraction": 0.01157986,
+    "truth_table": [true, true, true, true, false, true, false, true],
+    "formula": "c | !a"
+  },
+  {
+    "number": 246,
+    "complexity": 4,
+    "sample_count": 163377,
+    "area_fraction": 0.00163377,
+    "truth_table": [true, true, true, true, false, true, true, false],
+    "formula": "b & !a | !b & a | c"
+  },
+  {
+    "number": 247,
+    "complexity": 2,
+    "sample_count": 643525,
+    "area_fraction": 0.00643525,
+    "truth_table": [true, true, true, true, false, true, true, true],
+    "formula": "c | !b | !a"
+  },
+  {
+    "number": 248,
+    "complexity": 2,
+    "sample_count": 645599,
+    "area_fraction": 0.00645599,
+    "truth_table": [true, true, true, true, true, false, false, false],
+    "formula": "b & a | c"
+  },
+  {
+    "number": 249,
+    "complexity": 4,
+    "sample_count": 163137,
+    "area_fraction": 0.00163137,
+    "truth_table": [true, true, true, true, true, false, false, true],
+    "formula": "(b | !a) & (!b | a) | c"
+  },
+  {
+    "number": 250,
+    "complexity": 1,
+    "sample_count": 1157141,
+    "area_fraction": 0.01157141,
+    "truth_table": [true, true, true, true, true, false, true, false],
+    "formula": "c | a"
+  },
+  {
+    "number": 251,
+    "complexity": 2,
+    "sample_count": 645343,
+    "area_fraction": 0.00645343,
+    "truth_table": [true, true, true, true, true, false, true, true],
+    "formula": "c | !b | a"
+  },
+  {
+    "number": 252,
+    "complexity": 1,
+    "sample_count": 1156578,
+    "area_fraction": 0.01156578,
+    "truth_table": [true, true, true, true, true, true, false, false],
+    "formula": "c | b"
+  },
+  {
+    "number": 253,
+    "complexity": 2,
+    "sample_count": 644762,
+    "area_fraction": 0.00644762,
+    "truth_table": [true, true, true, true, true, true, false, true],
+    "formula": "c | b | !a"
+  },
+  {
+    "number": 254,
+    "complexity": 2,
+    "sample_count": 644094,
+    "area_fraction": 0.00644094,
+    "truth_table": [true, true, true, true, true, true, true, false],
+    "formula": "c | b | a"
+  },
+  {
+    "number": 255,
+    "complexity": 1,
+    "sample_count": 1496918,
+    "area_fraction": 0.01496918,
+    "truth_table": [true, true, true, true, true, true, true, true],
+    "formula": "!c | c"
+  }
+]

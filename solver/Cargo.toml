@@ -11,6 +11,8 @@ rand = "0.8"
 rand_distr = "0.4"
 boolean_expression = "0.4"
 itertools = "0.10"
+rayon = "1.5"
+nanoserde = "0.1"
 
 [features]
 z3-support = ["z3"]
