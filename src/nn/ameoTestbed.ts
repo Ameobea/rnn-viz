@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
+export * as tf from '@tensorflow/tfjs';
 import type { Activation } from '@tensorflow/tfjs-layers/dist/activations';
 
 import { Ameo, InterpolatedAmeo, LeakyAmeo, SoftAmeo, SoftLeakyAmeo } from './ameoActivation';
@@ -7,7 +8,7 @@ import { GCUActivation } from './gcuActivation';
 type Initialization =
   | { type: 'zeroes' }
   | { type: 'random' | 'randomPositive'; scale: number }
-  | { type: 'normalDistribution'; min: number; max: number };
+  | { type: 'normalDistribution'; mean?: number; stdDev?: number };
 
 interface AmeoTestbedParams {
   inputSize: number;
@@ -63,6 +64,23 @@ export const formatTestbedRunResult = (runRes: AmeoTestbedRunResult): string => 
 
 tf.setBackend('cpu');
 
+// https://mika-s.github.io/javascript/random/normal-distributed/2019/05/15/generating-normally-distributed-random-numbers-in-javascript.html
+function boxMullerTransform() {
+  const u1 = Math.random();
+  const u2 = Math.random();
+
+  const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+  const z1 = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
+
+  return { z0, z1 };
+}
+
+// https://mika-s.github.io/javascript/random/normal-distributed/2019/05/15/generating-normally-distributed-random-numbers-in-javascript.html
+function getNormallyDistributedRandomNumber(mean: number, stddev: number) {
+  const { z0 } = boxMullerTransform();
+  return z0 * stddev + mean;
+}
+
 export class AmeoTestbed {
   private params: AmeoTestbedParams;
 
@@ -85,30 +103,14 @@ export class AmeoTestbed {
         return new Array(this.params.inputSize).fill(0).map(() => (Math.random() * 2 - 1) * scale);
       }
       case 'normalDistribution': {
-        // https://stackoverflow.com/a/49434653/3833068
-        const randn_bm = (min: number, max: number, skew = 0) => {
-          let u = 0;
-          let v = 0;
-          while (u === 0) u = Math.random(); //Converting [0,1) to (0,1)
-          while (v === 0) v = Math.random();
-          let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-
-          num = num / 10.0 + 0.5; // Translate to 0 -> 1
-          if (num > 1 || num < 0)
-            num = randn_bm(min, max, skew); // resample between 0 and 1 if out of range
-          else {
-            num = Math.pow(num, skew); // Skew
-            num *= max - min; // Stretch to fill range
-            num += min; // offset to min
-          }
-          return num;
-        };
-
         return new Array(this.params.inputSize).fill(0).map(() => {
           if (this.params.initialization.type !== 'normalDistribution') {
             throw new Error('unreachable');
           }
-          return randn_bm(this.params.initialization.min, this.params.initialization.max);
+          return getNormallyDistributedRandomNumber(
+            this.params.initialization.mean ?? 0,
+            this.params.initialization.stdDev ?? 1
+          );
         });
       }
       default: {
@@ -191,7 +193,7 @@ export class AmeoTestbed {
     return validationRes;
   };
 
-  public run(attempts: number): AmeoTestbedRunResult {
+  public async run(attempts: number): Promise<AmeoTestbedRunResult> {
     let perfectFitCount = 0;
     let linearlySeparableCount = 0;
     let failureCount = 0;
@@ -258,6 +260,8 @@ export class AmeoTestbed {
 
       const validationRes = this.validate(weights, bias);
       console.log(`[${i}]: ${formatValidationRes(validationRes)}`);
+      console.log('Weights:', Array.from(weights.dataSync()));
+      console.log('Bias:', bias.dataSync()[0]);
       switch (validationRes) {
         case ValidationRes.Failure:
           failureCount += 1;
@@ -278,6 +282,8 @@ export class AmeoTestbed {
           bias: Array.from(bias.dataSync()),
         });
       }
+
+      await new Promise(resolve => setTimeout(resolve, 0));
     }
 
     return { perfectFitCount, linearlySeparableCount, failureCount };

@@ -47,6 +47,11 @@
       uPlotInst.setData([
         new Array(data.length).fill(null).map((_, i) => i),
         data.map(d => d.complexity),
+        // data.map(d => {
+        //   const trueCount = d.truth_table.filter(t => t).length;
+        //   const falseCount = d.truth_table.length - trueCount;
+        //   return Math.min(trueCount, falseCount);
+        // }),
         data.map(d => d.sample_count),
       ]);
     }
