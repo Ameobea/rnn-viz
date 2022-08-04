@@ -13,6 +13,7 @@ boolean_expression = "0.4"
 itertools = "0.10"
 rayon = "1.5"
 nanoserde = "0.1"
+hdrhistogram = "7.5"
 
 [features]
 z3-support = ["z3"]

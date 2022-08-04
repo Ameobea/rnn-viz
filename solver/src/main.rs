@@ -870,6 +870,40 @@ fn compare_complexities_to_distribution() {
     println!("{}", SerJson::serialize_json(&all_stats));
 }
 
+fn addition_bias() {
+    let iters = 10_000;
+
+    let distr = Normal::new(0., 0.5).unwrap();
+    let mut thread_rng = rand::thread_rng();
+    for input_count in [
+        1usize, 2, 3, 4, 5, 10, 15, 20, 30, 50, 100, 150, 200, 400, 1000, 10_000, 50_000,
+    ] {
+        let mut hist: hdrhistogram::Histogram<u64> = hdrhistogram::Histogram::new(2).unwrap();
+        for _ in 0..iters {
+            let mut inputs: Vec<f64> = Vec::with_capacity(input_count);
+            for _ in 0..input_count {
+                inputs.push(distr.sample(&mut thread_rng));
+            }
+
+            let sum = inputs.iter().sum::<f64>().max(-10.).min(10.);
+            // Scale sum from [-10, 10] to [0, 1_000_000]
+            let scaled_sum = (sum + 10.) * (1_000_000 as f64 / 20.);
+            hist.record((scaled_sum as u64).min(1_000_000 - 1)).unwrap();
+        }
+
+        let mut distr = Vec::new();
+        for i in 0..10usize {
+            let v = hist.value_at_quantile(i as f64 / 10.);
+            // scale back to [-10, 10]
+            let v = (v as f64 / (1_000_000 as f64 / 20.) - 10.)
+                .max(-10.)
+                .min(10.);
+            distr.push(format!("{:.2}", v));
+        }
+        println!("input count {input_count}: {:?}", distr);
+    }
+}
+
 fn main() {
     sanity2();
     sanity();
@@ -903,5 +937,7 @@ fn main() {
 
     // paper_repro();
 
-    compare_complexities_to_distribution();
+    // compare_complexities_to_distribution();
+
+    addition_bias()
 }
