@@ -191,40 +191,6 @@
   $: {
     if (!activate) fullOutputs = null;
     else {
-      /* prettier-ignore */
-      // const fullInputs: number[][][] = [
-      //   [[-1, -1, -1], [-1, -1, -1]],
-      //   [[1, -1, -1], [-1, -1, -1]],
-      //   [[-1, 1, -1], [-1, -1, -1]],
-      //   [[1, 1, -1], [-1, -1, -1]],
-      //   [[-1, -1, 1], [-1, -1, -1]],
-      //   [[1, -1, 1], [-1, -1, -1]],
-      //   [[-1, 1, 1], [-1, -1, -1]],
-      //   [[1, 1, 1], [-1, -1, -1]],
-      //   [[-1, -1, 1], [-1, -1, 1]], // 8
-      //   [[1, -1, 1], [-1, -1, 1]],
-      //   [[-1, 1, 1], [-1, -1, 1]], // 10
-      //   [[1, 1, 1], [-1, -1, 1]],
-      //   [[-1, 1, 1], [-1, 1, 1]], // 12
-      //   [[1, 1, 1], [-1, 1, 1]], // 13
-      //   [[1, 1, 1], [1, 1, 1]], // 14
-      //   [[1, 1, 1, -1], [-1, -1, -1, 1]],
-      //   [[-1, -1, -1, 1], [-1, -1, -1, 1]], // 16
-      //   [[-1, 1, 1, -1], [1, 1, -1, 1]],
-      //   [[1, 1,1, -1], [1, 1, -1, 1]],
-      //   [[-1, -1, -1, 1], [1, 1, -1, 1]],
-      //   [[1, -1, -1, 1], [1, 1, -1, 1]],
-      //   [[-1, 1, -1, 1], [1, 1, -1, 1]],
-      //   [[1, 1, -1, 1], [1, 1, -1, 1]],
-      //   [[-1, -1, 1, 1], [1, 1, -1, 1]],
-      //   [[1, -1, 1, 1], [1, 1, -1, 1]],
-      //   [[-1, 1, 1, 1], [1, 1, -1, 1]],
-      //   [[1, 1, 1, 1], [1, 1, -1, 1]],
-      //   [[1, 1, 1, 1], [-1, -1, 1, 1]],
-      //   [[1, 1, 1, 1], [1, -1, 1, 1]],
-      //   [[1, 1, 1, 1], [-1, 1, 1, 1]],
-      //   [[1, 1, 1, 1], [1, 1, 1, 1]], // 30
-      // ];
       const fullInputs = countBinary(8, 0.1, 32).map(x => [x, []]);
       const localActivate = activate;
       Promise.all(
@@ -243,11 +209,11 @@
                 entries.push(value);
               });
 
-              const layer1Neuron7Out = layer1Neuron7(outs[2], outs[3], outs[6]);
-              acc['layer1Neuron7'].push(layer1Neuron7Out);
+              // const layer1Neuron7Out = layer1Neuron7(outs[2], outs[3], outs[6]);
+              // acc['layer1Neuron7'].push(layer1Neuron7Out);
 
-              const layer1Neuron9Out = layer1Neuron9(outs[11], outs[6]);
-              acc['layer1Neuron9'].push(layer1Neuron9Out);
+              // const layer1Neuron9Out = layer1Neuron9(outs[11], outs[6]);
+              // acc['layer1Neuron9'].push(layer1Neuron9Out);
 
               return acc;
             },
@@ -258,8 +224,8 @@
               5: [] as number[],
               6: [] as number[],
               11: [] as number[],
-              layer1Neuron7: [] as number[],
-              layer1Neuron9: [] as number[],
+              // layer1Neuron7: [] as number[],
+              // layer1Neuron9: [] as number[],
             }
           )
         )
@@ -271,7 +237,7 @@
 </script>
 
 <div class="root">
-  <div class="checkboxes-container">
+  <!-- <div class="checkboxes-container">
     {#each Array(3) as _, i}
       <input type="checkbox" bind:checked={inputs[0][i]} />
     {/each}
@@ -280,10 +246,10 @@
     {#each Array(3) as _, i}
       <input type="checkbox" bind:checked={inputs[1][i]} />
     {/each}
-  </div>
+  </div> -->
 
   <div class="output">
-    {#if output !== null && output !== undefined}
+    <!-- {#if output !== null && output !== undefined}
       2: {output['2']}
       <br />
       3: {output['3']}
@@ -299,7 +265,7 @@
       combined: {layer1Neuron7(output['2'], output['3'], output['6'])}
     {:else}
       <span>Loading...</span>
-    {/if}
+    {/if} -->
 
     {#if fullOutputs}
       <OutputPlot
@@ -312,7 +278,7 @@
 
 <style lang="css">
   .root {
-    margin-top: 50px;
+    margin-top: -40px;
     display: flex;
     flex-direction: column;
     align-items: center;

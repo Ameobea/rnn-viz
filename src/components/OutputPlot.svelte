@@ -44,8 +44,8 @@
 
   const renderChart = (containerNode: HTMLElement) => {
     uPlotInst = new UPlot({
-      width: window.innerWidth / 2 - 20,
-      height: 600,
+      width: window.innerWidth - 20,
+      height: 480,
       series: [
         { label: 'input sum' },
         ...outputs.map((o, i) => ({
@@ -60,13 +60,13 @@
       axes: [
         {
           show: true,
-          label: 'input (decimal)',
+          label: 'Summed Input (decimal)',
           stroke: '#ccc',
           ticks: { size: 14, stroke: '#cccccc55', width: 1 },
         },
         {
           show: true,
-          label: 'output',
+          label: 'Neuron Output',
           stroke: '#ccc',
           ticks: { show: true, stroke: '#ccc', width: 1 },
           grid: { show: true, stroke: '#cccccc55', width: 1, dash: [1, 3] },
