@@ -206,27 +206,6 @@
 
   echarts.use([LineChart, GridComponent, SVGRenderer, LegendComponent]);
 
-  function rnn(initialState: number[], inputs: number[][]): number[][] {
-    function rnnStep(state: number[], input: number[]): [number[], number[]] {
-      const combined = [...state, ...input];
-
-      const newState = applyRecurrentTree(combined);
-      const output = applyOutputTree(combined);
-      return [newState, output];
-    }
-
-    type Acc = [number[], number[][]];
-
-    const [_finalState, outputs] = inputs.reduce(
-      ([state, outputs]: Acc, input) => {
-        const [newState, output] = rnnStep(state, input);
-        return [newState, [...outputs, output]];
-      },
-      [initialState, []] as Acc
-    );
-    return outputs;
-  }
-
   let variant: VariantParams = { type: 'interpolated', factor: 1, leaky: true };
   let ameoActivationMod: typeof import('../nn/ameoActivation') | null = null;
   let engine: typeof import('../engineComp/engine') | null = null;
@@ -338,15 +317,6 @@
 
   {#if variant.type !== 'gaussian' && variant.type !== 'gcu'}
     <div class="controls">
-      <!-- <div>
-        <label for="smooth-checkbox">Smooth</label>
-        <input
-          type="checkbox"
-          id="smooth-checkbox"
-          checked={variant.type === 'single' && variant.smooth}
-          on:change={evt => handleChange({ type: 'single', smooth: evt.currentTarget.checked })}
-        />
-      </div> -->
       <div>
         <label for="leaky-checkbox">Leaky</label>
         <input
@@ -357,16 +327,6 @@
             handleChange({ type: 'interpolated', leaky: evt.currentTarget.checked })}
         />
       </div>
-      <!-- <div>
-        <label for="leaky-checkbox">Interpolated</label>
-        <input
-          type="checkbox"
-          id="leaky-checkbox"
-          checked={variant.type === 'interpolated'}
-          on:change={evt =>
-            handleChange({ type: evt.currentTarget.checked ? 'interpolated' : 'single' })}
-        />
-      </div> -->
       {#if variant.type === 'interpolated'}
         <div>
           <label for="interpolation-factor-slider">Interpolation Factor</label>

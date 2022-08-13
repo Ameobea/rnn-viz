@@ -22,9 +22,7 @@ export class VoxelPlot3D {
 
   private voxelContainer = new THREE.InstancedMesh(
     new THREE.BoxBufferGeometry(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE),
-    new THREE.MeshNormalMaterial({
-      // color: 0x008800,
-    }),
+    new THREE.MeshNormalMaterial(),
     MAX_VOXEL_COUNT
   );
 
@@ -52,24 +50,7 @@ export class VoxelPlot3D {
     this.controls.rotateSpeed = 3.5;
     this.controls.update();
 
-    // const ambientlight = new THREE.AmbientLight(0xe3d2d2, 0.8);
-    // this.scene.add(ambientlight);
-
-    // {
-    //   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    //   directionalLight.position.set(-2, 0, 0);
-    //   directionalLight.lookAt(0, 0, 0);
-    //   this.scene.add(directionalLight);
-    // }
-    // {
-    //   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-    //   directionalLight.position.set(0, 0, 2);
-    //   directionalLight.lookAt(0, 0, 0);
-    //   this.scene.add(directionalLight);
-    // }
-
     this.scene.add(this.voxelContainer);
-    // this.scene.add(new THREE.AxesHelper(5));
 
     this.canvasResizeObserver = new ResizeObserver(_entries => {
       this.handleResize(canvas);

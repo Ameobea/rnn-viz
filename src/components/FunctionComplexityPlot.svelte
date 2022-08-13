@@ -73,7 +73,7 @@
       height: 600,
       series: [
         {
-          label: 'Equation',
+          label: 'Formula',
           scale: 'x',
           value: (self: uPlot, rawValue: number, seriesIdx: number, idx: number) =>
             data[idx].formula,
