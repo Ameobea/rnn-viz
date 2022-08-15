@@ -198,7 +198,6 @@
   import { LineChart } from 'echarts/charts.js';
   import { GridComponent } from 'echarts/components.js';
   import { SVGRenderer } from 'echarts/renderers.js';
-  // import { CanvasRenderer } from 'echarts/renderers.js';
   import { LegendComponent } from 'echarts/components';
   import { onMount } from 'svelte';
 
@@ -322,7 +321,7 @@
         <input
           type="checkbox"
           id="leaky-checkbox"
-          checked={variant.type === 'single' && variant.leaky}
+          checked={variant.leaky}
           on:change={evt =>
             handleChange({ type: 'interpolated', leaky: evt.currentTarget.checked })}
         />
