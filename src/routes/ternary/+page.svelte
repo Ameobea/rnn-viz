@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 
   onMount(async () => {
-    const { AmeoTestbed, formatTestbedRunResult, tf } = await import('../nn/ameoTestbed');
+    const { AmeoTestbed, formatTestbedRunResult, tf } = await import('../../nn/ameoTestbed');
     tf.setBackend('cpu');
 
     // const targetFunction = ([cond, ifTrue, ifFalse]: boolean[]) => (cond ? ifTrue : ifFalse);

@@ -26,8 +26,8 @@
 
   const buildActivationSeries = (
     params: VariantParams,
-    engine: typeof import('../engineComp/engine'),
-    ameoActivationMod: typeof import('../nn/ameoActivation') | null
+    engine: typeof import('../../engineComp/engine'),
+    ameoActivationMod: typeof import('../../nn/ameoActivation') | null
   ): EChartsOption['series'] => {
     const pointCount = 250;
     const range = [-4, 4];
@@ -206,8 +206,8 @@
   echarts.use([LineChart, GridComponent, SVGRenderer, LegendComponent]);
 
   let variant: VariantParams = { type: 'interpolated', factor: 1, leaky: true };
-  let ameoActivationMod: typeof import('../nn/ameoActivation') | null = null;
-  let engine: typeof import('../engineComp/engine') | null = null;
+  let ameoActivationMod: typeof import('../../nn/ameoActivation') | null = null;
+  let engine: typeof import('../../engineComp/engine') | null = null;
   let chartContainer: HTMLDivElement | null = null;
   let chartInst: echarts.ECharts | null = null;
 
@@ -235,7 +235,7 @@
       throw new Error('Chart container ref not set');
     }
 
-    engine = await import('../engineComp/engine').then(async engine => {
+    engine = await import('../../engineComp/engine').then(async engine => {
       await engine.default();
       return engine;
     });

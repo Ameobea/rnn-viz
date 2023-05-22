@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Variable, Rank, Tensor } from '@tensorflow/tfjs';
 
-  import LossPlot from 'src/components/LossPlot.svelte';
+  import LossPlot from '../../components/LossPlot.svelte';
   import { onDestroy, onMount } from 'svelte';
   import { writable } from 'svelte/store';
 
@@ -17,14 +17,14 @@
   let stopped = false;
 
   onMount(async () => {
-    const engine = await import('../engineComp/engine').then(async engine => {
+    const engine = await import('../../engineComp/engine').then(async engine => {
       await engine.default();
       return engine;
     });
-    const { tf } = await import('../nn/customRNN');
-    const { GCUActivation, SineActivation } = await import('src/nn/gcuActivation');
-    const { QuantizationRegularizer } = await import('../nn/QuantizationRegularizer');
-    const ameoActivationModule = await import('../nn/ameoActivation');
+    const { tf } = await import('../../nn/customRNN');
+    const { GCUActivation, SineActivation } = await import('../../nn/gcuActivation');
+    const { QuantizationRegularizer } = await import('../../nn/QuantizationRegularizer');
+    const ameoActivationModule = await import('../../nn/ameoActivation');
     ameoActivationModule.setWasmEngine(engine);
     tf.setBackend('cpu');
 

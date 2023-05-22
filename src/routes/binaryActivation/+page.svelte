@@ -108,7 +108,7 @@
 
   const layer1Neuron9 = (out11: number, out6: number) => Math.tanh(5.38 * out11 + 0.726 * out6);
 
-  const activate = (vals: number[], engine: typeof import('../engineComp/engine')) => {
+  const activate = (vals: number[], engine: typeof import('../../engineComp/engine')) => {
     const sum0 = vals.map((val, ix) => val * weights0[ix]).reduce((a, b) => a + b, 0) + bias0;
     const sum2 = vals.map((val, ix) => val * weights2[ix]).reduce((a, b) => a + b, 0) + bias2;
     const sum3 = vals.map((val, ix) => val * weights3[ix]).reduce((a, b) => a + b, 0) + bias3;
@@ -131,11 +131,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import OutputPlot from 'src/components/OutputPlot.svelte';
+  import OutputPlot from '../../components/OutputPlot.svelte';
 
-  let engine: typeof import('../engineComp/engine') | null = null;
+  let engine: typeof import('../../engineComp/engine') | null = null;
   onMount(async () => {
-    import('../engineComp/engine').then(async engineMod => {
+    import('../../engineComp/engine').then(async engineMod => {
       await engineMod.default();
       engine = engineMod;
     });

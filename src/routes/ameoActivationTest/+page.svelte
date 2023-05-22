@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 
   onMount(async () => {
-    const { Ameo, SoftLeakyAmeo, tfc } = await import('../nn/ameoActivation');
+    const { Ameo, SoftLeakyAmeo, tfc } = await import('../../nn/ameoActivation');
     const ameo = new Ameo();
     const ameoGrad = tfc.grad(x => ameo.apply(x));
     const min = -1.2;

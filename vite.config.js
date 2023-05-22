@@ -15,7 +15,7 @@ const config = {
     include: ['echarts'],
   },
   ssr: {
-    noExternal: ['echarts'].filter(Boolean),
+    noExternal: ['echarts', 'zrender'],
   },
 };
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import FunctionComplexityPlot from 'src/components/FunctionComplexityPlot.svelte';
-  import functionComplexityDistrs from '../data/functionComplexityDistr.json';
+  import FunctionComplexityPlot from '../../components/FunctionComplexityPlot.svelte';
+  import functionComplexityDistrs from '../../data/functionComplexityDistr.json';
 </script>
 
 <div class="root">

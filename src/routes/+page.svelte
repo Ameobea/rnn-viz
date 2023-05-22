@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RNNDefinition } from 'src/nn/RNN';
+  import type { RNNDefinition } from '../nn/RNN';
 
   import { onMount } from 'svelte';
 
@@ -25,7 +25,7 @@
         trainableInitialState: true,
       },
     ];
-    const { RNNViz } = await import('src/viz/RNNViz');
+    const { RNNViz } = await import('../viz/RNNViz');
     if (!canvas) {
       throw new Error('Expected canvas to be mounted by now');
     }

@@ -75,8 +75,8 @@
         {
           label: 'Formula',
           scale: 'x',
-          value: (self: uPlot, rawValue: number, seriesIdx: number, idx: number) =>
-            data[idx].formula,
+          value: (self: uPlot, rawValue: number, seriesIdx: number, idx: number | null) =>
+            idx !== null ? data[idx]?.formula ?? '' : '',
         },
         {
           label: 'Boolean Complexity',

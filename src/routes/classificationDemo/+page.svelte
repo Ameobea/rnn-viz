@@ -116,7 +116,7 @@
     bias = params[2];
   }
 
-  let engine: typeof import('../engineComp/engine') | null = null;
+  let engine: typeof import('../../engineComp/engine') | null = null;
   let xWeight = 0.3;
   let yWeight = 0.3;
   let bias = 0;
@@ -173,7 +173,7 @@
 
     enableAmeo = functionName.toLowerCase().includes('ameo');
 
-    engine = await import('../engineComp/engine').then(async engine => {
+    engine = await import('../../engineComp/engine').then(async engine => {
       await engine.default();
       return engine;
     });

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { VoxelPlot3D } from '../viz/VoxelPlot3D/VoxelPlot3D';
+  import type { VoxelPlot3D } from '../../viz/VoxelPlot3D/VoxelPlot3D';
   let canvas: HTMLCanvasElement | null = null;
 
   let xWeight = -1;
@@ -14,7 +14,7 @@
   }
 
   onMount(async () => {
-    const { VoxelPlot3D } = await import('../viz/VoxelPlot3D/VoxelPlot3D');
+    const { VoxelPlot3D } = await import('../../viz/VoxelPlot3D/VoxelPlot3D');
     if (!canvas) {
       throw new Error('Expected canvas to be mounted by now');
     }

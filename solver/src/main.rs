@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 use std::collections::HashMap;
 
 use itertools::Itertools;

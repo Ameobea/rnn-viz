@@ -12,9 +12,7 @@ const config = {
     adapter: adapter({ precompress: true }),
     prerender: {
       concurrency: 6,
-      default: true,
     },
-    floc: true,
   },
   experimental: {
     inspector: {

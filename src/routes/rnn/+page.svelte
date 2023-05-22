@@ -6,7 +6,7 @@
 </script>
 
 <script lang="ts">
-  import LossPlot from 'src/components/LossPlot.svelte';
+  import LossPlot from '../../components/LossPlot.svelte';
 
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
@@ -21,12 +21,12 @@
   const epochs = 1000;
 
   onMount(async () => {
-    const engine = await import('../engineComp/engine').then(async engine => {
+    const engine = await import('../../engineComp/engine').then(async engine => {
       await engine.default();
       return engine;
     });
-    const { tf, ...mod } = await import('../nn/customRNN');
-    const { QuantizationRegularizer } = await import('src/nn/QuantizationRegularizer');
+    const { tf, ...mod } = await import('../../nn/customRNN');
+    const { QuantizationRegularizer } = await import('../../nn/QuantizationRegularizer');
     tf.setBackend('cpu');
 
     // const initializer = tf.initializers.randomUniform({ minval: -1.5, maxval: 1.5 });
@@ -71,7 +71,6 @@
 
     const model = new tf.Sequential();
     model.add(rnn);
-    console.log(cell0.losses);
     // model.add(tf.layers.dense({ units: 8, activation: 'tanh' }));
     // model.add(
     //   tf.layers.dense({

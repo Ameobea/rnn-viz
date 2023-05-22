@@ -20,11 +20,13 @@ fn build_expr(inputs: &[Vec<bool>], output: &[bool]) -> Expr<char> {
                 if *v {
                     Expr::Terminal(CHARS[i])
                 } else {
-                    Expr::Not(box Expr::Terminal(CHARS[i]))
+                    Expr::Not(Box::new(Expr::Terminal(CHARS[i])))
                 }
             })
-            .fold(Expr::Const(true), |a, b| Expr::And(box a, box b));
-        expr = Expr::Or(box expr, box sub_expr);
+            .fold(Expr::Const(true), |a, b| {
+                Expr::And(Box::new(a), Box::new(b))
+            });
+        expr = Expr::Or(Box::new(expr), Box::new(sub_expr));
     }
     expr.simplify_via_bdd()
 }
@@ -126,29 +128,32 @@ pub(crate) fn paper_repro() {
 
     // (a & ((!b & c) v (b & !c))) v (!a & ((!b & !c) v (b & c)))
     let theirs_minimal: Expr<char> = Expr::Or(
-        box Expr::And(
-            box Expr::Terminal('a'),
-            box Expr::Or(
-                box Expr::And(
-                    box Expr::Not(box Expr::Terminal('b')),
-                    box Expr::Terminal('c'),
-                ),
-                box Expr::And(
-                    box Expr::Terminal('b'),
-                    box Expr::Not(box Expr::Terminal('c')),
-                ),
-            ),
-        ),
-        box Expr::And(
-            box Expr::Not(box Expr::Terminal('a')),
-            box Expr::Or(
-                box Expr::And(
-                    box Expr::Not(box Expr::Terminal('b')),
-                    box Expr::Not(box Expr::Terminal('c')),
-                ),
-                box Expr::And(box Expr::Terminal('b'), box Expr::Terminal('c')),
-            ),
-        ),
+        Box::new(Expr::And(
+            Box::new(Expr::Terminal('a')),
+            Box::new(Expr::Or(
+                Box::new(Expr::And(
+                    Box::new(Expr::Not(Box::new(Expr::Terminal('b')))),
+                    Box::new(Expr::Terminal('c')),
+                )),
+                Box::new(Expr::And(
+                    Box::new(Expr::Terminal('b')),
+                    Box::new(Expr::Not(Box::new(Expr::Terminal('c')))),
+                )),
+            )),
+        )),
+        Box::new(Expr::And(
+            Box::new(Expr::Not(Box::new(Expr::Terminal('a')))),
+            Box::new(Expr::Or(
+                Box::new(Expr::And(
+                    Box::new(Expr::Not(Box::new(Expr::Terminal('b')))),
+                    Box::new(Expr::Not(Box::new(Expr::Terminal('c')))),
+                )),
+                Box::new(Expr::And(
+                    Box::new(Expr::Terminal('b')),
+                    Box::new(Expr::Terminal('c')),
+                )),
+            )),
+        )),
     );
     let theirs_len = expr_len(&theirs_minimal);
     println!("Theirs Minimal: {}", format_expr_postfix(&theirs_minimal));
