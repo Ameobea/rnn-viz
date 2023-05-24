@@ -271,4 +271,4 @@
   });
 </script>
 
-<LossPlot iters={epochs} losses={$losses} accuracies={$accuracies} />
+<LossPlot iters={epochs} totalLosses={$losses} accuracies={$accuracies} />

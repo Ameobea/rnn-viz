@@ -238,8 +238,6 @@ export class MySimpleRNNCell extends RNNCell {
   }
 
   build(inputShape: Shape | Shape[]): void {
-    console.log(this.biasRegularizer, this.kernelRegularizer, this.recurrentRegularizer);
-
     inputShape = getExactlyOneShape(inputShape) as Shape;
     this.outputTree = this.addWeight(
       'output_tree',
@@ -330,6 +328,7 @@ export interface MyRNNLayerArgs extends RNNLayerArgs {
   trainableInitialState?: boolean;
   initialStateInitializer?: InitializerIdentifier;
   initialStateActivation?: ActivationIdentifier | null;
+  initialStateRegularizer?: RegularizerIdentifier | Regularizer | null;
 }
 
 export class MyRNN extends tf.RNN {
@@ -339,6 +338,7 @@ export class MyRNN extends tf.RNN {
   readonly trainableInitialState: boolean;
   readonly initialStateInitializer: InitializerIdentifier;
   readonly initialStateActivation: Activation | null;
+  readonly initialStateRegularizer: RegularizerIdentifier | Regularizer | null;
 
   public initialStateValues?: LayerVariable | LayerVariable[];
 
@@ -357,6 +357,7 @@ export class MyRNN extends tf.RNN {
     this.initialStateActivation = args.initialStateActivation
       ? getActivation(args.initialStateActivation)
       : null;
+    this.initialStateRegularizer = args.initialStateRegularizer ?? null;
   }
 
   public build(inputShape: Shape | Shape[]): void {
@@ -369,7 +370,7 @@ export class MyRNN extends tf.RNN {
           [stateSize],
           undefined,
           getInitializer(this.initialStateInitializer),
-          undefined,
+          this.initialStateRegularizer ? getRegularizer(this.initialStateRegularizer) : undefined,
           true
         );
 
@@ -416,6 +417,7 @@ export class MyRNN extends tf.RNN {
     return tidy(() => {
       if (this.initialStateValues) {
         if (Array.isArray(this.initialStateValues) && this.initialStateValues.length > 1) {
+          console.log({ initialStateValues: this.initialStateValues });
           throw new Error('MyRNNCell accepts only a single initial state value.');
         }
 

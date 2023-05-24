@@ -2,7 +2,8 @@
   import UPlot from 'uplot';
   import 'uplot/dist/uPlot.min.css';
 
-  export let losses: number[];
+  export let totalLosses: number[];
+  export let finalLosses: number[];
   export let accuracies: number[];
   export let iters: number;
 
@@ -11,7 +12,7 @@
   $: if (uPlotInst) {
     uPlotInst.setData([
       new Array<number>(iters).fill(0).map((_, i) => i),
-      losses,
+      totalLosses,
       accuracies.map(x => x * 100),
     ]);
   }
@@ -28,9 +29,9 @@
           scale: 'loss',
         },
         {
-          label: 'Validation Accuracy',
+          label: 'Traing Loss',
           stroke: 'yellow',
-          scale: 'acc',
+          scale: 'loss',
         },
       ],
       axes: [
@@ -43,13 +44,13 @@
           grid: { show: true, stroke: '#cccccc88', width: 1 },
           scale: 'loss',
         },
-        {
-          show: true,
-          side: 1,
-          label: 'Validation Accuracy (%)',
-          stroke: '#ccc',
-          scale: 'acc',
-        },
+        // {
+        //   show: true,
+        //   side: 1,
+        //   label: 'Validation Accuracy (%)',
+        //   stroke: '#ccc',
+        //   scale: 'acc',
+        // },
       ],
       scales: {
         x: { time: false },
@@ -58,7 +59,8 @@
       },
       id: 'loss-plot',
     });
-    uPlotInst.setData([losses.map((_, i) => i), losses]);
+
+    uPlotInst.setData([finalLosses.map((_, i) => i), finalLosses, totalLosses]);
     containerNode.appendChild(uPlotInst.root);
   };
 </script>

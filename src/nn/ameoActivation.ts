@@ -376,13 +376,20 @@ const nativeSoftLeakyAmeoImpl = createSimpleBinaryCPUKernelImpl(
 
     let y: number;
     if (x <= -2) y = leakyness * (x + 2);
-    else if (x <= -1.5) y = 8 * Math.pow(x + 2, 4);
-    else if (x <= -0.5)
-      y = -8 * Math.pow(x, 4) - 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) - 32 * x - 7;
-    else if (x <= 0.5) y = 8 * Math.pow(x, 4);
-    else if (x <= 1)
-      y = -8 * Math.pow(x, 4) + 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) + 32 * x - 7;
-    else y = leakyness * (x - 1) + 1;
+    else if (x <= -1.5) {
+      const xPlus2 = x + 2;
+      // y = 8 * Math.pow(x + 2, 4);
+      y = 8 * (xPlus2 * xPlus2 * xPlus2 * xPlus2);
+    } else if (x <= -0.5) {
+      // y = -8 * Math.pow(x, 4) - 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) - 32 * x - 7;
+      y = -8 * (x * x * x * x) - 32 * (x * x * x) - 48 * (x * x) - 32 * x - 7;
+    } else if (x <= 0.5) {
+      // y = 8 * Math.pow(x, 4);
+      y = 8 * (x * x * x * x);
+    } else if (x <= 1) {
+      // y = -8 * Math.pow(x, 4) + 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) + 32 * x - 7;
+      y = -8 * (x * x * x * x) + 32 * (x * x * x) - 48 * (x * x) + 32 * x - 7;
+    } else y = leakyness * (x - 1) + 1;
 
     return (y - 0.5) * 2;
   }
@@ -460,11 +467,20 @@ const softLeakyAmeoGradNativeImpl = createSimpleBinaryCPUKernelImpl(
     x -= 0.5;
 
     if (x <= -2) return leakyness;
-    else if (x <= -1.5) return 32 * Math.pow(x + 2, 3);
-    else if (x <= -0.5) return -32 * Math.pow(x, 3) - 96 * Math.pow(x, 2) - 96 * x - 32;
-    else if (x <= 0.5) return 32 * Math.pow(x, 3);
-    else if (x <= 1) return -32 * Math.pow(x, 3) + 96 * Math.pow(x, 2) - 96 * x + 32;
-    else return leakyness;
+    else if (x <= -1.5) {
+      // return 32 * Math.pow(x + 2, 3);
+      const xPlus2 = x + 2;
+      return 32 * (xPlus2 * xPlus2 * xPlus2);
+    } else if (x <= -0.5) {
+      // return -32 * Math.pow(x, 3) - 96 * Math.pow(x, 2) - 96 * x - 32;
+      return -32 * (x * x * x) - 96 * (x * x) - 96 * x - 32;
+    } else if (x <= 0.5) {
+      // return 32 * Math.pow(x, 3);
+      return 32 * (x * x * x);
+    } else if (x <= 1) {
+      // return -32 * Math.pow(x, 3) + 96 * Math.pow(x, 2) - 96 * x + 32;
+      return -32 * (x * x * x) + 96 * (x * x) - 96 * x + 32;
+    } else return leakyness;
   }
 );
 
@@ -558,13 +574,20 @@ const nativeFusedInterpolatedAmeoImplInner = (
 
   let softLeakyAmeoY: number;
   if (x <= -2) softLeakyAmeoY = leakyness * (x + 2);
-  else if (x <= -1.5) softLeakyAmeoY = 8 * Math.pow(x + 2, 4);
-  else if (x <= -0.5)
-    softLeakyAmeoY = -8 * Math.pow(x, 4) - 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) - 32 * x - 7;
-  else if (x <= 0.5) softLeakyAmeoY = 8 * Math.pow(x, 4);
-  else if (x <= 1)
-    softLeakyAmeoY = -8 * Math.pow(x, 4) + 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) + 32 * x - 7;
-  else softLeakyAmeoY = leakyness * (x - 1) + 1;
+  else if (x <= -1.5) {
+    // softLeakyAmeoY = 8 * Math.pow(x + 2, 4);
+    const xPlus2 = x + 2;
+    softLeakyAmeoY = 8 * (xPlus2 * xPlus2 * xPlus2 * xPlus2);
+  } else if (x <= -0.5) {
+    // softLeakyAmeoY = -8 * Math.pow(x, 4) - 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) - 32 * x - 7;
+    softLeakyAmeoY = -8 * (x * x * x * x) - 32 * (x * x * x) - 48 * (x * x) - 32 * x - 7;
+  } else if (x <= 0.5) {
+    // softLeakyAmeoY = 8 * Math.pow(x, 4);
+    softLeakyAmeoY = 8 * (x * x * x * x);
+  } else if (x <= 1) {
+    // softLeakyAmeoY = -8 * Math.pow(x, 4) + 32 * Math.pow(x, 3) - 48 * Math.pow(x, 2) + 32 * x - 7;
+    softLeakyAmeoY = -8 * (x * x * x * x) + 32 * (x * x * x) - 48 * (x * x) + 32 * x - 7;
+  } else softLeakyAmeoY = leakyness * (x - 1) + 1;
 
   softLeakyAmeoY = (softLeakyAmeoY - 0.5) * 2;
 
@@ -598,11 +621,20 @@ const nativeFusedInterpolatedAmeoGradImplInner = (
 
   let softLeakyAmeoGradY: number;
   if (x <= -2) softLeakyAmeoGradY = leakyness;
-  else if (x <= -1.5) softLeakyAmeoGradY = 32 * Math.pow(x + 2, 3);
-  else if (x <= -0.5) softLeakyAmeoGradY = -32 * Math.pow(x, 3) - 96 * Math.pow(x, 2) - 96 * x - 32;
-  else if (x <= 0.5) softLeakyAmeoGradY = 32 * Math.pow(x, 3);
-  else if (x <= 1) softLeakyAmeoGradY = -32 * Math.pow(x, 3) + 96 * Math.pow(x, 2) - 96 * x + 32;
-  else softLeakyAmeoGradY = leakyness;
+  else if (x <= -1.5) {
+    // softLeakyAmeoGradY = 32 * Math.pow(x + 2, 3);
+    const xPlus2 = x + 2;
+    softLeakyAmeoGradY = 32 * (xPlus2 * xPlus2 * xPlus2);
+  } else if (x <= -0.5) {
+    // softLeakyAmeoGradY = -32 * Math.pow(x, 3) - 96 * Math.pow(x, 2) - 96 * x - 32;
+    softLeakyAmeoGradY = -32 * (x * x * x) - 96 * (x * x) - 96 * x - 32;
+  } else if (x <= 0.5) {
+    // softLeakyAmeoGradY = 32 * Math.pow(x, 3);
+    softLeakyAmeoGradY = 32 * (x * x * x);
+  } else if (x <= 1) {
+    // softLeakyAmeoGradY = -32 * Math.pow(x, 3) + 96 * Math.pow(x, 2) - 96 * x + 32;
+    softLeakyAmeoGradY = -32 * (x * x * x) + 96 * (x * x) - 96 * x + 32;
+  } else softLeakyAmeoGradY = leakyness;
 
   const y0Mix = factor;
   const y1Mix = 1 - factor;
