@@ -38,16 +38,17 @@ export class SparseRegularizer extends Regularizer {
       const tanhWeights = shiftedWeights.mul(steepness).tanh().sub(yShift);
 
       // Add a small bit of l1 regularization to help guide weights to zero
-      const l1Weight = absWeights.sum().mul(0.01);
+      const l1Weight = absWeights.mean().mul(0.01);
 
       // Sum over all elements and scale by intensity
-      const penalty: Scalar = (tanhWeights.sum() as Scalar).add(l1Weight).mul(intensity);
+      const penalty: Scalar = (tanhWeights.mean() as Scalar).add(l1Weight).mul(intensity);
+      return penalty;
 
-      // Scale by the number of elements in the tensor
-      const numElements = x.size;
-      const scaledPenalty: Scalar = penalty.div(numElements);
-      // console.log('penalty', scaledPenalty.dataSync()[0]);
-      return scaledPenalty;
+      // // Scale by the number of elements in the tensor
+      // const numElements = x.size;
+      // const scaledPenalty: Scalar = penalty.div(numElements);
+      // // console.log('penalty', scaledPenalty.dataSync()[0]);
+      // return scaledPenalty;
     });
   }
 

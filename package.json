@@ -37,6 +37,7 @@
     "@types/echarts": "^4.9.17",
     "@types/three": "^0.152.0",
     "echarts": "^5.4.2",
+    "graphviz-builder": "^0.1.1",
     "pixi-viewport": "^5.0.1",
     "pixi.js": "^7.2.4",
     "three": "^0.152.2",

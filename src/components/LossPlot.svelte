@@ -54,7 +54,9 @@
       ],
       scales: {
         x: { time: false },
-        loss: { range: [0, 1.2] },
+        loss: {
+          /*range: [0, 2]*/
+        },
         acc: { range: [0, 100] },
       },
       id: 'loss-plot',

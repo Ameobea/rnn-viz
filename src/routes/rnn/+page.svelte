@@ -10,18 +10,26 @@
 
   import { onMount } from 'svelte';
   import { get, writable } from 'svelte/store';
+  import { runGraphTest } from './graphTest';
+  import { RNNGraph, type RNNCellWeights, type RNNGraphParams } from './graph';
 
   let totalLosses = writable([] as number[]);
   let finalLosses = writable([] as number[]);
   let accuracies = writable([] as number[]);
 
-  const seqLen = 4;
+  const seqLen = 6;
   const inputDim = 1;
   const outputDim = 1;
-  const batchSize = 4;
-  const epochs = 50000;
+  const batchSize = 32;
+  const epochs = 2000;
+  const quantIntensity = 0.4;
+  const sparseIntensity = 0.65;
+  const learningRate = 0.01;
 
   onMount(async () => {
+    // runGraphTest().then(console.log);
+    // return;
+
     const engine = await import('../../engineComp/engine').then(async engine => {
       await engine.default();
       return engine;
@@ -34,37 +42,37 @@
 
     // const initializer = tf.initializers.randomUniform({ minval: -1.5, maxval: 1.5 });
     // const initializer = tf.initializers.leCunUniform({});
-    const initializer = tf.initializers.randomNormal({ mean: 0, stddev: 0.5 });
+    const initializer = tf.initializers.glorotNormal({});
     // const activation = { type: 'interpolatedAmeo' as const, factor: 0.9, leakyness: 1 };
     const activation = { type: 'leakyAmeo' as const, leakyness: 0.2 };
     // const activation = 'linear';
 
-    const quantIntensity = 0.08;
-    const sparseIntensity = 0.45;
+    const cellParams = [
+      {
+        stateSize: 8,
+        outputDim: 2,
+        outputActivation: activation,
+        recurrentActivation: activation,
+        useOutputBias: true,
+        useRecurrentBias: true,
+        biasInitializer: initializer,
+        recurrentInitializer: initializer,
+        kernelInitializer: initializer,
+        kernelRegularizer: new ComposedRegularizer(
+          new QuantizationRegularizer(1, quantIntensity),
+          new SparseRegularizer(sparseIntensity, 0.1, 15)
+        ),
+        recurrentRegularizer: new ComposedRegularizer(
+          new QuantizationRegularizer(1, quantIntensity),
+          new SparseRegularizer(sparseIntensity, 0.1, 15)
+        ),
+        biasRegularizer: new QuantizationRegularizer(1, 0.2),
+      },
+    ];
+    const cells = cellParams.map(params => new mod.MySimpleRNNCell(params));
 
     const rnn = new mod.MyRNN({
-      cell: [
-        new mod.MySimpleRNNCell({
-          stateSize: 4,
-          outputDim: 16,
-          outputActivation: activation,
-          recurrentActivation: activation,
-          useOutputBias: true,
-          useRecurrentBias: true,
-          biasInitializer: initializer,
-          recurrentInitializer: initializer,
-          kernelInitializer: initializer,
-          kernelRegularizer: new ComposedRegularizer(
-            new QuantizationRegularizer(1, quantIntensity),
-            new SparseRegularizer(sparseIntensity, 0.1, 15)
-          ),
-          recurrentRegularizer: new ComposedRegularizer(
-            new QuantizationRegularizer(1, quantIntensity),
-            new SparseRegularizer(sparseIntensity, 0.1, 15)
-          ),
-          biasRegularizer: new QuantizationRegularizer(1, 0.2),
-        }),
-      ],
+      cell: cells,
       inputShape: [seqLen, inputDim],
       trainableInitialState: true,
       initialStateRegularizer: new QuantizationRegularizer(1, 0.2),
@@ -76,20 +84,19 @@
 
     const model = new tf.Sequential();
     model.add(rnn);
-    // model.add(tf.layers.dense({ units: 8, activation: 'tanh' }));
-    model.add(
-      tf.layers.dense({
-        units: outputDim,
-        activation: 'linear',
-        kernelInitializer: 'glorotNormal',
-        useBias: false,
-        kernelRegularizer: new ComposedRegularizer(
-          new QuantizationRegularizer(1, quantIntensity),
-          new SparseRegularizer(sparseIntensity, 0.1, 20)
-        ),
-        biasRegularizer: new QuantizationRegularizer(1, 0.2),
-      })
-    );
+    const denseLayerArgs = {
+      units: outputDim,
+      activation: 'linear' as const,
+      kernelInitializer: 'glorotNormal' as const,
+      useBias: false,
+      kernelRegularizer: new ComposedRegularizer(
+        new QuantizationRegularizer(1, quantIntensity),
+        new SparseRegularizer(sparseIntensity, 0.1, 20)
+      ),
+      biasRegularizer: new QuantizationRegularizer(1, 0.2),
+    };
+    const denseLayer = tf.layers.dense(denseLayerArgs);
+    model.add(denseLayer);
 
     // The loss of the whole network including the regularizers
     let lastLoss = Infinity;
@@ -105,36 +112,78 @@
           lastFinalLoss = loss.dataSync()[0];
           return loss;
         }),
-      optimizer: tf.train.adam(0.02),
+      optimizer: tf.train.adam(learningRate),
     });
 
+    // const oneBatchExamples = () => {
+    //   const inputs: (1 | -1)[] = [];
+    //   const outputs: (1 | -1)[] = [];
+    //   for (let i = 0; i < seqLen; i++) {
+    //     const input = randomBoolInput();
+    //     inputs.push(input);
+
+    //     if (i === 0 || i === 1 || i === 2) {
+    //       if (input === 1) {
+    //         outputs.push(1);
+    //       } else {
+    //         outputs.push(-1);
+    //       }
+    //       continue;
+    //     }
+    //     if (i === 0) {
+    //       outputs.push(input);
+    //       continue;
+    //     }
+
+    //     const prevInput = inputs[i - 3];
+    //     // const prevInput = inputs[i - 1];
+    //     const output = xor(input, prevInput);
+    //     outputs.push(output);
+    //   }
+
+    //   return { inputs, outputs };
+    // };
+
     const oneBatchExamples = () => {
-      const inputs: (1 | -1)[] = [];
-      const outputs: (1 | -1)[] = [];
-      for (let i = 0; i < seqLen; i++) {
-        const input = randomBoolInput();
+      const inputs: number[] = [];
+      const outputs: number[] = [];
+
+      const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+
+      for (let i = 0; i < seqLen; i += 1) {
+        const input = oneVal();
         inputs.push(input);
 
-        if (i === 0 || i === 1) {
-          if (input === 1) {
-            outputs.push(1);
-          } else {
-            outputs.push(-1);
-          }
+        if (i === 0) {
+          outputs.push(-1);
           continue;
         }
 
-        const prevInput = inputs[i - 2];
-        const output = xor(input, prevInput);
+        if (input === -1 && inputs[i - 1] === -1 && inputs[i - 2] === -1) {
+          outputs.push(1);
+          continue;
+        }
+
+        // 1 if 2 of the last 3 inputs were 1, else -1
+        if (i === 1) {
+          const output = inputs[i - 1] === 1 && input ? 1 : -1;
+          outputs.push(output);
+          continue;
+        }
+
+        const output = inputs[i - 1] === 1 && inputs[i - 2] === 1 ? 1 : -1;
         outputs.push(output);
       }
 
       return { inputs, outputs };
     };
 
+    const totalLossesLocal: number[] = [];
+    const finalLossesLocal: number[] = [];
+
     for (let i = 0; i < epochs; i++) {
-      const inputBatches: number[][] = [];
-      const outputBatches: number[][] = [];
+      const inputBatches: any[] = [];
+      const outputBatches: any[] = [];
       for (let i = 0; i < batchSize; i++) {
         const { inputs, outputs } = oneBatchExamples();
         inputBatches.push(inputs);
@@ -150,10 +199,14 @@
         callbacks: {
           onBatchEnd: async (batch, logs) => {
             if (logs) {
-              console.log({ trainLoss: logs.loss, finalLoss: lastFinalLoss });
               lastLoss = logs.loss;
-              totalLosses.update(l => [...l, logs.loss]);
-              finalLosses.update(l => [...l, lastFinalLoss]);
+              totalLossesLocal.push(logs.loss);
+              finalLossesLocal.push(lastFinalLoss);
+              if (i % 100 === 0) {
+                totalLosses.set(totalLossesLocal);
+                finalLosses.set(finalLossesLocal);
+                console.log({ trainLoss: logs.loss, finalLoss: lastFinalLoss });
+              }
             }
           },
         },
@@ -172,18 +225,52 @@
       //   });
       // }
 
-      await new Promise(resolve => setTimeout(resolve, 0));
+      if (i % 100 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
       if (lastLoss < 0.01) {
         break;
       }
     }
 
     model.weights.forEach(w => {
-      console.log(w.name);
+      console.log(w.name, w.shape);
       w.read().print();
     });
 
-    // model.save('downloads://rnn');
+    const params: Partial<RNNGraphParams> = { clipThreshold: 0.01 };
+    const cellWeights: RNNCellWeights[] = cells.map((cell, cellIx) => {
+      const params = cellParams[cellIx];
+
+      return {
+        // TODO
+        // initialState: cell.weights.find(w => w.name.includes('initial_state_weights'))!.read(),
+        initialState: tf.tensor(new Float32Array(params.stateSize).fill(0), [params.stateSize]),
+        outputActivation: params.outputActivation,
+        recurrentActivation: params.recurrentActivation,
+        outputSize: params.outputDim,
+        outputTreeWeights: cell.weights.find(w => w.name.includes('output_tree'))!.read(),
+        recurrentTreeWeights: cell.weights.find(w => w.name.includes('recurrent_tree'))!.read(),
+        stateSize: params.stateSize,
+        outputTreeBias: cell.weights.find(w => w.name.includes('output_bias'))?.read(),
+        recurrentTreeBias: cell.weights.find(w => w.name.includes('recurrent_bias'))?.read(),
+      };
+    });
+    const graph = new RNNGraph(
+      inputDim,
+      outputDim,
+      cellWeights,
+      [
+        {
+          weights: denseLayer.weights.find(w => w.name.includes('kernel'))!.read(),
+          bias: denseLayer.weights.find(w => w.name.includes('bias'))?.read(),
+          activation: denseLayerArgs.activation,
+        },
+      ],
+      params
+    );
+
+    console.log(graph.buildGraphviz());
   });
 </script>
 

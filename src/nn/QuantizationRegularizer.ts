@@ -16,13 +16,10 @@ export class QuantizationRegularizer extends Regularizer {
       const xQuantized = x.div(this.quantizationInterval);
       const xQuantizedRounded = xQuantized.round();
       const xQuantizationError = xQuantized.sub(xQuantizedRounded);
-      const xQuantizationErrorSquared = xQuantizationError.abs();
-      const xQuantizationErrorSquaredMean = xQuantizationErrorSquared.mean() as Scalar;
-      const penalty = xQuantizationErrorSquaredMean.mul(this.intensity);
-
-      // Scale by the number of elements in the tensor
-      const numElements = x.size;
-      return penalty.div(numElements);
+      const xQuantizationErrorAbs = xQuantizationError.abs();
+      const xQuantizationErrorAbsMean = xQuantizationErrorAbs.mean() as Scalar;
+      const penalty = xQuantizationErrorAbsMean.mul(this.intensity);
+      return penalty as Scalar;
     });
   }
 

@@ -72,7 +72,7 @@ export class MyStackedRNNCells extends StackedRNNCells {
 MyStackedRNNCells.className = 'MyStackedRNNCells';
 tf.serialization.registerClass(MyStackedRNNCells);
 
-type AmeoActivationIdentifier =
+export type AmeoActivationIdentifier =
   | 'ameo'
   | { type: 'ameo' }
   | 'softAmeo'
@@ -212,7 +212,6 @@ export class MySimpleRNNCell extends RNNCell {
     this.recurrentActivation = getActivation(
       args.recurrentActivation == null ? this.DEFAULT_ACTIVATION : args.recurrentActivation
     );
-    console.log(this.recurrentActivation);
     this.outputActivation = getActivation(
       args.outputActivation == null ? this.DEFAULT_ACTIVATION : args.outputActivation
     );
