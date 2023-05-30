@@ -362,26 +362,26 @@ export class MyRNN extends tf.RNN {
   public build(inputShape: Shape | Shape[]): void {
     super.build(inputShape);
 
-    if (this.trainableInitialState) {
-      const buildInitialStateValues = (stateSize: number, i?: number) =>
-        this.addWeight(
-          `initial_state_weights${i == null ? '' : `_${i}`}`,
-          [stateSize],
-          undefined,
-          getInitializer(this.initialStateInitializer),
-          this.initialStateRegularizer ? getRegularizer(this.initialStateRegularizer) : undefined,
-          true
-        );
+    // if (this.trainableInitialState) {
+    const buildInitialStateValues = (stateSize: number, i?: number) =>
+      this.addWeight(
+        `initial_state_weights${i == null ? '' : `_${i}`}`,
+        [stateSize],
+        undefined,
+        getInitializer(this.initialStateInitializer),
+        this.initialStateRegularizer ? getRegularizer(this.initialStateRegularizer) : undefined,
+        this.trainableInitialState
+      );
 
-      const stateSize = this.cell.stateSize;
-      if (Array.isArray(stateSize)) {
-        this.initialStateValues = stateSize.map((stateSize, i) =>
-          buildInitialStateValues(stateSize, i)
-        );
-      } else {
-        this.initialStateValues = buildInitialStateValues(stateSize);
-      }
+    const stateSize = this.cell.stateSize;
+    if (Array.isArray(stateSize)) {
+      this.initialStateValues = stateSize.map((stateSize, i) =>
+        buildInitialStateValues(stateSize, i)
+      );
+    } else {
+      this.initialStateValues = buildInitialStateValues(stateSize);
     }
+    // }
   }
 
   computeOutputShape(inputShape: Shape | Shape[]): Shape | Shape[] {
@@ -415,30 +415,35 @@ export class MyRNN extends tf.RNN {
   getInitialState(inputs: Tensor): Tensor[] {
     return tidy(() => {
       if (this.initialStateValues) {
-        if (Array.isArray(this.initialStateValues) && this.initialStateValues.length > 1) {
-          console.log({ initialStateValues: this.initialStateValues });
-          throw new Error('MyRNNCell accepts only a single initial state value.');
-        }
+        const vals = Array.isArray(this.initialStateValues)
+          ? this.initialStateValues
+          : [this.initialStateValues];
 
-        // console.log('inputs shape: ', inputs.shape);
-        let initialState = Array.isArray(this.initialStateValues)
-          ? this.initialStateValues[0].read()
-          : this.initialStateValues.read();
-        // console.log('initialState shape: ', initialState.shape);
-        initialState = K.expandDims(initialState, 0);
-        // console.log('initialState shape: ', initialState.shape);
-        initialState = K.tile(initialState, [inputs.shape[0], 1]);
-        // console.log('initialState shape: ', initialState.shape);
-        if (this.initialStateActivation) {
-          initialState = this.initialStateActivation.apply(initialState);
-        }
-
-        return [initialState];
+        return vals.map(val => {
+          // console.log('inputs shape: ', inputs.shape);
+          let initialState = val.read();
+          // console.log('initialState shape: ', initialState.shape);
+          initialState = K.expandDims(initialState, 0);
+          // console.log('initialState shape: ', initialState.shape);
+          initialState = K.tile(initialState, [inputs.shape[0], 1]);
+          // console.log('initialState shape: ', initialState.shape);
+          if (this.initialStateActivation) {
+            initialState = this.initialStateActivation.apply(initialState);
+          }
+          return initialState;
+        });
       }
 
       // Build an all-zero tensor of shape [samples, outputDim].
       // [Samples, timeSteps, inputDim].
-      let initialState: tf.Tensor<tf.Rank> = tf.zeros(inputs.shape);
+      let initialState: tf.Tensor<tf.Rank>;
+      if (this.initialStateInitializer) {
+        const initializer = getInitializer(this.initialStateInitializer);
+        initialState = initializer.apply([inputs.shape[0], this.outputDim], inputs.dtype);
+      } else {
+        initialState = tf.zeros([inputs.shape[0], this.outputDim], inputs.dtype);
+      }
+
       // [Samples].
       initialState = tf.sum(initialState, [1, 2]);
       initialState = K.expandDims(initialState); // [Samples, 1].

@@ -1,4 +1,4 @@
-import { type Tensor, type Rank, type Scalar, tidy, serialization } from '@tensorflow/tfjs';
+import { type Tensor, type Rank, type Scalar, tidy, serialization, scalar } from '@tensorflow/tfjs';
 import { Regularizer } from '@tensorflow/tfjs-layers/dist/regularizers';
 
 export class QuantizationRegularizer extends Regularizer {
@@ -13,6 +13,10 @@ export class QuantizationRegularizer extends Regularizer {
 
   apply(x: Tensor<Rank>): Scalar {
     return tidy(() => {
+      if (this.intensity === 0 || this.quantizationInterval === 0) {
+        return scalar(0);
+      }
+
       const xQuantized = x.div(this.quantizationInterval);
       const xQuantizedRounded = xQuantized.round();
       const xQuantizationError = xQuantized.sub(xQuantizedRounded);

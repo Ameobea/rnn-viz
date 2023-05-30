@@ -16,13 +16,15 @@ export class SparseRegularizer extends Regularizer {
    * Y shift so that the penalty is zero at 0.
    */
   private yShift;
+  private l1Intensity = 0.001;
 
-  constructor(intensity: number, threshold = 0.1, steepness = 100) {
+  constructor(intensity: number, threshold = 0.1, steepness = 100, l1 = 0.001) {
     super();
     this.intensity = intensity;
     this.threshold = threshold;
     this.steepness = steepness;
     this.yShift = Math.tanh(-threshold * steepness);
+    this.l1Intensity = l1;
   }
 
   apply(x: Tensor<Rank>): Scalar {
@@ -37,18 +39,19 @@ export class SparseRegularizer extends Regularizer {
       const shiftedWeights = absWeights.sub(threshold);
       const tanhWeights = shiftedWeights.mul(steepness).tanh().sub(yShift);
 
-      // Add a small bit of l1 regularization to help guide weights to zero
-      const l1Weight = absWeights.mean().mul(0.01);
+      // Add a bit of l1 regularization.  This seems to be important to prevent very large weights.
+      //
+      // Since the penalty of regularizer doesn't activate until the weights are above the threshold,
+      // networks find their way around this by having a very small weight of like 0.02 and then a
+      // very large one of like 10.
+      //
+      // Adding in the l1 penalty helps prevent and keeps the weights smaller overall, allowing for
+      // more effective quantization and pruning.
+      const l1Weight = absWeights.mean().mul(this.l1Intensity);
 
       // Sum over all elements and scale by intensity
-      const penalty: Scalar = (tanhWeights.mean() as Scalar).add(l1Weight).mul(intensity);
+      const penalty: Scalar = (tanhWeights.mean() as Scalar).mul(intensity).add(l1Weight);
       return penalty;
-
-      // // Scale by the number of elements in the tensor
-      // const numElements = x.size;
-      // const scaledPenalty: Scalar = penalty.div(numElements);
-      // // console.log('penalty', scaledPenalty.dataSync()[0]);
-      // return scaledPenalty;
     });
   }
 
