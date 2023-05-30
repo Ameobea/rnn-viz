@@ -14,12 +14,12 @@
   const seqLen = oneSeqExamples().inputs.length;
   const inputDim = oneSeqExamples().inputs[0].length;
   const outputDim = oneSeqExamples().outputs[0].length;
-  const batchSize = 64;
-  const epochs = 4000;
+  const batchSize = 128;
+  const epochs = 10000;
   const quantIntensity = 0.02;
-  const sparseIntensity = 0.1;
+  const sparseIntensity = 0.15;
   const sparseSteepness = 25;
-  const learningRate = 0.01;
+  const learningRate = 0.005;
   const l1 = 0.0;
 
   onMount(async () => {
@@ -42,8 +42,30 @@
 
     const cellParams = [
       {
+        stateSize: 4,
+        outputDim: 3,
+        outputActivation: activation,
+        recurrentActivation: activation,
+        useOutputBias: true,
+        useRecurrentBias: true,
+        biasInitializer: initializer,
+        recurrentInitializer: initializer,
+        kernelInitializer: initializer,
+        kernelRegularizer: new ComposedRegularizer(
+          // new QuantizationRegularizer(1, quantIntensity),
+          new SparseRegularizer(sparseIntensity, 0.025, sparseSteepness, l1)
+          // tf.regularizers.l1({ l1 })
+        ),
+        recurrentRegularizer: new ComposedRegularizer(
+          // new QuantizationRegularizer(1, quantIntensity),
+          new SparseRegularizer(sparseIntensity, 0.025, sparseSteepness, l1)
+          // tf.regularizers.l1({ l1 })
+        ),
+        // biasRegularizer: new QuantizationRegularizer(1, 0.2),
+      },
+      {
         stateSize: 2,
-        outputDim: 2,
+        outputDim: 4,
         outputActivation: activation,
         recurrentActivation: activation,
         useOutputBias: true,

@@ -3,6 +3,7 @@
   import type { RNNGraph } from '../rnn/graph';
   import { browser } from '$app/environment';
   import type { NodeViz } from './NodeViz';
+  import { ColorScaleLegend, getColor } from './ColorScale';
 
   type FetchLayoutState =
     | { type: 'notFetched' }
@@ -29,7 +30,7 @@
 <script lang="ts">
   export let graph: RNNGraph;
 
-  $: graphDotviz = browser ? graph.buildGraphviz({ arrowhead: false }) : '';
+  $: graphDotviz = browser ? graph.buildGraphviz({ arrowhead: false, cluster: false }) : '';
 
   let layoutDataState: FetchLayoutState = { type: 'notFetched' };
 
@@ -77,11 +78,24 @@
     viz = new NodeVizMod.NodeViz(canvas, layoutDataState.layoutData, graph);
   };
 
+  const useColorScaleLegend = (node: HTMLDivElement) => {
+    if (!browser) {
+      return;
+    }
+
+    const legend: SVGSVGElement = ColorScaleLegend(getColor, { height: 24, width: 300 });
+    legend.style.zIndex = '2';
+    legend.style.position = 'absolute';
+    legend.style.top = '0';
+    legend.style.right = '14px';
+    node.appendChild(legend);
+  };
+
   onDestroy(() => void viz?.destroy());
 </script>
 
 <svelte:window bind:innerWidth={windowWidth} bind:innerHeight={windowHeight} />
-<div class="root">
+<div class="root" use:useColorScaleLegend>
   {#if !NodeVizMod || layoutDataState.type === 'loading'}
     <p>Loading...</p>
   {:else if layoutDataState.type === 'error'}

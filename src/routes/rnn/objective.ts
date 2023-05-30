@@ -1,4 +1,4 @@
-const seqLen = 8;
+const seqLen = 9;
 
 // const oneSeqExamples = () => {
 //   const inputs: (1 | -1)[] = [];
@@ -61,40 +61,40 @@ const seqLen = 8;
 const xor = (a: -1 | 1, b: -1 | 1): -1 | 1 =>
   (a === -1 && b === 1) || (a === 1 && b === -1) ? 1 : -1;
 
-// export const oneSeqExamples = () => {
-//   const inputs: [number, number][] = [];
-//   const outputs: [number][] = [];
+export const oneSeqExamples = () => {
+  const inputs: [number, number][] = [];
+  const outputs: [number][] = [];
 
-//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+  const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
 
-//   for (let i = 0; i < seqLen; i += 1) {
-//     const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
-//     // const output: [number] =
-//     //   input[i - 1] === -1
-//     //     ? [-input[1]]
-//     //     : [xor(input[0] as 1 | -1, (inputs[i - 1]?.[1] as 1 | -1 | undefined) ?? -1)];
-//     const output: [number] = (() => {
-//       let cond = false;
-//       if (i === 0) {
-//         return [xor(input[0], -1)];
-//       }
-//       if (i === 1) {
-//         cond = input[0] === -1;
-//       } else if (i === 2) {
-//         cond = input[1] === -1;
-//       }
+  for (let i = 0; i < seqLen; i += 1) {
+    const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
+    // const output: [number] =
+    //   input[i - 1] === -1
+    //     ? [-input[1]]
+    //     : [xor(input[0] as 1 | -1, (inputs[i - 1]?.[1] as 1 | -1 | undefined) ?? -1)];
+    const output: [number] = (() => {
+      let cond = false;
+      if (i === 0) {
+        return [xor(input[0], -1)];
+      }
+      if (i === 1) {
+        cond = input[0] === -1;
+      } else if (i === 2) {
+        cond = input[1] === -1;
+      }
 
-//       if (cond) {
-//         return [-input[1]];
-//       }
-//       return [xor(input[0], (inputs[i - 1]?.[1] ?? -1) as 1 | -1)];
-//     })();
-//     inputs.push(input);
-//     outputs.push(output);
-//   }
+      if (cond) {
+        return [-input[1]];
+      }
+      return [xor(input[0], (inputs[i - 1]?.[1] ?? -1) as 1 | -1)];
+    })();
+    inputs.push(input);
+    outputs.push(output);
+  }
 
-//   return { inputs, outputs };
-// };
+  return { inputs, outputs };
+};
 
 // -1, -1, 1 loop
 /*
@@ -200,21 +200,21 @@ subgraph "cluster_inputs" {
   "input_0" -> "layer_0_recurrent_1" [ label = "-1" ];
 }
 */
-export const oneSeqExamples = () => {
-  const inputs: [number][] = [];
-  const outputs: [number][] = [];
+// export const oneSeqExamples = () => {
+//   const inputs: [number][] = [];
+//   const outputs: [number][] = [];
 
-  const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
 
-  for (let i = 0; i < seqLen; i += 1) {
-    const input: [1 | -1] = [oneVal()];
-    const output: [number] = [i === 0 || i === 1 ? -1 : inputs[i - 2][0]];
-    inputs.push(input);
-    outputs.push(output);
-  }
+//   for (let i = 0; i < seqLen; i += 1) {
+//     const input: [1 | -1] = [oneVal()];
+//     const output: [number] = [i === 0 || i === 1 ? -1 : inputs[i - 2][0]];
+//     inputs.push(input);
+//     outputs.push(output);
+//   }
 
-  return { inputs, outputs };
-};
+//   return { inputs, outputs };
+// };
 
 // input[0] is control, input[1] is data.  Has an internal "mode" which determines if data is output directly or inverted.
 // Starts out outputting input[1] directly.  When control changes from -1 to 1 or 1 to -1, the mode is inverted.

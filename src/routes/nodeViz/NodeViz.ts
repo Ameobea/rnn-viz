@@ -1,28 +1,18 @@
 import { PIXI, Viewport } from '../../viz/RNNViz/pixi';
 import type { RNNGraph, SparseNeuron } from '../rnn/graph';
+import { getColor } from './ColorScale';
 import { parseGraphvizPlainExt, type Point } from './plainExtParsing';
 
 const Conf = {
   LabelColor: 0xffffff,
-  NodeLabelFontSize: 60,
-  EdgeLabelFontSize: 36,
+  NodeLabelFontSize: 40,
+  EdgeLabelFontSize: 26,
   WorldWidth: 2000,
   WorldHeight: 2000,
   EdgeWidth: 3,
-  ArrowheadSize: 33,
+  ArrowheadSize: 24,
   ArrowheadHeightRatio: 0.6,
-};
-
-const getColor = (val: number): number => {
-  // val <= -1: blue
-  // val = 0: white
-  // val >= 1: red
-  //
-  // Smoothly interpolated between
-  const r = Math.min(255, Math.max(0, Math.round(255 * (1 - val))));
-  const g = Math.min(255, Math.max(0, Math.round(255 * (1 - Math.abs(val)))));
-  const b = Math.min(255, Math.max(0, Math.round(255 * (1 + val))));
-  return (r << 16) + (g << 8) + b;
+  TextResolution: 4,
 };
 
 class Edge {
@@ -38,7 +28,7 @@ class Edge {
     controlPoints: Point[],
     start: Point,
     end: Point,
-    label: { text: string; position: Point; fontSize: number },
+    label: { text: string; position: Point; fontSize: number; weight: number },
     lineWidth: number,
     txNode: VizNode
   ) {
@@ -47,13 +37,18 @@ class Edge {
     this.start = start;
     this.end = end;
     this.txNode = txNode;
-    this.color = txNode.getColor();
+    this.color = getColor(txNode.inner.getOutput() * label.weight);
 
     this.labelText = new PIXI.Text(
       label.text,
       new PIXI.TextStyle({ fontSize: label.fontSize, fill: Conf.LabelColor })
     );
-    this.labelText.position.set(label.position.x - 10, label.position.y - label.fontSize / 2);
+    this.labelText.resolution = Conf.TextResolution;
+    this.labelText.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+    // Label position is center, but we want top left
+    const labelX = label.position.x - this.labelText.width / 2;
+    const labelY = label.position.y - label.fontSize / 2;
+    this.labelText.position.set(labelX, labelY);
     this.graphics.addChild(this.labelText);
 
     this.drawSpline(this.color, lineWidth);
@@ -123,7 +118,8 @@ class VizNode {
     y: number,
     width: number,
     height: number,
-    inner: SparseNeuron
+    inner: SparseNeuron,
+    onSelect: (node: VizNode) => void
   ) {
     this.name = name;
     this.x = x;
@@ -136,9 +132,13 @@ class VizNode {
       getNodeLabelFromNodeID(name),
       new PIXI.TextStyle({ fontSize: Conf.NodeLabelFontSize, fill: Conf.LabelColor })
     );
-    // Place label in the center of the node
+    label.resolution = Conf.TextResolution;
+    label.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
     label.position.set(x + width / 2 - label.width / 2, y + height / 2 - label.height / 2);
     this.graphics.addChild(label);
+    this.graphics.interactive = true;
+    this.graphics.cursor = 'pointer';
+    this.graphics.on('pointerdown', () => onSelect(this));
     this.render();
   }
 
@@ -187,7 +187,7 @@ export class NodeViz {
     viewport.drag().pinch().wheel();
     this.app.stage.addChild(viewport);
 
-    const { positionByNodeID, edgeByTxNodeID } = parseGraphvizPlainExt(
+    const { positionByNodeID, edges } = parseGraphvizPlainExt(
       graphvizLayoutData,
       Conf.WorldWidth,
       Conf.WorldHeight
@@ -200,23 +200,30 @@ export class NodeViz {
         throw new Error(`Node ${nodeID} not found in graph`);
       }
 
-      const vizNode = new VizNode(nodeID, pos.x, pos.y, width, height, node);
+      const vizNode = new VizNode(nodeID, pos.x, pos.y, width, height, node, node =>
+        this.handleNodeSelect(node)
+      );
       this.nodes.push(vizNode);
       nodesByID.set(nodeID, vizNode);
     }
 
-    for (const [txNodeID, edge] of edgeByTxNodeID) {
+    for (const edge of edges) {
       const labelText = edge.weight.toFixed(Math.round(edge.weight) === edge.weight ? 0 : 2);
-      const txNode = nodesByID.get(txNodeID);
+      const txNode = nodesByID.get(edge.tx);
       if (!txNode) {
-        throw new Error(`Node ${txNodeID} not found in graph`);
+        throw new Error(`Node ${edge.tx} not found in graph`);
       }
 
       const vizEdge = new Edge(
         edge.controlPoints,
         edge.start,
         edge.end,
-        { fontSize: Conf.EdgeLabelFontSize, position: edge.labelPosition, text: labelText },
+        {
+          fontSize: Conf.EdgeLabelFontSize,
+          position: edge.labelPosition,
+          text: labelText,
+          weight: edge.weight,
+        },
         Conf.EdgeWidth,
         txNode
       );
@@ -230,6 +237,11 @@ export class NodeViz {
     for (const node of this.nodes) {
       viewport.addChild(node.graphics);
     }
+  }
+
+  private handleNodeSelect(node: VizNode) {
+    // TODO
+    console.log(node);
   }
 
   public destroy() {

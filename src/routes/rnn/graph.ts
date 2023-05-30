@@ -97,14 +97,21 @@ export class SparseNeuron {
     };
   }
 
-  public static deserialize(serialized: SerializedSparseNeuron, prevLayer: GraphRNNLayer) {
+  public static deserialize(
+    serialized: SerializedSparseNeuron,
+    prevLayer: GraphRNNLayer,
+    _index: number
+  ) {
     const { weights, bias, name, activation } = serialized;
-    const inputNeuron = prevLayer.getNeuron(weights[0].index);
-    if (!inputNeuron) {
-      throw new Error(`No input neuron for neuron ${name} with index ${weights[0].index}`);
-    }
+
     const neuron = new SparseNeuron(
-      weights.map(({ weight, index }) => ({ weight, index, inputNeuron })),
+      weights.map(({ weight, index }) => {
+        const inputNeuron = prevLayer.getNeuron(index);
+        if (!inputNeuron) {
+          throw new Error(`No input neuron for neuron ${name} with index ${index}`);
+        }
+        return { weight, index, inputNeuron };
+      }),
       bias,
       name,
       activation
@@ -152,9 +159,13 @@ export class InputNeuron extends SparseNeuron {
     };
   }
 
-  public static deserialize(serialized: ReturnType<InputNeuron['serialize']>) {
+  public static deserialize(
+    serialized: SerializedSparseNeuron,
+    _prevLayer: GraphRNNLayer,
+    index: number
+  ) {
     const { name } = serialized;
-    const neuron = new InputNeuron(0);
+    const neuron = new InputNeuron(index);
     neuron.name = name;
     return neuron;
   }
@@ -325,7 +336,7 @@ export class GraphRNNInputLayer implements GraphRNNLayer {
     for (let i = 0; i < neurons.length; i += 1) {
       const neuron = neurons[i];
       if (neuron) {
-        layer.neurons[i] = InputNeuron.deserialize(neuron);
+        layer.neurons[i] = InputNeuron.deserialize(neuron, layer, i);
       }
     }
     return layer;
@@ -789,7 +800,7 @@ export class GraphRNNPostLayer implements GraphRNNLayer {
       if (!neuron) {
         continue;
       }
-      neurons[i] = SparseNeuron.deserialize(neuron, prevLayer);
+      neurons[i] = SparseNeuron.deserialize(neuron, prevLayer, i);
     }
     return new GraphRNNPostLayer(outputDim, neurons);
   }
@@ -845,6 +856,10 @@ export class RNNGraph {
     this.postLayers = postLayers;
     this.allConnectedNeuronsByID = new Map();
 
+    this.pruneUnconnectedNeurons();
+  }
+
+  private pruneUnconnectedNeurons() {
     // Walk the full connected graph and remove any un-connected neurons
     const allConnectedNeuronsByID: Map<string, SparseNeuron> = new Map();
 
@@ -874,7 +889,7 @@ export class RNNGraph {
           continue;
         }
         if (!allConnectedNeuronsByID.has(neuron.name)) {
-          neurons[i];
+          delete neurons[i];
         }
       }
       return neurons;
@@ -976,32 +991,33 @@ export class RNNGraph {
     (window as any).l = undefined;
 
     const g = GVB.digraph('RNN');
+    const clusterPrefix = params?.cluster === false ? '' : 'cluster_';
 
-    const outputs = g.addCluster('cluster_outputs');
+    const outputs = g.addCluster(`${clusterPrefix}outputs`);
     for (let outputIx = 0; outputIx < this.outputs.size; outputIx += 1) {
       const neuron = this.outputs.getNeuron(outputIx)!;
       outputs.addNode(neuron.name);
     }
 
     this.cells.forEach((cell, layerIx) => {
-      const layer = g.addCluster(`cluster_layer_${layerIx}`);
+      const layer = g.addCluster(`${clusterPrefix}layer_${layerIx}`);
 
-      const state = layer.addCluster('cluster_state');
+      const state = layer.addCluster(`${clusterPrefix}state`);
       cell.stateNeurons.forEach(neuron => state.addNode(neuron.name));
 
-      const recurrent = layer.addCluster('cluster_recurrent');
+      const recurrent = layer.addCluster(`${clusterPrefix}recurrent`);
       cell.recurrentNeurons.forEach(neuron => recurrent.addNode(neuron.name));
 
-      const output = layer.addCluster('cluster_output');
+      const output = layer.addCluster(`${clusterPrefix}output`);
       cell.outputNeurons.forEach(neuron => output.addNode(neuron.name));
     });
 
     this.postLayers.forEach((postLayer, layerIx) => {
-      const layer = g.addCluster(`cluster_post_layer_${layerIx}`);
+      const layer = g.addCluster(`${clusterPrefix}post_layer_${layerIx}`);
       postLayer.neurons.forEach(neuron => layer.addNode(neuron.name));
     });
 
-    const inputs = g.addCluster('cluster_inputs');
+    const inputs = g.addCluster(`cluster_${clusterPrefix}inputs`);
     for (let inputIx = 0; inputIx < this.inputLayer.size; inputIx += 1) {
       inputs.addNode(`input_${inputIx}`, {});
     }
@@ -1109,6 +1125,7 @@ export class RNNGraph {
 
 interface BuildGraphvizParams {
   arrowhead?: boolean;
+  cluster?: boolean;
 }
 
 interface SerializedRNNGraph {
