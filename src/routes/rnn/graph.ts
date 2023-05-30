@@ -465,7 +465,10 @@ export class GraphRNNCell implements GraphRNNLayer {
       ? clipAndQuantizeWeights(weights.outputTreeBias.dataSync() as Float32Array, params)
       : null;
 
-    const initialStateData = weights.initialState.dataSync();
+    const initialStateData = clipAndQuantizeWeights(
+      weights.initialState.dataSync() as Float32Array,
+      params
+    );
     if (initialStateData.length !== weights.stateSize) {
       console.log({ weights, initialStateData });
       throw new Error(
