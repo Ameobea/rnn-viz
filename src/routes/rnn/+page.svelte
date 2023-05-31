@@ -63,28 +63,6 @@
         ),
         // biasRegularizer: new QuantizationRegularizer(1, 0.2),
       },
-      // {
-      //   stateSize: 2,
-      //   outputDim: 8,
-      //   outputActivation: activation,
-      //   recurrentActivation: activation,
-      //   useOutputBias: true,
-      //   useRecurrentBias: true,
-      //   biasInitializer: initializer,
-      //   recurrentInitializer: initializer,
-      //   kernelInitializer: initializer,
-      //   kernelRegularizer: new ComposedRegularizer(
-      //     // new QuantizationRegularizer(1, quantIntensity),
-      //     new SparseRegularizer(sparseIntensity, 0.025, sparseSteepness, l1)
-      //     // tf.regularizers.l1({ l1 })
-      //   ),
-      //   recurrentRegularizer: new ComposedRegularizer(
-      //     // new QuantizationRegularizer(1, quantIntensity),
-      //     new SparseRegularizer(sparseIntensity, 0.025, sparseSteepness, l1)
-      //     // tf.regularizers.l1({ l1 })
-      //   ),
-      //   // biasRegularizer: new QuantizationRegularizer(1, 0.2),
-      // },
     ];
     const cells = cellParams.map(params => new mod.MySimpleRNNCell(params));
 

@@ -30,7 +30,15 @@
 <script lang="ts">
   export let graph: RNNGraph;
 
-  $: graphDotviz = browser ? graph.buildGraphviz({ arrowhead: false, cluster: false }) : '';
+  let windowWidth = browser ? window.innerWidth : 0;
+  let windowHeight = browser ? window.innerHeight : 0;
+  $: graphDotviz = browser
+    ? graph.buildGraphviz({
+        arrowhead: false,
+        cluster: false,
+        aspectRatio: windowWidth && windowHeight ? windowHeight / windowWidth : undefined,
+      })
+    : '';
 
   let layoutDataState: FetchLayoutState = { type: 'notFetched' };
 
@@ -44,9 +52,6 @@
         layoutDataState = { type: 'error', error };
       });
   }
-
-  let windowWidth = browser ? window.innerWidth : 0;
-  let windowHeight = browser ? window.innerHeight : 0;
 
   let viz: NodeViz | null = null;
   let NodeVizMod: typeof import('./NodeViz') | null = null;

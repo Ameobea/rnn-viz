@@ -996,7 +996,8 @@ export class RNNGraph {
     const g = GVB.digraph('RNN');
     const clusterPrefix = params?.cluster === false ? '' : 'cluster_';
 
-    const outputs = g.addCluster(`${clusterPrefix}outputs`);
+    const outputs = g.addCluster('cluster_outputs');
+    outputs.set('rank', 'sink');
     for (let outputIx = 0; outputIx < this.outputs.size; outputIx += 1) {
       const neuron = this.outputs.getNeuron(outputIx)!;
       outputs.addNode(neuron.name);
@@ -1020,7 +1021,8 @@ export class RNNGraph {
       postLayer.neurons.forEach(neuron => layer.addNode(neuron.name));
     });
 
-    const inputs = g.addCluster(`cluster_${clusterPrefix}inputs`);
+    const inputs = g.addCluster('cluster_inputs');
+    inputs.set('rank', 'source');
     for (let inputIx = 0; inputIx < this.inputLayer.size; inputIx += 1) {
       inputs.addNode(`input_${inputIx}`, {});
     }
@@ -1050,6 +1052,12 @@ export class RNNGraph {
     if (params?.arrowhead === false) {
       g.setEdgeAttribut('arrowhead', 'none');
     }
+    g.set('ratio', params?.aspectRatio ?? 0.75);
+    g.set('rankdir', 'TB');
+    g.set('center', true);
+    g.set('splines', 'spline');
+    g.set('overlap', false);
+    g.set('nodesep', 0.32);
 
     return g.to_dot();
   }
@@ -1067,7 +1075,6 @@ export class RNNGraph {
     for (let seqIx = 0; seqIx < expectedOuts.length; seqIx += 1) {
       for (let i = 0; i < expectedOuts[seqIx].length; i += 1) {
         if (Math.round(actualOuts[seqIx][i]) !== Math.round(expectedOuts[seqIx][i])) {
-          // console.log(`Expected: ${expectedOuts[seqIx]} Actual: ${actualOuts[seqIx]}`);
           return {
             isValid: false,
             expected: expectedOuts[seqIx],
@@ -1129,6 +1136,7 @@ export class RNNGraph {
 interface BuildGraphvizParams {
   arrowhead?: boolean;
   cluster?: boolean;
+  aspectRatio?: number;
 }
 
 interface SerializedRNNGraph {

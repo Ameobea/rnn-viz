@@ -5,8 +5,8 @@ import { parseGraphvizPlainExt, type Point } from './plainExtParsing';
 
 const Conf = {
   LabelColor: 0xffffff,
-  NodeLabelFontSize: 40,
-  EdgeLabelFontSize: 26,
+  NodeLabelFontSize: 30,
+  EdgeLabelFontSize: 20,
   WorldWidth: 2000,
   WorldHeight: 2000,
   EdgeWidth: 3,
