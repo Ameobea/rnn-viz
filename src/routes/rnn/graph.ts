@@ -1000,31 +1000,33 @@ export class RNNGraph {
     outputs.set('rank', 'sink');
     for (let outputIx = 0; outputIx < this.outputs.size; outputIx += 1) {
       const neuron = this.outputs.getNeuron(outputIx)!;
-      outputs.addNode(neuron.name);
+      outputs.addNode(neuron.name).set('label', `O${outputIx}`);
     }
 
     this.cells.forEach((cell, layerIx) => {
       const layer = g.addCluster(`${clusterPrefix}layer_${layerIx}`);
 
       const state = layer.addCluster(`${clusterPrefix}state`);
-      cell.stateNeurons.forEach(neuron => state.addNode(neuron.name));
+      cell.stateNeurons.forEach(neuron => state.addNode(neuron.name).set('label', 'S'));
 
       const recurrent = layer.addCluster(`${clusterPrefix}recurrent`);
-      cell.recurrentNeurons.forEach(neuron => recurrent.addNode(neuron.name));
+      cell.recurrentNeurons.forEach(neuron => recurrent.addNode(neuron.name).set('label', 'R'));
 
       const output = layer.addCluster(`${clusterPrefix}output`);
-      cell.outputNeurons.forEach(neuron => output.addNode(neuron.name));
+      cell.outputNeurons.forEach(neuron => output.addNode(neuron.name).set('label', 'O'));
     });
 
     this.postLayers.forEach((postLayer, layerIx) => {
       const layer = g.addCluster(`${clusterPrefix}post_layer_${layerIx}`);
-      postLayer.neurons.forEach(neuron => layer.addNode(neuron.name));
+      postLayer.neurons.forEach(neuron => layer.addNode(neuron.name).set('label', 'P'));
     });
 
     const inputs = g.addCluster('cluster_inputs');
+    inputs.setNodeAttribut('shape', 'circle');
+    // inputs.setNodeAttribut('width', 0.8);
     inputs.set('rank', 'source');
     for (let inputIx = 0; inputIx < this.inputLayer.size; inputIx += 1) {
-      inputs.addNode(`input_${inputIx}`, {});
+      inputs.addNode(`input_${inputIx}`, {}).set('label', `IN${inputIx}`);
     }
 
     const processedNodes = new Set<string>();
@@ -1036,8 +1038,12 @@ export class RNNGraph {
       processedNodes.add(neuron.name);
 
       neuron.weights.forEach(({ inputNeuron, weight }) => {
+        let label = weight.toFixed(3);
+        // trim trailing zeros
+        label = label.replace(/\.?0+$/, '');
+
         g.addEdge(inputNeuron.name, neuron.name, {
-          label: weight.toFixed(Math.round(weight) === weight ? 0 : 3),
+          label: params?.edgeLabels === false ? '1' : label,
         });
         addEdges(inputNeuron);
       });
@@ -1052,6 +1058,7 @@ export class RNNGraph {
     if (params?.arrowhead === false) {
       g.setEdgeAttribut('arrowhead', 'none');
     }
+    g.setNodeAttribut('shape', 'square');
     g.set('ratio', params?.aspectRatio ?? 0.75);
     g.set('rankdir', 'TB');
     g.set('center', true);
@@ -1137,6 +1144,7 @@ interface BuildGraphvizParams {
   arrowhead?: boolean;
   cluster?: boolean;
   aspectRatio?: number;
+  edgeLabels?: boolean;
 }
 
 interface SerializedRNNGraph {

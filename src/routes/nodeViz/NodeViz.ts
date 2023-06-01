@@ -9,9 +9,9 @@ const Conf = {
   EdgeLabelFontSize: 20,
   WorldWidth: 2000,
   WorldHeight: 2000,
-  EdgeWidth: 3,
-  ArrowheadSize: 24,
-  ArrowheadHeightRatio: 0.6,
+  EdgeWidth: 2,
+  ArrowheadSize: 20,
+  ArrowheadHeightRatio: 0.65,
   TextResolution: 4,
 };
 
@@ -19,23 +19,17 @@ class Edge {
   public graphics: PIXI.Graphics;
   private labelText: PIXI.Text;
   private controlPoints: Point[];
-  private start: Point;
-  private end: Point;
   private txNode: VizNode;
   private color: number;
 
   constructor(
     controlPoints: Point[],
-    start: Point,
-    end: Point,
     label: { text: string; position: Point; fontSize: number; weight: number },
     lineWidth: number,
     txNode: VizNode
   ) {
     this.graphics = new PIXI.Graphics();
     this.controlPoints = controlPoints;
-    this.start = start;
-    this.end = end;
     this.txNode = txNode;
     this.color = getColor(txNode.inner.getOutput() * label.weight);
 
@@ -55,27 +49,40 @@ class Edge {
   }
 
   private drawSpline(color: number, lineWidth: number): void {
+    if (this.controlPoints.length < 4) {
+      throw new Error('At least 4 control points are required.');
+    }
+
+    if (this.controlPoints.length % 3 !== 1) {
+      throw new Error('Invalid number of control points; expected 3n + 1');
+    }
+
     this.graphics.clear();
     this.graphics.lineStyle(lineWidth, color);
 
-    this.graphics.moveTo(this.start.x, this.start.y);
-    for (let i = 0; i < this.controlPoints.length - 3; i += 3) {
-      this.graphics.bezierCurveTo(
-        this.controlPoints[i].x,
-        this.controlPoints[i].y,
-        this.controlPoints[i + 1].x,
-        this.controlPoints[i + 1].y,
-        this.controlPoints[i + 2].x,
-        this.controlPoints[i + 2].y
-      );
-    }
-    this.graphics.lineTo(this.end.x, this.end.y);
+    const start = this.controlPoints[0];
+    this.graphics.moveTo(start.x, start.y);
 
-    this.drawArrowHead(this.end, this.controlPoints[this.controlPoints.length - 1], color);
+    const startPoint = this.controlPoints[0];
+    this.graphics.moveTo(startPoint.x, startPoint.y);
+
+    let p1: Point, p2: Point, p3: Point;
+    for (let i = 1; i < this.controlPoints.length; i += 3) {
+      p1 = this.controlPoints[i];
+      p2 = this.controlPoints[i + 1];
+      p3 = this.controlPoints[i + 2];
+      this.graphics.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+    }
+
+    this.drawArrowHead(p3!, p2!, p1!, this.color);
   }
 
-  private drawArrowHead(end: Point, prev: Point, color: number): void {
-    const angle = Math.atan2(end.y - prev.y, end.x - prev.x);
+  private drawArrowHead(end: Point, prev1: Point, prev2: Point, color: number): void {
+    // Computes the direction of the last bezier curve in the spline to determine
+    // the arrowhead direction
+    const dx = end.x - prev1.x;
+    const dy = end.y - prev1.y;
+    const angle = Math.atan2(dy, dx);
 
     const point1 = {
       x: end.x - Conf.ArrowheadSize * Math.cos(angle - (Math.PI / 6) * Conf.ArrowheadHeightRatio),
@@ -98,11 +105,6 @@ class Edge {
   }
 }
 
-const getNodeLabelFromNodeID = (nodeID: string): string => {
-  // TODO
-  return nodeID;
-};
-
 class VizNode {
   public name: string;
   public x: number;
@@ -118,6 +120,7 @@ class VizNode {
     y: number,
     width: number,
     height: number,
+    labelText: string,
     inner: SparseNeuron,
     onSelect: (node: VizNode) => void
   ) {
@@ -129,7 +132,7 @@ class VizNode {
     this.inner = inner;
 
     const label = new PIXI.Text(
-      getNodeLabelFromNodeID(name),
+      labelText,
       new PIXI.TextStyle({ fontSize: Conf.NodeLabelFontSize, fill: Conf.LabelColor })
     );
     label.resolution = Conf.TextResolution;
@@ -194,13 +197,13 @@ export class NodeViz {
     );
     const nodesByID = new Map<string, VizNode>();
 
-    for (const [nodeID, { pos, width, height }] of positionByNodeID) {
+    for (const [nodeID, { pos, width, height, label }] of positionByNodeID) {
       const node = graph.allConnectedNeuronsByID.get(nodeID);
       if (!node) {
         throw new Error(`Node ${nodeID} not found in graph`);
       }
 
-      const vizNode = new VizNode(nodeID, pos.x, pos.y, width, height, node, node =>
+      const vizNode = new VizNode(nodeID, pos.x, pos.y, width, height, label, node, node =>
         this.handleNodeSelect(node)
       );
       this.nodes.push(vizNode);
@@ -208,7 +211,9 @@ export class NodeViz {
     }
 
     for (const edge of edges) {
-      const labelText = edge.weight.toFixed(Math.round(edge.weight) === edge.weight ? 0 : 2);
+      let labelText = edge.weight.toFixed(Math.round(edge.weight) === edge.weight ? 0 : 2);
+      // trim trailing zeros
+      labelText = labelText.replace(/\.?0+$/, '');
       const txNode = nodesByID.get(edge.tx);
       if (!txNode) {
         throw new Error(`Node ${edge.tx} not found in graph`);
@@ -216,8 +221,6 @@ export class NodeViz {
 
       const vizEdge = new Edge(
         edge.controlPoints,
-        edge.start,
-        edge.end,
         {
           fontSize: Conf.EdgeLabelFontSize,
           position: edge.labelPosition,

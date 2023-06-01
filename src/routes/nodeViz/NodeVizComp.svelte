@@ -36,6 +36,7 @@
     ? graph.buildGraphviz({
         arrowhead: false,
         cluster: false,
+        // edgeLabels: false,
         aspectRatio: windowWidth && windowHeight ? windowHeight / windowWidth : undefined,
       })
     : '';

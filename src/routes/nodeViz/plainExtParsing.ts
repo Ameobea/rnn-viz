@@ -2,8 +2,6 @@ export interface NodeVizEdge {
   tx: string;
   rx: string;
   weight: number;
-  start: Point;
-  end: Point;
   controlPoints: Point[];
   labelPosition: Point;
 }
@@ -14,7 +12,7 @@ export interface Point {
 }
 
 export interface NodeVizLayout {
-  positionByNodeID: Map<string, { pos: Point; width: number; height: number }>;
+  positionByNodeID: Map<string, { pos: Point; width: number; height: number; label: string }>;
   edges: NodeVizEdge[];
 }
 
@@ -23,7 +21,10 @@ export const parseGraphvizPlainExt = (
   worldWidth: number,
   worldHeight: number
 ): NodeVizLayout => {
-  const positionByNodeID = new Map<string, { pos: Point; width: number; height: number }>();
+  const positionByNodeID = new Map<
+    string,
+    { pos: Point; width: number; height: number; label: string }
+  >();
   const edges: NodeVizEdge[] = [];
 
   const lines = input.split('\n');
@@ -41,6 +42,7 @@ export const parseGraphvizPlainExt = (
     } else if (parts[0] === 'node') {
       const width = parseFloat(parts[4]) * scale;
       const height = parseFloat(parts[5]) * scale;
+      const label = parts[6].replace(/\\n/g, '\n');
 
       // Pos of node is center, but we want top left
       const centerY = graphHeight - parseFloat(parts[3]);
@@ -49,7 +51,7 @@ export const parseGraphvizPlainExt = (
         y: centerY * scale - height / 2,
       };
 
-      positionByNodeID.set(parts[1], { pos, width, height });
+      positionByNodeID.set(parts[1], { pos, width, height, label });
     } else if (parts[0] === 'edge') {
       const controlPoints: Point[] = [];
       const controlPointCount = parseInt(parts[3], 10);
@@ -70,8 +72,6 @@ export const parseGraphvizPlainExt = (
         tx: parts[1],
         rx: parts[2],
         weight,
-        start: controlPoints.shift() || { x: 0, y: 0 },
-        end: controlPoints.pop() || { x: 0, y: 0 },
         controlPoints: controlPoints,
         labelPosition,
       };
