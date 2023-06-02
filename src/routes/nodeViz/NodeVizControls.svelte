@@ -10,8 +10,6 @@
 </div>
 
 <style lang="css">
-  /* Minimal, monospaced, dark theme UI */
-
   .root {
     display: flex;
     flex-direction: column;

@@ -2,31 +2,29 @@
   import LossPlot from '../../components/LossPlot.svelte';
 
   import { onMount } from 'svelte';
-  import { get, writable } from 'svelte/store';
-  import { runGraphTest } from './graphTest';
+  import { writable } from 'svelte/store';
   import { RNNGraph, type RNNCellWeights, type RNNGraphParams } from './graph';
   import { oneSeqExamples } from './objective';
 
-  let totalLosses = writable([] as number[]);
-  let finalLosses = writable([] as number[]);
-  let accuracies = writable([] as number[]);
+  const totalLosses = writable([] as number[]);
+  const lossesWithoutRegularization = writable([] as number[]);
 
   const seqLen = oneSeqExamples().inputs.length;
   const inputDim = oneSeqExamples().inputs[0].length;
   const outputDim = oneSeqExamples().outputs[0].length;
   const batchSize = 128;
   const epochs = 40000;
-  const quantIntensity = 0.02;
+  const _quantIntensity = 0.02;
   const sparseIntensity = 0.15;
   const sparseSteepness = 25;
   const learningRate = 0.01;
   const l1 = 0.0;
 
   onMount(async () => {
-    const engine = await import('../../engineComp/engine').then(async engine => {
-      await engine.default();
-      return engine;
-    });
+    // const engine = await import('../../engineComp/engine').then(async engine => {
+    //   await engine.default();
+    //   return engine;
+    // });
     const { tf, ...mod } = await import('../../nn/customRNN');
     // const { QuantizationRegularizer } = await import('../../nn/QuantizationRegularizer');
     const { ComposedRegularizer } = await import('../../nn/ComposedRegularizer');
@@ -139,8 +137,7 @@
               finalLossesLocal.push(lastFinalLoss);
               if (i % 100 === 0) {
                 totalLosses.set(totalLossesLocal);
-                finalLosses.set(finalLossesLocal);
-                console.log({ trainLoss: logs.loss, finalLoss: lastFinalLoss });
+                lossesWithoutRegularization.set(finalLossesLocal);
               }
             }
           },
@@ -266,6 +263,5 @@
 <LossPlot
   iters={epochs}
   totalLosses={$totalLosses}
-  finalLosses={$finalLosses}
-  accuracies={$accuracies}
+  lossesWithoutRegularization={$lossesWithoutRegularization}
 />

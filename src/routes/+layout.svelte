@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { maybeInitSentry } from 'src/sentry';
+  import { maybeInitSentry } from '../sentry';
 
   import 'src/index.css';
 

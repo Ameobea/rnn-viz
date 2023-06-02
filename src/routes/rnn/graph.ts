@@ -59,6 +59,7 @@ export class SparseNeuron {
   public name: string;
   private activationID: AmeoActivationIdentifier | 'linear' | 'tanh';
   public activation: (x: number) => number = x => x;
+  private curOutputCache: number | null = null;
 
   constructor(
     weights: SparseWeight[],
@@ -77,15 +78,21 @@ export class SparseNeuron {
   }
 
   public getOutput(): number {
+    if (this.curOutputCache !== null) {
+      return this.curOutputCache;
+    }
+
     const weightedSum = this.weights.reduce((sum, { weight, inputNeuron }) => {
       const output = inputNeuron.getOutput();
       return sum + weight * output;
     }, this.bias);
-    return this.activation(weightedSum);
+    const output = this.activation(weightedSum);
+    this.curOutputCache = output;
+    return output;
   }
 
   public advanceSequence() {
-    // no-op
+    this.curOutputCache = null;
   }
 
   public serialize(): SerializedSparseNeuron {
@@ -117,6 +124,10 @@ export class SparseNeuron {
       activation
     );
     return neuron;
+  }
+
+  public reset() {
+    this.curOutputCache = null;
   }
 }
 
@@ -470,7 +481,7 @@ export class GraphRNNCell implements GraphRNNLayer {
       params
     );
     if (initialStateData.length !== weights.stateSize) {
-      console.log({ weights, initialStateData });
+      console.error({ weights, initialStateData });
       throw new Error(
         `Unexpected initial state length; expected=${weights.stateSize} actual=${initialStateData.length}`
       );
@@ -588,6 +599,8 @@ export class GraphRNNCell implements GraphRNNLayer {
    */
   public reset(): void {
     this.stateNeurons.forEach(neuron => neuron.reset());
+    this.outputNeurons.forEach(neuron => neuron.reset());
+    this.recurrentNeurons.forEach(neuron => neuron.reset());
   }
 
   public serialize(): SerializedGraphRNNCell {
@@ -780,8 +793,12 @@ export class GraphRNNPostLayer implements GraphRNNLayer {
     return layer;
   }
 
+  public reset() {
+    this.neurons.forEach(neuron => neuron.reset());
+  }
+
   advanceSequence(): void {
-    // no-op
+    this.neurons.forEach(neuron => neuron.advanceSequence());
   }
 
   getNeuron(outputIx: number): SparseNeuron | undefined {
@@ -846,6 +863,10 @@ export class RNNGraph {
   private cells: GraphRNNCell[] = [];
   private postLayers: GraphRNNPostLayer[] = [];
   public allConnectedNeuronsByID: Map<string, SparseNeuron>;
+  /**
+   * Records the output of each neuron for each step of the sequence.
+   */
+  private neuronOutputHistory: Map<string, number[]> = new Map();
 
   constructor(
     inputLayer: GraphRNNInputLayer,
@@ -960,6 +981,8 @@ export class RNNGraph {
 
   public reset(): void {
     this.cells.forEach(cell => cell.reset());
+    this.postLayers.forEach(postLayer => postLayer.reset());
+    this.neuronOutputHistory.clear();
   }
 
   public evaluateOneTimestep(): Float32Array {
@@ -978,6 +1001,15 @@ export class RNNGraph {
   }
 
   public advanceSequence() {
+    // Record current outputs for all neurons
+    for (const neuron of this.allConnectedNeuronsByID.values()) {
+      const output = neuron.getOutput();
+      if (!this.neuronOutputHistory.has(neuron.name)) {
+        this.neuronOutputHistory.set(neuron.name, []);
+      }
+      this.neuronOutputHistory.get(neuron.name)!.push(output);
+    }
+
     // Advance sequences from bottom to top so that state neurons can pull their new inputs from current graph outputs
     this.outputs.advanceSequence();
     this.postLayers.forEach(layer => layer.advanceSequence());
@@ -996,9 +1028,11 @@ export class RNNGraph {
    * @returns the output of each timestep
    */
   public evaluate(inputSeq: Float32Array[]): Float32Array[] {
+    this.reset();
+
     const outputs: Float32Array[] = [];
     this.inputLayer.setInputSequence([...inputSeq]);
-    this.cells.forEach(cell => cell.reset());
+
     for (let seqIx = 0; seqIx < inputSeq.length; seqIx += 1) {
       outputs.push(this.evaluateOneTimestep());
       this.advanceSequence();

@@ -3,18 +3,15 @@
   import 'uplot/dist/uPlot.min.css';
 
   export let totalLosses: number[];
-  export let finalLosses: number[];
-  export let accuracies: number[];
+  export let lossesWithoutRegularization: number[];
   export let iters: number;
+
+  $: xs = new Array(iters).fill(null).map((_, i) => i);
 
   let uPlotInst: UPlot | null = null;
 
   $: if (uPlotInst) {
-    uPlotInst.setData([
-      new Array<number>(iters).fill(0).map((_, i) => i),
-      totalLosses,
-      accuracies.map(x => x * 100),
-    ]);
+    uPlotInst.setData([xs, totalLosses, lossesWithoutRegularization]);
   }
 
   const renderChart = (containerNode: HTMLElement) => {
@@ -24,12 +21,12 @@
       series: [
         {},
         {
-          label: 'Test Loss',
+          label: 'Total Loss',
           stroke: 'red',
           scale: 'loss',
         },
         {
-          label: 'Traing Loss',
+          label: 'Loss w/o Regularization',
           stroke: 'yellow',
           scale: 'loss',
         },
@@ -44,13 +41,6 @@
           grid: { show: true, stroke: '#cccccc88', width: 1 },
           scale: 'loss',
         },
-        // {
-        //   show: true,
-        //   side: 1,
-        //   label: 'Validation Accuracy (%)',
-        //   stroke: '#ccc',
-        //   scale: 'acc',
-        // },
       ],
       scales: {
         x: { time: false },
@@ -62,7 +52,6 @@
       id: 'loss-plot',
     });
 
-    uPlotInst.setData([finalLosses.map((_, i) => i), finalLosses, totalLosses]);
     containerNode.appendChild(uPlotInst.root);
   };
 </script>
