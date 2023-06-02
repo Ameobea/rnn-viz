@@ -301,6 +301,11 @@
   resolved "https://registry.yarnpkg.com/@pixi/filter-fxaa/-/filter-fxaa-7.2.4.tgz#78fac5466ca1a249f343be1af90c79bae399bf92"
   integrity sha512-qzKjdL+Ih18uGTJLg8tT/H+YCsTeGkw2uF7lyKnw/lxGLJQhLWIhM95M9qSNgxbXyW1vp7SbG81a9aAEz2HAhA==
 
+"@pixi/filter-glow@^5.2.1":
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/@pixi/filter-glow/-/filter-glow-5.2.1.tgz#3757b32bef50a147e27c9a889f047c70bbad3126"
+  integrity sha512-94I4XePDF9yqqA6KQuhPSphEHPJ2lXfqJLn0Bes8VVdwft0Ianj1wALqjoSUeBWqiJbhjBEXGDNkRZhPHvY3Xg==
+
 "@pixi/filter-noise@7.2.4":
   version "7.2.4"
   resolved "https://registry.yarnpkg.com/@pixi/filter-noise/-/filter-noise-7.2.4.tgz#0586a00381ec0e63f6c00d49cd58b781eaf07f37"

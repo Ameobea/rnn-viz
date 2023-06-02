@@ -61,80 +61,6 @@ const seqLen = 9;
 const xor = (a: -1 | 1, b: -1 | 1): -1 | 1 =>
   (a === -1 && b === 1) || (a === 1 && b === -1) ? 1 : -1;
 
-export const oneSeqExamples = () => {
-  const inputs: [number, number][] = [];
-  const outputs: [number][] = [];
-
-  const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
-
-  for (let i = 0; i < seqLen; i += 1) {
-    const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
-    // const output: [number] =
-    //   input[i - 1] === -1
-    //     ? [-input[1]]
-    //     : [xor(input[0] as 1 | -1, (inputs[i - 1]?.[1] as 1 | -1 | undefined) ?? -1)];
-    const output: [number] = (() => {
-      let cond = false;
-      if (i === 0) {
-        return [xor(input[0], -1)];
-      }
-      if (i === 1) {
-        cond = input[0] === -1;
-      } else if (i === 2) {
-        cond = input[1] === -1;
-      }
-
-      if (cond) {
-        return [-input[1]];
-      }
-      return [xor(input[0], (inputs[i - 1]?.[1] ?? -1) as 1 | -1)];
-    })();
-    inputs.push(input);
-    outputs.push(output);
-  }
-
-  return { inputs, outputs };
-};
-
-// -1, -1, 1 loop
-/*
-digraph "RNN" {
-  subgraph "outputs" {
-    "output_0";
-  }
-
-  subgraph "layer_0" {
-  subgraph "state" {
-    "layer_0_state_0";
-    "layer_0_state_1";
-  }
-
-  subgraph "recurrent" {
-    "layer_0_recurrent_0";
-    "layer_0_recurrent_1";
-  }
-
-  subgraph "output" {
-    "layer_0_output_0";
-  }
-
-  }
-
-  subgraph "post_layer_0" {
-    "post_layer_output_0";
-  }
-
-    "post_layer_output_0" -> "output_0" [ label = "1" ];
-    "layer_0_output_0" -> "post_layer_output_0" [ label = "1" ];
-    "layer_0_state_0" -> "layer_0_output_0" [ label = "1" ];
-    "layer_0_recurrent_0" -> "layer_0_state_0" [ label = "1" ];
-    "layer_0_state_0" -> "layer_0_recurrent_0" [ label = "0.500" ];
-    "layer_0_state_1" -> "layer_0_recurrent_0" [ label = "1" ];
-    "layer_0_recurrent_1" -> "layer_0_state_1" [ label = "1" ];
-    "layer_0_state_0" -> "layer_0_recurrent_1" [ label = "-1" ];
-    "layer_0_state_1" -> "layer_0_recurrent_1" [ label = "0.500" ];
-  }
-*/
 // export const oneSeqExamples = () => {
 //   const inputs: [number, number][] = [];
 //   const outputs: [number][] = [];
@@ -143,14 +69,25 @@ digraph "RNN" {
 
 //   for (let i = 0; i < seqLen; i += 1) {
 //     const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
-//     const output: [1 | -1] = (() => {
-//       if (i % 3 === 0) {
-//         return [-1];
-//       } else if (i % 3 === 1) {
-//         return [-1];
-//       } else {
-//         return [1];
+//     // const output: [number] =
+//     //   input[i - 1] === -1
+//     //     ? [-input[1]]
+//     //     : [xor(input[0] as 1 | -1, (inputs[i - 1]?.[1] as 1 | -1 | undefined) ?? -1)];
+//     const output: [number] = (() => {
+//       let cond = false;
+//       if (i === 0) {
+//         return [xor(input[0], -1)];
 //       }
+//       if (i === 1) {
+//         cond = input[0] === -1;
+//       } else if (i === 2) {
+//         cond = input[1] === -1;
+//       }
+
+//       if (cond) {
+//         return [-input[1]];
+//       }
+//       return [xor(input[0], (inputs[i - 1]?.[1] ?? -1) as 1 | -1)];
 //     })();
 //     inputs.push(input);
 //     outputs.push(output);
@@ -158,6 +95,103 @@ digraph "RNN" {
 
 //   return { inputs, outputs };
 // };
+
+// -1, -1, 1 loop
+/*
+digraph "RNN" {
+  graph [ ratio = "0.75", rankdir =TB, center =true, splines = "spline", overlap = "false", nodesep =0.32 ];
+  node [ shape =square ];
+  edge [ arrowhead =none ];
+
+  subgraph "cluster_outputs" {
+    graph [ rank =sink ];
+    node [ fontsize =10 ];
+    "output_0" [ label = "OUT0" ];
+  }
+
+  subgraph "layer_0" {
+  subgraph "state" {
+    node [ shape =circle ];
+    "layer_0_state_1" [ label = "S" ];
+    "layer_0_state_3" [ label = "S" ];
+  }
+
+  subgraph "recurrent" {
+    "layer_0_recurrent_1" [ label = "N" ];
+    "layer_0_recurrent_3" [ label = "N" ];
+  }
+
+  subgraph "output" {
+    "layer_0_output_7" [ label = "N" ];
+  }
+
+  }
+
+  subgraph "post_layer_0" {
+    "post_layer_output_0" [ label = "N" ];
+  }
+
+  subgraph "cluster_inputs" {
+    graph [ rank =source ];
+    node [ shape =circle, fontsize =10 ];
+  }
+
+  "post_layer_output_0" -> "output_0" [ label = "1" ];
+  "layer_0_output_7" -> "post_layer_output_0" [ label = "1" ];
+  "layer_0_state_1" -> "layer_0_output_7" [ label = "-1" ];
+  "layer_0_recurrent_1" -> "layer_0_state_1" [ label = "1" ];
+  "layer_0_state_3" -> "layer_0_recurrent_1" [ label = "1" ];
+  "layer_0_recurrent_3" -> "layer_0_state_3" [ label = "1" ];
+  "layer_0_state_1" -> "layer_0_recurrent_3" [ label = "-1" ];
+  "layer_0_state_3" -> "layer_0_recurrent_3" [ label = "1" ];
+}
+
+Serialized graph: {"inputLayer":{"neurons":[null,null]},"cells":[{"outputNeurons":[null,null,null,null,null,null,null,{"weights":[{"weight":-1,"index":3}],"bias":0,"name":"layer_0_output_7","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}}],"recurrentNeurons":[null,{"weights":[{"weight":1,"index":5}],"bias":0,"name":"layer_0_recurrent_1","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}},null,{"weights":[{"weight":-1,"index":3},{"weight":1,"index":5}],"bias":-1,"name":"layer_0_recurrent_3","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}}],"stateNeurons":[null,{"bias":-1,"name":"layer_0_state_1","activation":"linear","weights":[{"weight":1,"index":1}]},null,{"bias":1,"name":"layer_0_state_3","activation":"linear","weights":[{"weight":1,"index":3}]}],"outputDim":8}],"postLayers":[{"neurons":[{"weights":[{"weight":1,"index":7}],"bias":0,"name":"post_layer_output_0","activation":"linear"}],"outputDim":1}],"outputs":{"neurons":[{"name":"output_0","activation":"linear","weights":[{"weight":1,"index":0}],"bias":0}]}}
+
+LEARNED:
+
+s0[0] = T
+s1[0] = F
+
+s0[n] = XNOR(s0[n-1], s1[n-1])
+s1[n] = NOT(s0[n-1])
+out   = s1[n]
+
+EXPECTED:
+
+s0[0] = F
+s1[0] = F
+s2[0] = T
+
+s0[n] = s2[n-1]
+s1[n] = s0[n-1]
+s2[n] = s1[n-1]
+out   = s1[n]
+
+*/
+export const oneSeqExamples = () => {
+  const inputs: [number, number][] = [];
+  const outputs: [number][] = [];
+
+  const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+
+  for (let i = 0; i < seqLen; i += 1) {
+    const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
+    const output: [1 | -1] = (() => {
+      if (i % 3 === 0) {
+        return [-1];
+      } else if (i % 3 === 1) {
+        return [-1];
+      } else {
+        return [1];
+      }
+    })();
+    inputs.push(input);
+    outputs.push(output);
+  }
+
+  return { inputs, outputs };
+};
 
 // Simple 2-ago
 /*

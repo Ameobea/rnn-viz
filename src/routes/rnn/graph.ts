@@ -958,33 +958,50 @@ export class RNNGraph {
     this.inputLayer.setInputSequence([...inputSeq]);
   }
 
+  public reset(): void {
+    this.cells.forEach(cell => cell.reset());
+  }
+
+  public evaluateOneTimestep(): Float32Array {
+    const output = new Float32Array(this.outputs.size);
+
+    // Pull from the output node through the rest of the graph to compute each output
+    for (let outputIx = 0; outputIx < output.length; outputIx += 1) {
+      const outputNeuron = this.outputs.getNeuron(outputIx);
+      if (!outputNeuron) {
+        continue;
+      }
+      output[outputIx] = outputNeuron.getOutput();
+    }
+
+    return output;
+  }
+
+  public advanceSequence() {
+    // Advance sequences from bottom to top so that state neurons can pull their new inputs from current graph outputs
+    this.outputs.advanceSequence();
+    this.postLayers.forEach(layer => layer.advanceSequence());
+    for (let cellIx = this.cells.length - 1; cellIx >= 0; cellIx -= 1) {
+      this.cells[cellIx].advanceSequence();
+    }
+    this.inputLayer.advanceSequence();
+
+    this.cells.forEach(cell => cell.stateNeurons.forEach(n => n.commitNewState()));
+  }
+
+  /**
+   * Evaluates the graph for a full sequence of timesteps, returning the output of each timestep.
+   *
+   * @param inputSeq the input sequence to evaluate
+   * @returns the output of each timestep
+   */
   public evaluate(inputSeq: Float32Array[]): Float32Array[] {
     const outputs: Float32Array[] = [];
     this.inputLayer.setInputSequence([...inputSeq]);
     this.cells.forEach(cell => cell.reset());
     for (let seqIx = 0; seqIx < inputSeq.length; seqIx += 1) {
-      const output = new Float32Array(this.outputs.size);
-
-      // Pull from the output node through the rest of the graph to compute each output
-      for (let outputIx = 0; outputIx < output.length; outputIx += 1) {
-        const outputNeuron = this.outputs.getNeuron(outputIx);
-        if (!outputNeuron) {
-          continue;
-        }
-        output[outputIx] = outputNeuron.getOutput();
-      }
-
-      outputs.push(output);
-
-      // Advance sequences from bottom to top so that state neurons can pull their new inputs from current graph outputs
-      this.outputs.advanceSequence();
-      this.postLayers.forEach(layer => layer.advanceSequence());
-      for (let cellIx = this.cells.length - 1; cellIx >= 0; cellIx -= 1) {
-        this.cells[cellIx].advanceSequence();
-      }
-      this.inputLayer.advanceSequence();
-
-      this.cells.forEach(cell => cell.stateNeurons.forEach(n => n.commitNewState()));
+      outputs.push(this.evaluateOneTimestep());
+      this.advanceSequence();
     }
     return outputs;
   }
@@ -998,35 +1015,39 @@ export class RNNGraph {
 
     const outputs = g.addCluster('cluster_outputs');
     outputs.set('rank', 'sink');
+    outputs.setNodeAttribut('fontsize', 10);
     for (let outputIx = 0; outputIx < this.outputs.size; outputIx += 1) {
       const neuron = this.outputs.getNeuron(outputIx)!;
-      outputs.addNode(neuron.name).set('label', `O${outputIx}`);
+      outputs.addNode(neuron.name).set('label', `OUT${outputIx}`);
     }
 
     this.cells.forEach((cell, layerIx) => {
       const layer = g.addCluster(`${clusterPrefix}layer_${layerIx}`);
 
       const state = layer.addCluster(`${clusterPrefix}state`);
+      state.setNodeAttribut('shape', 'circle');
       cell.stateNeurons.forEach(neuron => state.addNode(neuron.name).set('label', 'S'));
 
       const recurrent = layer.addCluster(`${clusterPrefix}recurrent`);
-      cell.recurrentNeurons.forEach(neuron => recurrent.addNode(neuron.name).set('label', 'R'));
+      cell.recurrentNeurons.forEach(neuron => recurrent.addNode(neuron.name).set('label', 'N'));
 
       const output = layer.addCluster(`${clusterPrefix}output`);
-      cell.outputNeurons.forEach(neuron => output.addNode(neuron.name).set('label', 'O'));
+      cell.outputNeurons.forEach(neuron => output.addNode(neuron.name).set('label', 'N'));
     });
 
     this.postLayers.forEach((postLayer, layerIx) => {
       const layer = g.addCluster(`${clusterPrefix}post_layer_${layerIx}`);
-      postLayer.neurons.forEach(neuron => layer.addNode(neuron.name).set('label', 'P'));
+      postLayer.neurons.forEach(neuron => layer.addNode(neuron.name).set('label', 'N'));
     });
 
     const inputs = g.addCluster('cluster_inputs');
     inputs.setNodeAttribut('shape', 'circle');
-    // inputs.setNodeAttribut('width', 0.8);
+    inputs.setNodeAttribut('fontsize', 10);
     inputs.set('rank', 'source');
     for (let inputIx = 0; inputIx < this.inputLayer.size; inputIx += 1) {
-      inputs.addNode(`input_${inputIx}`, {}).set('label', `IN${inputIx}`);
+      if (this.inputLayer.getNeuron(inputIx)) {
+        inputs.addNode(`input_${inputIx}`, {}).set('label', `IN${inputIx}`);
+      }
     }
 
     const processedNodes = new Set<string>();

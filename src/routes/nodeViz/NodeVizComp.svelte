@@ -28,6 +28,8 @@
 </script>
 
 <script lang="ts">
+  import NodeVizControls from './NodeVizControls.svelte';
+
   export let graph: RNNGraph;
 
   let windowWidth = browser ? window.innerWidth : 0;
@@ -37,7 +39,8 @@
         arrowhead: false,
         cluster: false,
         // edgeLabels: false,
-        aspectRatio: windowWidth && windowHeight ? windowHeight / windowWidth : undefined,
+        aspectRatio:
+          windowWidth && windowHeight ? Math.max(windowHeight / windowWidth, 0.65) : undefined,
       })
     : '';
 
@@ -108,6 +111,9 @@
     <p>Error: {layoutDataState.error}</p>
   {:else if layoutDataState.type === 'loaded'}
     <canvas use:useNodeViz width={windowWidth} height={windowHeight} />
+    {#if viz}
+      <NodeVizControls {viz} />
+    {/if}
   {/if}
 </div>
 

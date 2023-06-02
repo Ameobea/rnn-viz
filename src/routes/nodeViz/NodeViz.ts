@@ -1,5 +1,11 @@
-import { PIXI, Viewport } from '../../viz/RNNViz/pixi';
-import type { RNNGraph, SparseNeuron } from '../rnn/graph';
+import { PIXI, Viewport, GlowFilter } from '../../viz/RNNViz/pixi';
+import {
+  StateNeuron,
+  type RNNGraph,
+  type SparseNeuron,
+  InputNeuron,
+  OutputNeuron,
+} from '../rnn/graph';
 import { getColor } from './ColorScale';
 import { parseGraphvizPlainExt, type Point } from './plainExtParsing';
 
@@ -9,28 +15,30 @@ const Conf = {
   EdgeLabelFontSize: 20,
   WorldWidth: 2000,
   WorldHeight: 2000,
-  EdgeWidth: 2,
+  EdgeWidth: 3,
   ArrowheadSize: 20,
   ArrowheadHeightRatio: 0.65,
   TextResolution: 4,
 };
 
-class Edge {
+class VizEdge {
   public graphics: PIXI.Graphics;
   private labelText: PIXI.Text;
   private controlPoints: Point[];
   private txNode: VizNode;
   private color: number;
+  private weight: number;
 
   constructor(
     controlPoints: Point[],
     label: { text: string; position: Point; fontSize: number; weight: number },
-    lineWidth: number,
-    txNode: VizNode
+    txNode: VizNode,
+    onSelect: (edge: VizEdge) => void
   ) {
     this.graphics = new PIXI.Graphics();
     this.controlPoints = controlPoints;
     this.txNode = txNode;
+    this.weight = label.weight;
     this.color = getColor(txNode.inner.getOutput() * label.weight);
 
     this.labelText = new PIXI.Text(
@@ -45,10 +53,52 @@ class Edge {
     this.labelText.position.set(labelX, labelY);
     this.graphics.addChild(this.labelText);
 
-    this.drawSpline(this.color, lineWidth);
+    this.graphics.interactive = true;
+    this.graphics.cursor = 'pointer';
+    this.graphics.on('pointerdown', evt => {
+      onSelect(this);
+      evt.stopPropagation();
+    });
+
+    this.drawSpline(this.color);
+
+    // Adapted from excellent solution by @SignDawn / @oushu1liangqi1:
+    // https://github.com/pixijs/pixijs/issues/7058#issuecomment-1385224212
+    let linePoly: PIXI.Polygon | undefined;
+    let arrowheadPoly: PIXI.Polygon | undefined;
+    this.graphics.hitArea = {
+      contains: (x: number, y: number) => {
+        if (!this.graphics.geometry.points.length) {
+          return false;
+        }
+
+        if (!linePoly || !arrowheadPoly) {
+          const points = this.graphics.geometry.points;
+          const odd: { x: number; y: number; z: number }[] = [];
+          const even: { x: number; y: number; z: number }[] = [];
+
+          for (let index = 0; index * 2 < points.length - 6; index++) {
+            const x = points[index * 2];
+            const y = points[index * 2 + 1];
+            const z = points[index * 2 + 2];
+            if (index % 2 === 0) {
+              odd.push({ x, y, z });
+            } else {
+              even.push({ x, y, z });
+            }
+          }
+          linePoly = new PIXI.Polygon([...odd, ...even.reverse()]);
+
+          const arrowheadPoints = points.slice(-6);
+          arrowheadPoly = new PIXI.Polygon(arrowheadPoints);
+        }
+
+        return linePoly.contains(x, y) || arrowheadPoly.contains(x, y);
+      },
+    };
   }
 
-  private drawSpline(color: number, lineWidth: number): void {
+  private drawSpline(color: number): void {
     if (this.controlPoints.length < 4) {
       throw new Error('At least 4 control points are required.');
     }
@@ -58,7 +108,7 @@ class Edge {
     }
 
     this.graphics.clear();
-    this.graphics.lineStyle(lineWidth, color);
+    this.graphics.lineStyle(Conf.EdgeWidth, color);
 
     const start = this.controlPoints[0];
     this.graphics.moveTo(start.x, start.y);
@@ -93,15 +143,33 @@ class Edge {
       y: end.y - Conf.ArrowheadSize * Math.sin(angle + (Math.PI / 6) * Conf.ArrowheadHeightRatio),
     };
 
-    this.graphics.lineStyle(1, color);
+    this.graphics.lineStyle(0, color);
     this.graphics.beginFill(color);
     this.graphics.drawPolygon([end.x, end.y, point1.x, point1.y, point2.x, point2.y]);
+    const poly = new PIXI.Polygon([end.x, end.y, point1.x, point1.y, point2.x, point2.y]);
+    this.graphics.drawPolygon(poly);
     this.graphics.endFill();
   }
 
   public update(): void {
-    this.color = this.txNode.getColor();
-    this.drawSpline(this.color, 1);
+    this.color = getColor(this.txNode.inner.getOutput() * this.weight);
+    this.drawSpline(this.color);
+  }
+
+  public onSelect() {
+    // Add a glow effect
+    this.graphics.filters = [
+      new GlowFilter({
+        alpha: 0.7,
+        color: 0xffffff,
+        distance: 40,
+        outerStrength: 4,
+      }),
+    ];
+  }
+
+  public onDeselect() {
+    this.graphics.filters = [];
   }
 }
 
@@ -141,23 +209,61 @@ class VizNode {
     this.graphics.addChild(label);
     this.graphics.interactive = true;
     this.graphics.cursor = 'pointer';
-    this.graphics.on('pointerdown', () => onSelect(this));
-    this.render();
+    this.graphics.on('pointerdown', evt => {
+      onSelect(this);
+      evt.stopPropagation();
+    });
+    this.update();
   }
 
-  private render() {
+  public update() {
     this.graphics.clear();
     const value = this.inner.getOutput();
     const color = getColor(value);
 
+    const shape: 'circle' | 'square' = (() => {
+      if (
+        this.inner instanceof StateNeuron ||
+        this.inner instanceof InputNeuron ||
+        this.inner instanceof OutputNeuron
+      ) {
+        return 'circle';
+      }
+      return 'square';
+    })();
+
     this.graphics.lineStyle(2, 0xffffff);
-    this.graphics.beginFill(color);
-    this.graphics.drawRect(this.x, this.y, this.width, this.height);
-    this.graphics.endFill();
+    if (shape === 'square') {
+      this.graphics.beginFill(color);
+      this.graphics.drawRect(this.x, this.y, this.width, this.height);
+      this.graphics.endFill();
+    } else if (shape === 'circle') {
+      this.graphics.beginFill(color);
+      this.graphics.drawCircle(this.x + this.width / 2, this.y + this.height / 2, this.width / 2);
+      this.graphics.endFill();
+    } else {
+      throw new Error('Invalid shape: ' + shape);
+    }
   }
 
   public getColor(): number {
     return getColor(this.inner.getOutput());
+  }
+
+  public onSelect() {
+    // Add a glow effect
+    this.graphics.filters = [
+      new GlowFilter({
+        alpha: 0.8,
+        color: 0xffffff,
+        distance: this.width,
+        outerStrength: 1.8,
+      }),
+    ];
+  }
+
+  public onDeselect() {
+    this.graphics.filters = [];
   }
 }
 
@@ -165,8 +271,9 @@ export class NodeViz {
   private app: PIXI.Application;
   private graph: RNNGraph;
   private nodes: VizNode[] = [];
-  private edges: Edge[] = [];
+  private edges: VizEdge[] = [];
   private destroyed = false;
+  private selected: VizNode | VizEdge | null = null;
 
   constructor(canvas: HTMLCanvasElement, graphvizLayoutData: string, graph: RNNGraph) {
     this.graph = graph;
@@ -189,6 +296,11 @@ export class NodeViz {
     });
     viewport.drag().pinch().wheel();
     this.app.stage.addChild(viewport);
+
+    // Handle background clicks
+    viewport.interactive = true;
+    viewport.cursor = 'default';
+    viewport.on('pointerdown', () => void this.handleBackgroundClick());
 
     const { positionByNodeID, edges } = parseGraphvizPlainExt(
       graphvizLayoutData,
@@ -219,7 +331,7 @@ export class NodeViz {
         throw new Error(`Node ${edge.tx} not found in graph`);
       }
 
-      const vizEdge = new Edge(
+      const vizEdge = new VizEdge(
         edge.controlPoints,
         {
           fontSize: Conf.EdgeLabelFontSize,
@@ -227,8 +339,8 @@ export class NodeViz {
           text: labelText,
           weight: edge.weight,
         },
-        Conf.EdgeWidth,
-        txNode
+        txNode,
+        edge => this.handleEdgeSelect(edge)
       );
       this.edges.push(vizEdge);
     }
@@ -243,8 +355,57 @@ export class NodeViz {
   }
 
   private handleNodeSelect(node: VizNode) {
+    this.selected?.onDeselect();
+    node.onSelect();
+    this.selected = node;
+
     // TODO
     console.log(node);
+  }
+
+  private handleEdgeSelect(edge: VizEdge) {
+    this.selected?.onDeselect();
+    edge.onSelect();
+    this.selected = edge;
+
+    // TODO
+    console.log(edge);
+  }
+
+  private handleBackgroundClick() {
+    this.selected?.onDeselect();
+    this.selected = null;
+  }
+
+  private buildOneInputSeq(): Float32Array[] {
+    const input = new Float32Array(this.graph.inputDim);
+    for (let i = 0; i < input.length; i++) {
+      const val: 1 | -1 = Math.random() > 0.5 ? 1 : -1;
+      input[i] = val;
+    }
+    return [input];
+  }
+
+  public reset() {
+    this.graph.reset();
+    this.graph.setInputSequence(this.buildOneInputSeq());
+    this.update();
+  }
+
+  private update() {
+    for (const node of this.nodes) {
+      node.update();
+    }
+    for (const edge of this.edges) {
+      edge.update();
+    }
+  }
+
+  public progressTimestep() {
+    this.graph.advanceSequence();
+    this.graph.setInputSequence(this.buildOneInputSeq());
+    this.graph.evaluateOneTimestep();
+    this.update();
   }
 
   public destroy() {

@@ -32,6 +32,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@pixi/filter-glow": "^5.2.1",
     "@sentry/browser": "^7.52.1",
     "@sentry/tracing": "^7.52.1",
     "@sveltejs/adapter-static": "^2.0.2",
