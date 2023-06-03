@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
   import { onDestroy, onMount } from 'svelte';
-  import type { RNNGraph } from '../rnn/graph';
+  import { RNNGraph } from '../rnn/graph';
   import { browser } from '$app/environment';
   import type { NodeViz } from './NodeViz';
   import { ColorScaleLegend, getColor } from './ColorScale';
@@ -28,21 +28,30 @@
 </script>
 
 <script lang="ts">
+  import NodeOutputsChart from './NodeOutputsChart.svelte';
   import NodeVizControls from './NodeVizControls.svelte';
 
-  export let graph: RNNGraph;
+  export let serializedRNNGraph: string;
+
+  const { graph, graphDotviz }: { graph: RNNGraph; graphDotviz: string } = (() => {
+    const graph = RNNGraph.deserialize(JSON.parse(serializedRNNGraph));
+    const graphDotviz = browser
+      ? graph.buildGraphviz({
+          arrowhead: false,
+          cluster: false,
+          // edgeLabels: false,
+          aspectRatio:
+            window.innerWidth && window.innerHeight
+              ? Math.max(window.innerHeight / window.innerWidth, 0.65)
+              : undefined,
+        })
+      : '';
+    return { graph, graphDotviz };
+  })();
+  const currentTimestep = graph.currentTimestep;
 
   let windowWidth = browser ? window.innerWidth : 0;
   let windowHeight = browser ? window.innerHeight : 0;
-  $: graphDotviz = browser
-    ? graph.buildGraphviz({
-        arrowhead: false,
-        cluster: false,
-        // edgeLabels: false,
-        aspectRatio:
-          windowWidth && windowHeight ? Math.max(windowHeight / windowWidth, 0.65) : undefined,
-      })
-    : '';
 
   let layoutDataState: FetchLayoutState = { type: 'notFetched' };
 
@@ -57,8 +66,12 @@
       });
   }
 
-  let viz: NodeViz | null = null;
   let NodeVizMod: typeof import('./NodeViz') | null = null;
+  let viz: NodeViz | null = null;
+  $: selected = viz?.selected;
+  $: visibleNodeIDs = viz?.visibleNodeIDs;
+
+  $: viz?.handleResize(windowWidth, windowHeight);
 
   onMount(() => {
     if (!browser) {
@@ -113,6 +126,12 @@
     <canvas use:useNodeViz width={windowWidth} height={windowHeight} />
     {#if viz}
       <NodeVizControls {viz} />
+      <NodeOutputsChart
+        currentTimestep={$currentTimestep}
+        neuronOutputHistory={graph.neuronOutputHistory}
+        selectedNodeID={selected && $selected instanceof NodeVizMod.VizNode ? $selected.name : null}
+        visibleNodeIDs={$visibleNodeIDs ?? []}
+      />
     {/if}
   {/if}
 </div>

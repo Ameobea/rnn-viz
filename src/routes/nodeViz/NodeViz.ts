@@ -1,3 +1,4 @@
+import { writable, type Writable } from 'svelte/store';
 import { PIXI, Viewport, GlowFilter } from '../../viz/RNNViz/pixi';
 import {
   StateNeuron,
@@ -173,7 +174,7 @@ class VizEdge {
   }
 }
 
-class VizNode {
+export class VizNode {
   public name: string;
   public x: number;
   public y: number;
@@ -269,11 +270,13 @@ class VizNode {
 
 export class NodeViz {
   private app: PIXI.Application;
+  private viewport: Viewport;
   private graph: RNNGraph;
   private nodes: VizNode[] = [];
   private edges: VizEdge[] = [];
   private destroyed = false;
-  private selected: VizNode | VizEdge | null = null;
+  public selected: Writable<VizNode | VizEdge | null> = writable(null);
+  public visibleNodeIDs: Writable<string[]> = writable([]);
 
   constructor(canvas: HTMLCanvasElement, graphvizLayoutData: string, graph: RNNGraph) {
     this.graph = graph;
@@ -286,30 +289,29 @@ export class NodeViz {
       width: canvas.width,
       backgroundColor: 0,
     });
-    // TODO: Handle resize
-    const viewport = new Viewport({
+    this.viewport = new Viewport({
       screenWidth: canvas.width,
       screenHeight: canvas.height,
       worldWidth: Conf.WorldWidth,
       worldHeight: Conf.WorldHeight,
       events: this.app.renderer.events,
     });
-    viewport.drag().pinch().wheel();
-    this.app.stage.addChild(viewport);
+    this.viewport.drag().pinch().wheel();
+    this.app.stage.addChild(this.viewport);
 
     // Handle background clicks
-    viewport.interactive = true;
-    viewport.cursor = 'default';
-    viewport.on('pointerdown', () => void this.handleBackgroundClick());
+    this.viewport.interactive = true;
+    this.viewport.cursor = 'default';
+    this.viewport.on('pointerdown', () => void this.handleBackgroundClick());
 
-    const { positionByNodeID, edges } = parseGraphvizPlainExt(
+    const { nodes, edges } = parseGraphvizPlainExt(
       graphvizLayoutData,
       Conf.WorldWidth,
       Conf.WorldHeight
     );
     const nodesByID = new Map<string, VizNode>();
 
-    for (const [nodeID, { pos, width, height, label }] of positionByNodeID) {
+    for (const [nodeID, { pos, width, height, label }] of nodes) {
       const node = graph.allConnectedNeuronsByID.get(nodeID);
       if (!node) {
         throw new Error(`Node ${nodeID} not found in graph`);
@@ -347,34 +349,42 @@ export class NodeViz {
 
     // Add edges first so that they are behind nodes
     for (const edge of this.edges) {
-      viewport.addChild(edge.graphics);
+      this.viewport.addChild(edge.graphics);
     }
     for (const node of this.nodes) {
-      viewport.addChild(node.graphics);
+      this.viewport.addChild(node.graphics);
     }
   }
 
   private handleNodeSelect(node: VizNode) {
-    this.selected?.onDeselect();
-    node.onSelect();
-    this.selected = node;
+    this.selected.update(selected => {
+      selected?.onDeselect();
+      node.onSelect();
 
-    // TODO
-    console.log(node);
+      // TODO
+      console.log(node);
+
+      return node;
+    });
   }
 
   private handleEdgeSelect(edge: VizEdge) {
-    this.selected?.onDeselect();
-    edge.onSelect();
-    this.selected = edge;
+    this.selected.update(selected => {
+      selected?.onDeselect();
+      edge.onSelect();
 
-    // TODO
-    console.log(edge);
+      // TODO
+      console.log(edge);
+
+      return edge;
+    });
   }
 
   private handleBackgroundClick() {
-    this.selected?.onDeselect();
-    this.selected = null;
+    this.selected.update(selected => {
+      selected?.onDeselect();
+      return null;
+    });
   }
 
   private buildOneInputSeq(): Float32Array[] {
@@ -402,10 +412,15 @@ export class NodeViz {
   }
 
   public progressTimestep() {
-    this.graph.advanceSequence();
-    this.graph.setInputSequence(this.buildOneInputSeq());
+    const nextInput = this.buildOneInputSeq();
+    this.graph.advanceSequence(nextInput);
     this.graph.evaluateOneTimestep();
     this.update();
+  }
+
+  public handleResize(newWidth: number, newHeight: number) {
+    this.app.renderer.resize(newWidth, newHeight);
+    this.viewport.resize(newWidth, newHeight);
   }
 
   public destroy() {

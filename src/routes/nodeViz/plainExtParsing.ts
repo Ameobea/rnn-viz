@@ -12,7 +12,7 @@ export interface Point {
 }
 
 export interface NodeVizLayout {
-  positionByNodeID: Map<string, { pos: Point; width: number; height: number; label: string }>;
+  nodes: Map<string, { pos: Point; width: number; height: number; label: string }>;
   edges: NodeVizEdge[];
 }
 
@@ -21,10 +21,7 @@ export const parseGraphvizPlainExt = (
   worldWidth: number,
   worldHeight: number
 ): NodeVizLayout => {
-  const positionByNodeID = new Map<
-    string,
-    { pos: Point; width: number; height: number; label: string }
-  >();
+  const nodes = new Map<string, { pos: Point; width: number; height: number; label: string }>();
   const edges: NodeVizEdge[] = [];
 
   const lines = input.split('\n');
@@ -51,7 +48,7 @@ export const parseGraphvizPlainExt = (
         y: centerY * scale - height / 2,
       };
 
-      positionByNodeID.set(parts[1], { pos, width, height, label });
+      nodes.set(parts[1], { pos, width, height, label });
     } else if (parts[0] === 'edge') {
       const controlPoints: Point[] = [];
       const controlPointCount = parseInt(parts[3], 10);
@@ -80,5 +77,5 @@ export const parseGraphvizPlainExt = (
     }
   }
 
-  return { positionByNodeID, edges };
+  return { nodes, edges };
 };

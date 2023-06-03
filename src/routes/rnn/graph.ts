@@ -2,6 +2,7 @@ import type { Rank, Tensor } from '@tensorflow/tfjs';
 import type { AmeoActivationIdentifier } from '../../nn/customRNN';
 import { nativeFusedInterpolatedAmeoImplInner } from '../../nn/ameoActivation/native';
 import * as GVB from 'graphviz-builder';
+import { writable, type Writable } from 'svelte/store';
 
 export interface RNNCellWeights {
   initialState: Tensor<Rank>;
@@ -866,13 +867,15 @@ export class RNNGraph {
   /**
    * Records the output of each neuron for each step of the sequence.
    */
-  private neuronOutputHistory: Map<string, number[]> = new Map();
+  public neuronOutputHistory: Map<string, number[]> = new Map();
+  public currentTimestep: Writable<number> = writable(0);
 
   constructor(
     inputLayer: GraphRNNInputLayer,
     outputs: GraphRNNOutputs,
     cells: GraphRNNCell[],
-    postLayers: GraphRNNPostLayer[]
+    postLayers: GraphRNNPostLayer[],
+    initialInputSeq?: Float32Array[]
   ) {
     this.inputLayer = inputLayer;
     this.outputs = outputs;
@@ -881,6 +884,14 @@ export class RNNGraph {
     this.allConnectedNeuronsByID = new Map();
 
     this.pruneUnconnectedNeurons();
+
+    const inputSeq = initialInputSeq ?? [
+      new Float32Array(this.inputLayer.inputDim).map(() => (Math.random() > 0.5 ? 1 : -1)),
+    ];
+    this.setInputSequence(inputSeq);
+    for (const neuron of this.allConnectedNeuronsByID.values()) {
+      this.neuronOutputHistory.set(neuron.name, [neuron.getOutput()]);
+    }
   }
 
   private pruneUnconnectedNeurons() {
@@ -983,6 +994,10 @@ export class RNNGraph {
     this.cells.forEach(cell => cell.reset());
     this.postLayers.forEach(postLayer => postLayer.reset());
     this.neuronOutputHistory.clear();
+    for (const neuron of this.allConnectedNeuronsByID.values()) {
+      this.neuronOutputHistory.set(neuron.name, [neuron.getOutput()]);
+    }
+    this.currentTimestep.set(0);
   }
 
   public evaluateOneTimestep(): Float32Array {
@@ -1000,17 +1015,9 @@ export class RNNGraph {
     return output;
   }
 
-  public advanceSequence() {
-    // Record current outputs for all neurons
-    for (const neuron of this.allConnectedNeuronsByID.values()) {
-      const output = neuron.getOutput();
-      if (!this.neuronOutputHistory.has(neuron.name)) {
-        this.neuronOutputHistory.set(neuron.name, []);
-      }
-      this.neuronOutputHistory.get(neuron.name)!.push(output);
-    }
-
+  public advanceSequence(nextInputSeq?: Float32Array[]): void {
     // Advance sequences from bottom to top so that state neurons can pull their new inputs from current graph outputs
+    this.currentTimestep.update(t => t + 1);
     this.outputs.advanceSequence();
     this.postLayers.forEach(layer => layer.advanceSequence());
     for (let cellIx = this.cells.length - 1; cellIx >= 0; cellIx -= 1) {
@@ -1019,6 +1026,19 @@ export class RNNGraph {
     this.inputLayer.advanceSequence();
 
     this.cells.forEach(cell => cell.stateNeurons.forEach(n => n.commitNewState()));
+
+    if (nextInputSeq) {
+      this.inputLayer.setInputSequence(nextInputSeq);
+    }
+
+    // Record current outputs for all neurons
+    for (const neuron of this.allConnectedNeuronsByID.values()) {
+      const output = neuron.getOutput();
+      if (!this.neuronOutputHistory.has(neuron.name)) {
+        this.neuronOutputHistory.set(neuron.name, []);
+      }
+      this.neuronOutputHistory.get(neuron.name)!.push(output);
+    }
   }
 
   /**
@@ -1175,7 +1195,10 @@ export class RNNGraph {
     };
   }
 
-  public static deserialize(serialized: SerializedRNNGraph): RNNGraph {
+  public static deserialize(
+    serialized: SerializedRNNGraph,
+    initialInputSeq?: Float32Array[]
+  ): RNNGraph {
     const inputLayer = GraphRNNInputLayer.deserialize(serialized.inputLayer);
     let prevLayer: GraphRNNLayer = inputLayer;
 
@@ -1191,7 +1214,7 @@ export class RNNGraph {
     });
     const outputs = GraphRNNOutputs.deserialize(serialized.outputs, prevLayer);
 
-    return new RNNGraph(inputLayer, outputs, cells, postLayers);
+    return new RNNGraph(inputLayer, outputs, cells, postLayers, initialInputSeq);
   }
 }
 
