@@ -276,7 +276,6 @@ export class NodeViz {
   private edges: VizEdge[] = [];
   private destroyed = false;
   public selected: Writable<VizNode | VizEdge | null> = writable(null);
-  public visibleNodeIDs: Writable<string[]> = writable([]);
 
   constructor(canvas: HTMLCanvasElement, graphvizLayoutData: string, graph: RNNGraph) {
     this.graph = graph;
@@ -360,10 +359,6 @@ export class NodeViz {
     this.selected.update(selected => {
       selected?.onDeselect();
       node.onSelect();
-
-      // TODO
-      console.log(node);
-
       return node;
     });
   }
@@ -372,10 +367,6 @@ export class NodeViz {
     this.selected.update(selected => {
       selected?.onDeselect();
       edge.onSelect();
-
-      // TODO
-      console.log(edge);
-
       return edge;
     });
   }

@@ -59,8 +59,7 @@
   export let neuronOutputHistory: Map<string, number[]>;
   export let selectedNodeID: string | null;
   export let visibleNodeIDs: string[];
-
-  let expanded = false;
+  export let expanded = false;
 
   $: nodeIDsToRender = [...neuronOutputHistory.keys()]
     .filter(
@@ -108,7 +107,7 @@
       return aNum - bNum;
     });
 
-  let uPlotInsts: { nodeID: string; inst: UPlot }[] = [];
+  const uPlotInsts: { nodeID: string; inst: UPlot }[] = [];
 
   $: xs = new Array<number>(currentTimestep + 2).fill(0).map((_, i) => i);
   $: for (const { inst, nodeID } of uPlotInsts) {
@@ -167,7 +166,7 @@
       expanded = true;
     }}
   >
-    Show Outputs Timeline
+    Open Logic Analyzer
   </button>
 {/if}
 
@@ -191,7 +190,7 @@
   }
 
   .collapsed {
-    width: 220px;
+    width: calc(min(220px, 50vw));
     position: absolute;
     bottom: 0;
     left: 0;

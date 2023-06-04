@@ -28,8 +28,10 @@
 </script>
 
 <script lang="ts">
-  import NodeOutputsChart from './NodeOutputsChart.svelte';
+  import NodeInfo from './NodeInfo.svelte';
+  import LogicAnalyzer from './LogicAnalyzer.svelte';
   import NodeVizControls from './NodeVizControls.svelte';
+  import { writable, type Writable } from 'svelte/store';
 
   export let serializedRNNGraph: string;
 
@@ -42,7 +44,7 @@
           // edgeLabels: false,
           aspectRatio:
             window.innerWidth && window.innerHeight
-              ? Math.max(window.innerHeight / window.innerWidth, 0.65)
+              ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)
               : undefined,
         })
       : '';
@@ -52,6 +54,7 @@
 
   let windowWidth = browser ? window.innerWidth : 0;
   let windowHeight = browser ? window.innerHeight : 0;
+  $: isMobile = windowWidth < 600;
 
   let layoutDataState: FetchLayoutState = { type: 'notFetched' };
 
@@ -68,8 +71,12 @@
 
   let NodeVizMod: typeof import('./NodeViz') | null = null;
   let viz: NodeViz | null = null;
+  let logicAnalyzerOpen = false;
   $: selected = viz?.selected;
-  $: visibleNodeIDs = viz?.visibleNodeIDs;
+  const logicAnalyzerVisibleNodeIDs: Writable<string[]> = writable([]);
+  $: selectedNode =
+    NodeVizMod && selected && $selected instanceof NodeVizMod.VizNode ? $selected : null;
+  $: selectedNodeID = selectedNode?.name ?? null;
 
   $: viz?.handleResize(windowWidth, windowHeight);
 
@@ -105,11 +112,14 @@
       return;
     }
 
-    const legend: SVGSVGElement = ColorScaleLegend(getColor, { height: 24, width: 300 });
+    const legend: SVGSVGElement = ColorScaleLegend(getColor, {
+      height: isMobile ? 12 : 24,
+      width: isMobile ? 200 : 300,
+    });
     legend.style.zIndex = '2';
     legend.style.position = 'absolute';
     legend.style.top = '0';
-    legend.style.right = '14px';
+    legend.style.right = '10px';
     node.appendChild(legend);
   };
 
@@ -126,12 +136,32 @@
     <canvas use:useNodeViz width={windowWidth} height={windowHeight} />
     {#if viz}
       <NodeVizControls {viz} />
-      <NodeOutputsChart
-        currentTimestep={$currentTimestep}
-        neuronOutputHistory={graph.neuronOutputHistory}
-        selectedNodeID={selected && $selected instanceof NodeVizMod.VizNode ? $selected.name : null}
-        visibleNodeIDs={$visibleNodeIDs ?? []}
-      />
+      {#if !isMobile}
+        <LogicAnalyzer
+          currentTimestep={$currentTimestep}
+          neuronOutputHistory={graph.neuronOutputHistory}
+          {selectedNodeID}
+          visibleNodeIDs={$logicAnalyzerVisibleNodeIDs ?? []}
+          bind:expanded={logicAnalyzerOpen}
+        />
+      {/if}
+      {#if selectedNode}
+        <NodeInfo
+          node={selectedNode}
+          addToLogicAnalyzer={() => {
+            logicAnalyzerVisibleNodeIDs.update(ids => {
+              if (!selectedNode || ids.includes(selectedNode.name)) {
+                return ids;
+              }
+              return [...ids, selectedNode.name];
+            });
+          }}
+          {isMobile}
+          logicAnalyzerVisibleNodeIDs={$logicAnalyzerVisibleNodeIDs}
+          {logicAnalyzerOpen}
+          currentTimestep={$currentTimestep}
+        />
+      {/if}
     {/if}
   {/if}
 </div>

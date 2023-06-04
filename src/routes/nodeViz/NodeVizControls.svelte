@@ -45,8 +45,10 @@
     on:click={() => {
       stopPlaying();
       viz.reset();
-    }}>Reset</button
+    }}
   >
+    Reset
+  </button>
   <button disabled={playState.isPlaying} on:click={() => viz.progressTimestep()}>
     +1 timestep
   </button>
@@ -66,7 +68,7 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 200px;
+    width: calc(min(200px, 50vw));
     background-color: #222;
   }
 
