@@ -1,3 +1,12 @@
+<script lang="ts" context="module">
+  const colorToCSS = (color: number): string => {
+    const r = (color >> 16) & 0xff;
+    const g = (color >> 8) & 0xff;
+    const b = color & 0xff;
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+</script>
+
 <script lang="ts">
   import { StateNeuron } from '../rnn/graph';
   import { getColor } from './ColorScale';
@@ -35,18 +44,18 @@
 
 <div class="root" style="left: {left}">
   <h3>{node.name}</h3>
-  <div class="info-item">
-    Current {stateNode ? 'state' : 'output'}:
-    <span style="color: #{curOutputColor.toString(16)}">{curOutput}</span>
-  </div>
   {#if stateNode}
     <div class="info-item">
       Initial state:
-      <span style="color: #{getColor(stateNode.initialState).toString(16)}">
+      <span class="output-display" style={`color: ${colorToCSS(getColor(stateNode.initialState))}`}>
         {stateNode.initialState}
       </span>
     </div>
   {/if}
+  <div class="info-item">
+    Current {stateNode ? 'state' : 'output'}:
+    <span class="output-display" style={`color: ${colorToCSS(curOutputColor)}`}>{curOutput}</span>
+  </div>
   {#if !isInLogicAnalyzer}
     <div class="add-to-logic-analyzer">
       <button on:click={addToLogicAnalyzer}>Add to logic analyzer</button>
@@ -95,5 +104,11 @@
     border-radius: 0;
     border: none;
     cursor: pointer;
+  }
+
+  .output-display {
+    background-color: #000;
+    padding-left: 2px;
+    padding-right: 2px;
   }
 </style>
