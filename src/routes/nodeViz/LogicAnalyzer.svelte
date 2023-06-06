@@ -111,6 +111,7 @@
 
   $: xs = new Array<number>(currentTimestep + 2).fill(0).map((_, i) => i);
   $: for (const { inst, nodeID } of uPlotInsts) {
+    console.log(uPlotInsts);
     const xsSlice = xs.slice(-21);
     const ys: (number | null)[] = (neuronOutputHistory.get(nodeID) ?? [])
       .slice(-20)
@@ -178,7 +179,7 @@
     bottom: 0;
     left: 0;
     background-color: #111;
-    height: 300px;
+    height: 368px;
     overflow-y: auto;
     border: 1px solid #444;
     box-sizing: border-box;
@@ -199,7 +200,7 @@
   .collapse {
     width: 100px;
     position: absolute;
-    bottom: 300px;
+    bottom: 368px;
     height: 20px;
     line-height: 0;
   }

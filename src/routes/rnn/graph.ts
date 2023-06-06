@@ -888,6 +888,7 @@ export class RNNGraph {
     const inputSeq = initialInputSeq ?? [
       new Float32Array(this.inputLayer.inputDim).map(() => (Math.random() > 0.5 ? 1 : -1)),
     ];
+    console.log({ inputSeq });
     this.setInputSequence(inputSeq);
     for (const neuron of this.allConnectedNeuronsByID.values()) {
       this.neuronOutputHistory.set(neuron.name, [neuron.getOutput()]);
@@ -990,10 +991,11 @@ export class RNNGraph {
     this.inputLayer.setInputSequence([...inputSeq]);
   }
 
-  public reset(): void {
+  public reset(newInputSeq: Float32Array[]): void {
     this.cells.forEach(cell => cell.reset());
     this.postLayers.forEach(postLayer => postLayer.reset());
     this.neuronOutputHistory.clear();
+    this.inputLayer.setInputSequence([...newInputSeq]);
     for (const neuron of this.allConnectedNeuronsByID.values()) {
       this.neuronOutputHistory.set(neuron.name, [neuron.getOutput()]);
     }
@@ -1029,15 +1031,15 @@ export class RNNGraph {
 
     if (nextInputSeq) {
       this.inputLayer.setInputSequence(nextInputSeq);
-    }
 
-    // Record current outputs for all neurons
-    for (const neuron of this.allConnectedNeuronsByID.values()) {
-      const output = neuron.getOutput();
-      if (!this.neuronOutputHistory.has(neuron.name)) {
-        this.neuronOutputHistory.set(neuron.name, []);
+      // Record current outputs for all neurons
+      for (const neuron of this.allConnectedNeuronsByID.values()) {
+        const output = neuron.getOutput();
+        if (!this.neuronOutputHistory.has(neuron.name)) {
+          this.neuronOutputHistory.set(neuron.name, []);
+        }
+        this.neuronOutputHistory.get(neuron.name)!.push(output);
       }
-      this.neuronOutputHistory.get(neuron.name)!.push(output);
     }
   }
 
@@ -1048,10 +1050,9 @@ export class RNNGraph {
    * @returns the output of each timestep
    */
   public evaluate(inputSeq: Float32Array[]): Float32Array[] {
-    this.reset();
+    this.reset(inputSeq);
 
     const outputs: Float32Array[] = [];
-    this.inputLayer.setInputSequence([...inputSeq]);
 
     for (let seqIx = 0; seqIx < inputSeq.length; seqIx += 1) {
       outputs.push(this.evaluateOneTimestep());

@@ -388,8 +388,7 @@ export class NodeViz {
   }
 
   public reset() {
-    this.graph.reset();
-    this.graph.setInputSequence(this.buildOneInputSeq());
+    this.graph.reset(this.buildOneInputSeq());
     this.update();
   }
 

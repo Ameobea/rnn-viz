@@ -13,7 +13,7 @@
   const inputDim = oneSeqExamples().inputs[0].length;
   const outputDim = oneSeqExamples().outputs[0].length;
   const batchSize = 128;
-  const epochs = 40000;
+  const epochs = 20000;
   const _quantIntensity = 0.02;
   const sparseIntensity = 0.15;
   const sparseSteepness = 25;

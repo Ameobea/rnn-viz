@@ -56,6 +56,12 @@
     Current {stateNode ? 'state' : 'output'}:
     <span class="output-display" style={`color: ${colorToCSS(curOutputColor)}`}>{curOutput}</span>
   </div>
+  <div class="info-item">
+    Bias:
+    <span class="output-display" style={`color: ${colorToCSS(getColor(node.inner.bias))}`}
+      >{node.inner.bias}</span
+    >
+  </div>
   {#if !isInLogicAnalyzer}
     <div class="add-to-logic-analyzer">
       <button on:click={addToLogicAnalyzer}>Add to logic analyzer</button>

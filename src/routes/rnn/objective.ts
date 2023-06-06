@@ -169,29 +169,29 @@ s2[n] = s1[n-1]
 out   = s1[n]
 
 */
-export const oneSeqExamples = () => {
-  const inputs: [number, number][] = [];
-  const outputs: [number][] = [];
+// export const oneSeqExamples = () => {
+//   const inputs: [number, number][] = [];
+//   const outputs: [number][] = [];
 
-  const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
 
-  for (let i = 0; i < seqLen; i += 1) {
-    const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
-    const output: [1 | -1] = (() => {
-      if (i % 3 === 0) {
-        return [-1];
-      } else if (i % 3 === 1) {
-        return [-1];
-      } else {
-        return [1];
-      }
-    })();
-    inputs.push(input);
-    outputs.push(output);
-  }
+//   for (let i = 0; i < seqLen; i += 1) {
+//     const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
+//     const output: [1 | -1] = (() => {
+//       if (i % 3 === 0) {
+//         return [-1];
+//       } else if (i % 3 === 1) {
+//         return [-1];
+//       } else {
+//         return [1];
+//       }
+//     })();
+//     inputs.push(input);
+//     outputs.push(output);
+//   }
 
-  return { inputs, outputs };
-};
+//   return { inputs, outputs };
+// };
 
 // Simple 2-ago
 /*
@@ -440,3 +440,31 @@ digraph "RNN" {
 
 //   return { inputs, outputs };
 // };
+
+/**
+ * All 3 inputs -1 or all 3 inputs 1
+ *
+ * {"inputLayer":{"neurons":[{"name":"input_0","activation":"linear","weights":[],"bias":0},{"name":"input_1","activation":"linear","weights":[],"bias":0},{"name":"input_2","activation":"linear","weights":[],"bias":0}]},"cells":[{"outputNeurons":[null,null,null,{"weights":[{"weight":-0.5,"index":0},{"weight":-0.5,"index":1},{"weight":-0.5,"index":2}],"bias":-1,"name":"layer_0_output_3","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}},null,null,null,null],"recurrentNeurons":[null],"stateNeurons":[null,null],"outputDim":8}],"postLayers":[{"neurons":[{"weights":[{"weight":-1.5,"index":3}],"bias":0,"name":"post_layer_output_0","activation":"linear"}],"outputDim":1}],"outputs":{"neurons":[{"name":"output_0","activation":"linear","weights":[{"weight":1,"index":0}],"bias":0}]}}
+ *
+ * Apparently it's representable in a single neuron!  All input weights=-0.5, bias=-1
+ */
+export const oneSeqExamples = () => {
+  const inputs: [number, number, number][] = [];
+  const outputs: [number][] = [];
+
+  const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+
+  for (let i = 0; i < seqLen; i += 1) {
+    const input: [1 | -1, 1 | -1, 1 | -1] = [oneVal(), oneVal(), oneVal()];
+    const output: [1 | -1] = (() => {
+      if (input[0] === input[1] && input[1] === input[2]) {
+        return [1];
+      }
+      return [-1];
+    })();
+    inputs.push(input);
+    outputs.push(output);
+  }
+
+  return { inputs, outputs };
+};
