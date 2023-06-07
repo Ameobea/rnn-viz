@@ -12,10 +12,10 @@
   const seqLen = oneSeqExamples().inputs.length;
   const inputDim = oneSeqExamples().inputs[0].length;
   const outputDim = oneSeqExamples().outputs[0].length;
-  const batchSize = 128;
+  const batchSize = 1024;
   const epochs = 20000;
   const _quantIntensity = 0.02;
-  const sparseIntensity = 0.015;
+  const sparseIntensity = 0.08;
   const sparseSteepness = 25;
   const learningRate = 0.001;
   const l1 = 0.0;
@@ -31,17 +31,17 @@
     const { SparseRegularizer } = await import('../../nn/SparseRegularizer');
     tf.setBackend('cpu');
 
-    const initializer = tf.initializers.randomNormal({ mean: 0, stddev: 0.2 });
+    // const initializer = tf.initializers.randomNormal({ mean: 0, stddev: 0.2 });
     // const initializer = tf.initializers.leCunUniform({});
-    // const initializer = tf.initializers.glorotNormal({});
+    const initializer = tf.initializers.glorotNormal({});
     const activation = { type: 'interpolatedAmeo' as const, factor: 0.6, leakyness: 1 };
     // const activation = { type: 'leakyAmeo' as const, leakyness: 0.2 };
     // const activation = 'linear';
 
     const cellParams = [
       {
-        stateSize: 16,
-        outputDim: 32,
+        stateSize: 32,
+        outputDim: 24,
         outputActivation: activation,
         recurrentActivation: activation,
         useOutputBias: true,
@@ -62,7 +62,7 @@
         // biasRegularizer: new QuantizationRegularizer(1, 0.2),
       },
       {
-        stateSize: 4,
+        stateSize: 8,
         outputDim: 16,
         outputActivation: activation,
         recurrentActivation: activation,

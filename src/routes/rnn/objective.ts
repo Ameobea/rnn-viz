@@ -1,4 +1,4 @@
-const seqLen = 24;
+const seqLen = 16;
 
 const oneVal = (threshold = 0.5) => (Math.random() > threshold ? 1 : -1);
 
