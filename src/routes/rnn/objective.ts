@@ -1,4 +1,6 @@
-const seqLen = 9;
+const seqLen = 24;
+
+const oneVal = (threshold = 0.5) => (Math.random() > threshold ? 1 : -1);
 
 // const oneSeqExamples = () => {
 //   const inputs: (1 | -1)[] = [];
@@ -33,8 +35,6 @@ const seqLen = 9;
 //   const inputs: number[] = [];
 //   const outputs: number[] = [];
 
-//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
-
 //   for (let i = 0; i < seqLen; i += 1) {
 //     const input = oneVal();
 //     inputs.push(input);
@@ -60,6 +60,16 @@ const seqLen = 9;
 
 const xor = (a: -1 | 1, b: -1 | 1): -1 | 1 =>
   (a === -1 && b === 1) || (a === 1 && b === -1) ? 1 : -1;
+
+const and = (a: -1 | 1, b: -1 | 1): -1 | 1 => (a === 1 && b === 1 ? 1 : -1);
+
+const or = (a: -1 | 1, b: -1 | 1): -1 | 1 => (a === 1 || b === 1 ? 1 : -1);
+
+const xnor = (a: -1 | 1, b: -1 | 1): -1 | 1 => (a === b ? 1 : -1);
+
+const nand = (a: -1 | 1, b: -1 | 1): -1 | 1 => (a === 1 && b === 1 ? -1 : 1);
+
+const nor = (a: -1 | 1, b: -1 | 1): -1 | 1 => (a === 1 || b === 1 ? -1 : 1);
 
 // export const oneSeqExamples = () => {
 //   const inputs: [number, number][] = [];
@@ -173,8 +183,6 @@ out   = s1[n]
 //   const inputs: [number, number][] = [];
 //   const outputs: [number][] = [];
 
-//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
-
 //   for (let i = 0; i < seqLen; i += 1) {
 //     const input: [1 | -1, 1 | -1] = [oneVal(), oneVal()];
 //     const output: [1 | -1] = (() => {
@@ -237,8 +245,6 @@ subgraph "cluster_inputs" {
 // export const oneSeqExamples = () => {
 //   const inputs: [number][] = [];
 //   const outputs: [number][] = [];
-
-//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
 
 //   for (let i = 0; i < seqLen; i += 1) {
 //     const input: [1 | -1] = [oneVal()];
@@ -309,9 +315,7 @@ subgraph "cluster_inputs" {
 */
 // export const oneSeqExamples = () => {
 //   const inputs: [number, number][] = [];
-//   const outputs: [number][] = [];
-
-//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+//   const outputs: [number][] = [];]
 
 //   let inverted = false;
 //   let lastControl = -1;
@@ -396,7 +400,6 @@ digraph "RNN" {
 //   const inputs: [number][] = [];
 //   const outputs: [number][] = [];
 
-//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
 //   let sum = 0;
 
 //   for (let i = 0; i < seqLen; i += 1) {
@@ -414,7 +417,6 @@ digraph "RNN" {
 //   const inputs: [number][] = [];
 //   const outputs: [number][] = [];
 
-//   const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
 //   let output = 1;
 //   let n = 1;
 //   let count = 0;
@@ -448,19 +450,120 @@ digraph "RNN" {
  *
  * Apparently it's representable in a single neuron!  All input weights=-0.5, bias=-1
  */
+// export const oneSeqExamples = () => {
+//   const inputs: [number, number, number][] = [];
+//   const outputs: [number][] = [];
+
+//   for (let i = 0; i < seqLen; i += 1) {
+//     const input: [1 | -1, 1 | -1, 1 | -1] = [oneVal(), oneVal(), oneVal()];
+//     const output: [1 | -1] = (() => {
+//       if (input[0] === input[1] && input[1] === input[2]) {
+//         return [1];
+//       }
+//       return [-1];
+//     })();
+//     inputs.push(input);
+//     outputs.push(output);
+//   }
+
+//   return { inputs, outputs };
+// };
+
+/**
+ * Holds a mode as state which determines which operation to apply to inputs.
+ *
+ * First channel of input is gate which toggles between the two modes when it is high.
+ *
+ * {"inputLayer":{"neurons":[{"name":"input_0","activation":"linear","weights":[],"bias":0},{"name":"input_1","activation":"linear","weights":[],"bias":0},{"name":"input_2","activation":"linear","weights":[],"bias":0}]},"cells":[{"outputNeurons":[{"weights":[{"weight":-1,"index":2}],"bias":0,"name":"layer_0_output_0","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}},{"weights":[{"weight":1,"index":0},{"weight":0.8500000238418579,"index":1}],"bias":-1.25,"name":"layer_0_output_1","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}},{"weights":[{"weight":-1.0499999523162842,"index":0},{"weight":0.800000011920929,"index":1},{"weight":0.4000000059604645,"index":2},{"weight":-0.6499999761581421,"index":4}],"bias":-0.8500000238418579,"name":"layer_0_output_2","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}},null,{"weights":[{"weight":1.5499999523162842,"index":0},{"weight":-0.699999988079071,"index":1},{"weight":0.8500000238418579,"index":2},{"weight":-0.5,"index":4}],"bias":0.699999988079071,"name":"layer_0_output_4","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}},null,null,null],"recurrentNeurons":[null,{"weights":[{"weight":0.949999988079071,"index":0},{"weight":-1,"index":4}],"bias":0.949999988079071,"name":"layer_0_recurrent_1","activation":{"type":"interpolatedAmeo","factor":0.6,"leakyness":1}},null,null],"stateNeurons":[null,{"bias":0.949999988079071,"name":"layer_0_state_1","activation":"linear","weights":[{"weight":1,"index":1}]},null,null],"outputDim":8}],"postLayers":[{"neurons":[{"weights":[{"weight":0.3499999940395355,"index":0},{"weight":1,"index":1},{"weight":1.5499999523162842,"index":2},{"weight":-0.75,"index":4}],"bias":0,"name":"post_layer_output_0","activation":"linear"}],"outputDim":1}],"outputs":{"neurons":[{"name":"output_0","activation":"linear","weights":[{"weight":1,"index":0}],"bias":0}]}}
+ */
+// export const oneSeqExamples = () => {
+//   const inputs: [number, number, number][] = [];
+//   const outputs: [number][] = [];
+
+//   enum Mode {
+//     Xor = -1,
+//     And = 1,
+//   }
+//   let mode = Mode.Xor;
+
+//   for (let i = 0; i < seqLen; i += 1) {
+//     const changeMode = oneVal(0.8);
+//     if (changeMode === 1) {
+//       mode = mode === Mode.Xor ? Mode.And : Mode.Xor;
+//     }
+
+//     const input: [1 | -1, 1 | -1, 1 | -1] = [changeMode, oneVal(), oneVal()];
+//     const output: [1 | -1] = (() => {
+//       switch (mode) {
+//         case Mode.Xor:
+//           return [xor(input[1], input[2])];
+//         case Mode.And:
+//           return [and(input[1], input[2])];
+//         default:
+//           throw new Error('Invalid mode');
+//       }
+//     })();
+//     inputs.push(input);
+//     outputs.push(output);
+//   }
+
+//   return { inputs, outputs };
+// };
+
+/**
+ * Similar to above but with 6 modes and two control channels.  First control channel is the same as before
+ * (gate which switches modes when high) and the second determines whether to move forward or backward through
+ * the modes.
+ */
 export const oneSeqExamples = () => {
-  const inputs: [number, number, number][] = [];
+  const inputs: [number, number, number, number][] = [];
   const outputs: [number][] = [];
 
-  const oneVal = () => (Math.random() > 0.5 ? 1 : -1);
+  enum Mode {
+    Xor = -1,
+    And = 1,
+    Or = -2,
+    Nor = 2,
+    Nand = -3,
+    Xnor = 3,
+  }
+  const allModes = [
+    Mode.Xor,
+    Mode.And,
+    Mode.Or,
+    // Mode.Nor, Mode.Nand, Mode.Xnor
+  ];
+  let mode = Mode.Xor;
+  let modeIndex = 0;
 
   for (let i = 0; i < seqLen; i += 1) {
-    const input: [1 | -1, 1 | -1, 1 | -1] = [oneVal(), oneVal(), oneVal()];
+    const changeMode = oneVal(0.8);
+    const changeDir = oneVal();
+    if (changeMode === 1) {
+      modeIndex += changeDir === 1 ? 1 : -1;
+      modeIndex = modeIndex < 0 ? allModes.length - 1 : modeIndex;
+      modeIndex = modeIndex >= allModes.length ? 0 : modeIndex;
+      mode = allModes[modeIndex];
+    }
+
+    const input: [1 | -1, 1 | -1, 1 | -1, 1 | -1] = [changeMode, changeDir, oneVal(), oneVal()];
     const output: [1 | -1] = (() => {
-      if (input[0] === input[1] && input[1] === input[2]) {
-        return [1];
+      switch (mode) {
+        case Mode.Xor:
+          return [xor(input[1], input[2])];
+        case Mode.And:
+          return [and(input[1], input[2])];
+        case Mode.Or:
+          return [or(input[1], input[2])];
+        case Mode.Nor:
+          return [nor(input[1], input[2])];
+        case Mode.Nand:
+          return [nand(input[1], input[2])];
+        case Mode.Xnor:
+          return [xnor(input[1], input[2])];
+        default:
+          throw new Error('Invalid mode');
       }
-      return [-1];
     })();
     inputs.push(input);
     outputs.push(output);

@@ -111,11 +111,11 @@
 
   $: xs = new Array<number>(currentTimestep + 2).fill(0).map((_, i) => i);
   $: for (const { inst, nodeID } of uPlotInsts) {
-    console.log(uPlotInsts);
     const xsSlice = xs.slice(-21);
     const ys: (number | null)[] = (neuronOutputHistory.get(nodeID) ?? [])
       .slice(-20)
       .map(y => clamp(-1, 1, y));
+    console.log({ inst, nodeID, ys });
     ys.push(null);
     inst.setData([xsSlice, ys]);
   }

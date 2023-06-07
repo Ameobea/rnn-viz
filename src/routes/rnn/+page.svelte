@@ -15,9 +15,9 @@
   const batchSize = 128;
   const epochs = 20000;
   const _quantIntensity = 0.02;
-  const sparseIntensity = 0.15;
+  const sparseIntensity = 0.015;
   const sparseSteepness = 25;
-  const learningRate = 0.01;
+  const learningRate = 0.001;
   const l1 = 0.0;
 
   onMount(async () => {
@@ -40,8 +40,30 @@
 
     const cellParams = [
       {
+        stateSize: 16,
+        outputDim: 32,
+        outputActivation: activation,
+        recurrentActivation: activation,
+        useOutputBias: true,
+        useRecurrentBias: true,
+        biasInitializer: initializer,
+        recurrentInitializer: initializer,
+        kernelInitializer: initializer,
+        kernelRegularizer: new ComposedRegularizer(
+          // new QuantizationRegularizer(1, quantIntensity),
+          new SparseRegularizer(sparseIntensity, 0.025, sparseSteepness, l1)
+          // tf.regularizers.l1({ l1 })
+        ),
+        recurrentRegularizer: new ComposedRegularizer(
+          // new QuantizationRegularizer(1, quantIntensity),
+          new SparseRegularizer(sparseIntensity, 0.025, sparseSteepness, l1)
+          // tf.regularizers.l1({ l1 })
+        ),
+        // biasRegularizer: new QuantizationRegularizer(1, 0.2),
+      },
+      {
         stateSize: 4,
-        outputDim: 8,
+        outputDim: 16,
         outputActivation: activation,
         recurrentActivation: activation,
         useOutputBias: true,
