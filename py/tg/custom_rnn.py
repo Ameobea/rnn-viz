@@ -1,29 +1,36 @@
 from typing import Callable, Dict, List
 from tinygrad.tensor import Tensor
 
+from ameo_activation import Ameo
+
+
 def build_activation(id) -> Callable[[Tensor], Tensor]:
-    if id=='tanh':
+    if id == "tanh":
         return lambda x: x.tanh()
-    elif id=='sigmoid':
+    elif id == "sigmoid":
         return lambda x: x.sigmoid()
-    elif id=='relu':
+    elif id == "relu":
         return lambda x: x.relu()
-    elif id == 'linear' or id is None:
+    elif id == "linear" or id is None:
         return lambda x: x
+    elif id == "ameo":
+        return lambda x: Ameo.apply(x)
     else:
-        raise ValueError(f'Unknown activation: {id}')
+        raise ValueError(f"Unknown activation: {id}")
+
 
 def build_initializer(id) -> Callable[[List[int]], Tensor]:
-    if id=='zeros':
+    if id == "zeros":
         return lambda shape: Tensor.zeros(*shape)
-    elif id=='ones':
+    elif id == "ones":
         return lambda shape: Tensor.ones(*shape)
-    elif id=='glorot_uniform':
+    elif id == "glorot_uniform":
         return lambda shape: Tensor.glorot_uniform(*shape)
     # elif id=='orthogonal':
     #     return lambda shape: Tensor.orthogonal(*shape)
     else:
-        raise ValueError(f'Unknown initializer: {id}')
+        raise ValueError(f"Unknown initializer: {id}")
+
 
 class CustomRNNCell:
     weights: Dict[str, Tensor] = {}
@@ -35,8 +42,8 @@ class CustomRNNCell:
         input_shape,
         output_dim,
         state_size,
-        output_activation='tanh',
-        recurrent_activation='tanh',
+        output_activation="tanh",
+        recurrent_activation="tanh",
         use_bias=True,
         kernel_initializer="glorot_uniform",
         recurrent_initializer="glorot_uniform",
@@ -46,7 +53,7 @@ class CustomRNNCell:
         recurrent_regularizer=None,
         bias_regularizer=None,
         trainable_initial_weights=False,
-        **kwargs
+        **kwargs,
     ):
         self.output_dim = output_dim
         self.state_size = state_size
@@ -106,7 +113,14 @@ class CustomRNNCell:
         if not self.trainable_initial_weights:
             self.initial_state.requires_grad = False
 
-    def add_weight(self, shape, initializer: Callable[[List[int]], Tensor], name, trainable=True, regularizer=None) -> Tensor:
+    def add_weight(
+        self,
+        shape,
+        initializer: Callable[[List[int]], Tensor],
+        name,
+        trainable=True,
+        regularizer=None,
+    ) -> Tensor:
         t = initializer(shape)
         self.weights[name] = t
         if trainable:
@@ -129,7 +143,7 @@ class CustomRNNCell:
 
     def get_initial_state(self, batch_size, dtype=None) -> Tensor:
         # tile initial state to batch size
-        return self.initial_state.unsqueeze(0).repeat([batch_size,1])
+        return self.initial_state.unsqueeze(0).repeat([batch_size, 1])
 
 
 class CustomRNN:
