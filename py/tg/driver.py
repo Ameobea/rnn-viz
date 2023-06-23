@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+import queue
 from custom_rnn import CustomRNNCell, CustomRNN
 import numpy as np
 from tinygrad.tensor import Tensor
@@ -16,7 +18,7 @@ output_dim = one_batch_examples(1, seq_len)[1].shape[-1]
 batch_size = 1024 * 4
 
 
-reg = SparseRegularizer(intensity=0.4, threshold=0.025, steepness=25, l1=0.001)
+reg = SparseRegularizer(intensity=0.1, threshold=0.025, steepness=25, l1=0.001)
 activation = {"id": "interpolated_ameo", "factor": 0.6, "leakyness": 1}
 
 rnn = CustomRNN(
@@ -28,6 +30,26 @@ rnn = CustomRNN(
         ),
         output_dim=64,
         state_size=64,
+        output_activation=activation,
+        recurrent_activation=activation,
+        trainable_initial_weights=True,
+        use_bias=True,
+        output_kernel_regularizer=reg,
+        recurrent_kernel_regularizer=reg,
+        kernel_initializer="glorot_normal",
+        bias_initializer="glorot_normal",
+        initial_state_initializer="glorot_normal",
+        # output_bias_regularizer=reg,
+        # recurrent_bias_regularizer=reg,
+    ),
+    CustomRNNCell(
+        input_shape=(
+            batch_size,
+            seq_len,
+            64,
+        ),
+        output_dim=32,
+        state_size=32,
         output_activation=activation,
         recurrent_activation=activation,
         trainable_initial_weights=True,
@@ -74,8 +96,27 @@ def train_one_batch(x: Tensor, y: Tensor) -> Tensor:
 
     return raw_loss.reshape((1,)).cat(reg_loss.reshape((1,))).realize()
 
+data_queue = queue.Queue(maxsize=10)
+data_gen_worker_count = 4  # number of data generation threads. Modify this as required.
+
 
 np.set_printoptions(suppress=True)
+
+def data_gen_worker():
+    while True:
+        x, y = one_batch_examples(batch_size, seq_len)
+        data_queue.put((Tensor(x), Tensor(y)))
+
+# Start data generation in worker threads
+with ThreadPoolExecutor(max_workers=data_gen_worker_count) as executor:
+    for _ in range(data_gen_worker_count):
+        executor.submit(data_gen_worker)
+
+    # Training loop
+    for i in range(500):
+        x, y = data_queue.get()  # this will block if the queue is empty
+        loss = train_one_batch(x, y)
+        print(f"loss: {loss.numpy()}")
 
 for i in range(500):
     x, y = one_batch_examples(batch_size, seq_len)
