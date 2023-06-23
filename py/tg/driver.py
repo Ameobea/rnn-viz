@@ -5,36 +5,29 @@ from tinygrad.nn.optim import Adam
 from tinygrad.nn import Linear
 from tinygrad.jit import TinyJit
 from sparse_regularizer import SparseRegularizer
-
-input_dim = 1
-output_dim = 1
-batch_size = 1024 * 2
-seq_len = 12
+from objective import one_batch_examples
+from validate import validate
 
 
-def build_examples(batch_size: int, seq_len: int):
-    # random numbers, either -1 or 1
-    inputs = np.random.choice([-1, 1], size=(batch_size, seq_len, input_dim)).astype(np.float32)
-    # train to return the previous number, or -1 if it's the first number
-    outputs = np.zeros((batch_size, seq_len, output_dim), dtype=np.float32)
-    outputs[:, 1:, :] = inputs[:, :-1, :]
-    outputs[:, 0, :] = -1
-
-    return inputs, outputs
+learning_rate = 0.003
+seq_len = 18
+input_dim = one_batch_examples(1, seq_len)[0].shape[-1]
+output_dim = one_batch_examples(1, seq_len)[1].shape[-1]
+batch_size = 1024 * 4
 
 
 reg = SparseRegularizer(intensity=0.4, threshold=0.025, steepness=25, l1=0.001)
 activation = {"id": "interpolated_ameo", "factor": 0.6, "leakyness": 1}
 
-cells = CustomRNN(
+rnn = CustomRNN(
     CustomRNNCell(
         input_shape=(
             batch_size,
             seq_len,
-            1,
+            input_dim,
         ),
-        output_dim=2,
-        state_size=1,
+        output_dim=64,
+        state_size=64,
         output_activation=activation,
         recurrent_activation=activation,
         trainable_initial_weights=True,
@@ -48,11 +41,11 @@ cells = CustomRNN(
         # recurrent_bias_regularizer=reg,
     )
 )
-dense = Linear(cells.cell.output_dim, 1, bias=True)
+dense = Linear(rnn.cells[-1].output_dim, 1, bias=True)
 
 
 def forward(x: Tensor) -> Tensor:
-    y = cells(x)
+    y = rnn(x)
     y = dense(y)
     return y
 
@@ -61,10 +54,10 @@ def compute_loss(y_pred: Tensor, y_true: Tensor) -> Tensor:
     return (y_pred - y_true).pow(2).mean()
 
 
-trainable_params = cells.get_trainable_params() + [dense.weight, dense.bias]
+trainable_params = rnn.get_trainable_params() + [dense.weight, dense.bias]
 opt = Adam(
     trainable_params,
-    0.06,
+    learning_rate,
 )
 
 
@@ -72,7 +65,7 @@ opt = Adam(
 def train_one_batch(x: Tensor, y: Tensor) -> Tensor:
     y_pred = forward(x)
     raw_loss = compute_loss(y_pred, y)
-    reg_loss = cells.get_regularization_loss() + reg(dense.weight)
+    reg_loss = rnn.get_regularization_loss() + reg(dense.weight)
     loss = raw_loss + reg_loss
 
     opt.zero_grad()
@@ -85,23 +78,20 @@ def train_one_batch(x: Tensor, y: Tensor) -> Tensor:
 np.set_printoptions(suppress=True)
 
 for i in range(500):
-    x, y = build_examples(batch_size, seq_len)
+    x, y = one_batch_examples(batch_size, seq_len)
     x, y = Tensor(x), Tensor(y)
     loss = train_one_batch(x, y)
     print(f"loss: {loss.numpy()}")
-
-print("output weights:", cells.cell.output_kernel.numpy())
-print("output bias:", cells.cell.output_bias.numpy() if cells.cell.output_bias else None)
-print("recurrent weights:", cells.cell.recurrent_kernel.numpy())
-print("recurrent bias:", cells.cell.recurrent_bias.numpy() if cells.cell.recurrent_bias else None)
-print("initial state:", cells.cell.initial_state.numpy())
+for i, cell in enumerate(rnn.cells):
+    print(f"[{i}] output weights:", cell.output_kernel.numpy())
+    if cell.output_bias:
+        print(f"[{i}] output bias:", cell.output_bias.numpy())
+    print(f"[{i}] recurrent weights:", cell.recurrent_kernel.numpy())
+    if cell.recurrent_bias:
+        print(f"[{i}] recurrent bias:", cell.recurrent_bias.numpy())
+    print(f"[{i}] initial state:", cell.initial_state.numpy())
 print("dense weights:", dense.weight.numpy())
 print("dense bias:", dense.bias.numpy())
 
-# eval test sequence
-x, y = build_examples(1, seq_len)
-x, y = Tensor(x), Tensor(y)
-y_pred = forward(x)
-print("input:", x.numpy())
-print("expected output:", y.numpy())
-print("predicted output:", y_pred.numpy())
+
+validate(one_batch_examples, forward, 40)

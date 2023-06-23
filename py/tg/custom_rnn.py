@@ -1,3 +1,4 @@
+from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Union
 from tinygrad.tensor import Tensor
 import numpy as np
@@ -50,7 +51,7 @@ def build_initializer(id) -> Callable[[List[int]], Tensor]:
 
 class CustomRNNCell:
     weights: Dict[str, Tensor] = {}
-    trainable_weights = []
+    trainable_weights: List[Tensor] = []
 
     def __init__(
         self,
@@ -171,21 +172,25 @@ class CustomRNNCell:
 
 class CustomRNN:
     # TODO: Support multiple cells
-    def __init__(self, cell: CustomRNNCell, return_sequences=True, return_state=False, **kwargs):
+    def __init__(self, *cells: CustomRNNCell, return_sequences=True, return_state=False, **kwargs):
         super(CustomRNN, self).__init__(**kwargs)
-        self.cell = cell
+        self.cells = cells
         self.return_sequences = return_sequences
         self.return_state = return_state
         self.states = None
 
     def __call__(self, inputs: Tensor):
         batch_size, seq_len = (inputs.shape[0], inputs.shape[1])
-        self.states = self.cell.get_initial_state(batch_size)
+        self.states = [cell.get_initial_state(batch_size) for cell in self.cells]
         outputs = []
         for seq_ix in range(seq_len):
             inputs_for_timestep = inputs[:, seq_ix, :]
-            output, self.states = self.cell(inputs_for_timestep, self.states)
-            outputs.append(output)
+            new_states = []
+            for cell, state in zip(self.cells, self.states):
+                inputs_for_timestep, new_state = cell(inputs_for_timestep, state)
+                new_states.append(new_state)
+            outputs.append(inputs_for_timestep)
+            self.states = new_states
 
         if self.return_sequences:
             output = Tensor.stack(outputs, dim=1)
@@ -198,7 +203,7 @@ class CustomRNN:
             return output
 
     def get_trainable_params(self):
-        return self.cell.trainable_weights
+        return [p for cell in self.cells for p in cell.trainable_weights]
 
     def get_regularization_loss(self):
-        return self.cell.get_regularization_cost()
+        return reduce(lambda a, b: a + b, [cell.get_regularization_cost() for cell in self.cells], Tensor(0.0))
