@@ -1,10 +1,25 @@
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Union
 from tinygrad.tensor import Tensor
+import numpy as np
+from glorot_normal import glorot_normal
 
-from ameo_activation import Ameo
+from ameo_activation import mk_leaky_ameo, mk_interpolated_ameo
 
 
-def build_activation(id) -> Callable[[Tensor], Tensor]:
+def build_activation(id: Union[str, Dict[str, Any]]) -> Callable[[Tensor], Tensor]:
+    if isinstance(id, dict):
+        if id["id"] == "leaky_ameo":
+            leakyness = id["leakyness"]
+            LeakyAmeo = mk_leaky_ameo(leakyness=leakyness)
+            return lambda x: LeakyAmeo.apply(x)
+        elif id["id"] == "interpolated_ameo":
+            factor = id["factor"]
+            leakyness = id["leakyness"]
+            InterpolatedAmeo = mk_interpolated_ameo(factor, leakyness=leakyness)
+            return lambda x: InterpolatedAmeo.apply(x)
+        else:
+            raise ValueError(f"Unknown activation: {id}")
+
     if id == "tanh":
         return lambda x: x.tanh()
     elif id == "sigmoid":
@@ -14,7 +29,8 @@ def build_activation(id) -> Callable[[Tensor], Tensor]:
     elif id == "linear" or id is None:
         return lambda x: x
     elif id == "ameo":
-        return lambda x: Ameo.apply(x)
+        LeakyAmeo = mk_leaky_ameo(leakyness=0.0)
+        return lambda x: LeakyAmeo.apply(x)
     else:
         raise ValueError(f"Unknown activation: {id}")
 
@@ -26,8 +42,8 @@ def build_initializer(id) -> Callable[[List[int]], Tensor]:
         return lambda shape: Tensor.ones(*shape)
     elif id == "glorot_uniform":
         return lambda shape: Tensor.glorot_uniform(*shape)
-    # elif id=='orthogonal':
-    #     return lambda shape: Tensor.orthogonal(*shape)
+    elif id == "glorot_normal":
+        return lambda shape: Tensor(glorot_normal(shape))
     else:
         raise ValueError(f"Unknown initializer: {id}")
 
@@ -35,23 +51,23 @@ def build_initializer(id) -> Callable[[List[int]], Tensor]:
 class CustomRNNCell:
     weights: Dict[str, Tensor] = {}
     trainable_weights = []
-    regularizers = []
 
     def __init__(
         self,
         input_shape,
         output_dim,
         state_size,
-        output_activation="tanh",
-        recurrent_activation="tanh",
+        output_activation: Union[str, Dict[str, Any]] = "tanh",
+        recurrent_activation: Union[str, Dict[str, Any]] = "tanh",
         use_bias=True,
         kernel_initializer="glorot_uniform",
         recurrent_initializer="glorot_uniform",
         bias_initializer="glorot_uniform",
         initial_state_initializer="glorot_uniform",
-        kernel_regularizer=None,
-        recurrent_regularizer=None,
-        bias_regularizer=None,
+        output_kernel_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
+        output_bias_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
+        recurrent_kernel_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
+        recurrent_bias_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
         trainable_initial_weights=False,
         **kwargs,
     ):
@@ -66,9 +82,10 @@ class CustomRNNCell:
         self.bias_initializer = build_initializer(bias_initializer)
         self.initial_state_initializer = build_initializer(initial_state_initializer)
 
-        # self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        # self.recurrent_regularizer = regularizers.get(recurrent_regularizer)
-        # self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.output_kernel_regularizer = output_kernel_regularizer
+        self.output_bias_regularizer = output_bias_regularizer
+        self.recurrent_kernel_regularizer = recurrent_kernel_regularizer
+        self.recurrent_bias_regularizer = recurrent_bias_regularizer
 
         self.trainable_initial_weights = trainable_initial_weights
 
@@ -76,14 +93,12 @@ class CustomRNNCell:
             shape=(input_shape[-1] + self.state_size, self.output_dim),
             initializer=self.kernel_initializer,
             name="kernel",
-            # regularizer=self.kernel_regularizer,
         )
 
         self.recurrent_kernel = self.add_weight(
             shape=(input_shape[-1] + self.state_size, self.state_size),
             initializer=self.recurrent_initializer,
             name="recurrent_kernel",
-            # regularizer=self.recurrent_regularizer,
         )
 
         if self.use_bias:
@@ -91,14 +106,12 @@ class CustomRNNCell:
                 shape=(self.output_dim,),
                 initializer=self.bias_initializer,
                 name="bias",
-                # regularizer=self.bias_regularizer,
             )
 
             self.recurrent_bias = self.add_weight(
                 shape=(self.state_size,),
                 initializer=self.bias_initializer,
                 name="recurrent_bias",
-                # regularizer=self.bias_regularizer,
             )
         else:
             self.output_bias = None
@@ -119,13 +132,11 @@ class CustomRNNCell:
         initializer: Callable[[List[int]], Tensor],
         name,
         trainable=True,
-        regularizer=None,
     ) -> Tensor:
         t = initializer(shape)
         self.weights[name] = t
         if trainable:
             self.trainable_weights.append(t)
-        # TODO: Handle regularizer
         return t
 
     def __call__(self, inputs: Tensor, prev_state: Tensor):
@@ -144,6 +155,18 @@ class CustomRNNCell:
     def get_initial_state(self, batch_size, dtype=None) -> Tensor:
         # tile initial state to batch size
         return self.initial_state.unsqueeze(0).repeat([batch_size, 1])
+
+    def get_regularization_cost(self):
+        cost = Tensor(0.0)
+        if self.output_kernel_regularizer is not None:
+            cost = cost + self.output_kernel_regularizer(self.output_kernel).sum()
+        if self.output_bias_regularizer is not None:
+            cost = cost + self.output_bias_regularizer(self.output_bias).sum()
+        if self.recurrent_kernel_regularizer is not None:
+            cost = cost + self.recurrent_kernel_regularizer(self.recurrent_kernel).sum()
+        if self.recurrent_bias_regularizer is not None:
+            cost = cost + self.recurrent_bias_regularizer(self.recurrent_bias).sum()
+        return cost
 
 
 class CustomRNN:
@@ -176,3 +199,6 @@ class CustomRNN:
 
     def get_trainable_params(self):
         return self.cell.trainable_weights
+
+    def get_regularization_loss(self):
+        return self.cell.get_regularization_cost()

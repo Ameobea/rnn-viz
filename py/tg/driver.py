@@ -4,11 +4,12 @@ from tinygrad.tensor import Tensor
 from tinygrad.nn.optim import Adam
 from tinygrad.nn import Linear
 from tinygrad.jit import TinyJit
+from sparse_regularizer import SparseRegularizer
 
 input_dim = 1
 output_dim = 1
-batch_size = 1024
-seq_len = 16
+batch_size = 1024 * 2
+seq_len = 12
 
 
 def build_examples(batch_size: int, seq_len: int):
@@ -22,6 +23,9 @@ def build_examples(batch_size: int, seq_len: int):
     return inputs, outputs
 
 
+reg = SparseRegularizer(intensity=0.4, threshold=0.025, steepness=25, l1=0.001)
+activation = {"id": "interpolated_ameo", "factor": 0.6, "leakyness": 1}
+
 cells = CustomRNN(
     CustomRNNCell(
         input_shape=(
@@ -29,12 +33,19 @@ cells = CustomRNN(
             seq_len,
             1,
         ),
-        output_dim=4,
-        state_size=2,
-        output_activation="ameo",
-        recurrent_activation="ameo",
+        output_dim=2,
+        state_size=1,
+        output_activation=activation,
+        recurrent_activation=activation,
         trainable_initial_weights=True,
         use_bias=True,
+        output_kernel_regularizer=reg,
+        recurrent_kernel_regularizer=reg,
+        kernel_initializer="glorot_normal",
+        bias_initializer="glorot_normal",
+        initial_state_initializer="glorot_normal",
+        # output_bias_regularizer=reg,
+        # recurrent_bias_regularizer=reg,
     )
 )
 dense = Linear(cells.cell.output_dim, 1, bias=True)
@@ -47,26 +58,33 @@ def forward(x: Tensor) -> Tensor:
 
 
 def compute_loss(y_pred: Tensor, y_true: Tensor) -> Tensor:
-    return (y_pred - y_true).abs().mean()
+    return (y_pred - y_true).pow(2).mean()
 
 
-trainable_params = cells.get_trainable_params()  # + [dense.weight, dense.bias]
-opt = Adam(trainable_params, 0.05)
+trainable_params = cells.get_trainable_params() + [dense.weight, dense.bias]
+opt = Adam(
+    trainable_params,
+    0.06,
+)
 
 
 @TinyJit
 def train_one_batch(x: Tensor, y: Tensor) -> Tensor:
     y_pred = forward(x)
-    loss = compute_loss(y_pred, y)
+    raw_loss = compute_loss(y_pred, y)
+    reg_loss = cells.get_regularization_loss() + reg(dense.weight)
+    loss = raw_loss + reg_loss
 
     opt.zero_grad()
     loss.backward()
     opt.step()
 
-    return loss.realize()
+    return raw_loss.reshape((1,)).cat(reg_loss.reshape((1,))).realize()
 
 
-for i in range(800):
+np.set_printoptions(suppress=True)
+
+for i in range(500):
     x, y = build_examples(batch_size, seq_len)
     x, y = Tensor(x), Tensor(y)
     loss = train_one_batch(x, y)
