@@ -5,7 +5,8 @@ import numpy as np
 
 
 def f32_to_int(x: Tensor) -> Tensor:
-    return (x + 0.5).floor().cast(dtypes.int32)
+    # return (x + 0.5).floor().cast(dtypes.int32)
+    return (x > 0.0).cast(dtypes.float32).mul(2.0).sub(1.0).cast(dtypes.int32)
 
 
 def validate(
@@ -54,7 +55,9 @@ def validate(
 
                 for i in range(seq_len):
                     if seq_expected[i] != seq_pred[i]:
-                        print(f"first error at index {i}; expected {seq_expected[i]}, got {seq_pred[i]}")
+                        print(
+                            f"first error at index {i}; expected {seq_expected[i]}, got {seq_pred[i]}"
+                        )
                         break
 
                 return

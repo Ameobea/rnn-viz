@@ -58,6 +58,7 @@
   export let currentTimestep: number;
   export let neuronOutputHistory: Map<string, number[]>;
   export let selectedNodeID: string | null;
+  export let toggleSelecteNodeID: (nodeID: string) => void;
   export let visibleNodeIDs: string[];
   export let expanded = false;
 
@@ -109,15 +110,13 @@
 
   const uPlotInsts: { nodeID: string; inst: UPlot }[] = [];
 
-  $: xs = new Array<number>(currentTimestep + 2).fill(0).map((_, i) => i);
   $: for (const { inst, nodeID } of uPlotInsts) {
-    const xsSlice = xs.slice(-21);
+    const xs = new Array<number>(20).fill(currentTimestep).map((_, i) => i);
     const ys: (number | null)[] = (neuronOutputHistory.get(nodeID) ?? [])
-      .slice(-20)
+      .slice(-19)
       .map(y => clamp(-1, 1, y));
-    console.log({ inst, nodeID, ys });
     ys.push(null);
-    inst.setData([xsSlice, ys]);
+    inst.setData([xs, ys]);
   }
 
   const renderChart = (container: HTMLDivElement, nodeID: string) => {
@@ -137,7 +136,12 @@
         id={nodeID}
       >
         <div class="node-output-chart-label">{nodeID}</div>
-        <div class="chart-container" use:renderChart={nodeID} />
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div
+          class="chart-container"
+          use:renderChart={nodeID}
+          on:click={() => toggleSelecteNodeID(nodeID)}
+        />
         <div class="last-output-value">
           <button
             class="remove-chart-button"
@@ -225,7 +229,7 @@
   }
 
   .node-output-graph-selected {
-    background-color: #03777daa;
+    background-color: #03777d55;
   }
 
   .last-output-value {

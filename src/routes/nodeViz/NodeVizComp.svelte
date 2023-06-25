@@ -33,10 +33,13 @@
   import NodeVizControls from './NodeVizControls.svelte';
   import { writable, type Writable } from 'svelte/store';
 
-  export let serializedRNNGraph: string;
+  export let serializedRNNGraph: string | RNNGraph;
 
   const { graph, graphDotviz }: { graph: RNNGraph; graphDotviz: string } = (() => {
-    const graph = RNNGraph.deserialize(JSON.parse(serializedRNNGraph));
+    const graph =
+      typeof serializedRNNGraph === 'string'
+        ? RNNGraph.deserialize(JSON.parse(serializedRNNGraph))
+        : serializedRNNGraph;
     const graphDotviz = browser
       ? graph.buildGraphviz({
           arrowhead: false,
@@ -77,6 +80,13 @@
   $: selectedNode =
     NodeVizMod && selected && $selected instanceof NodeVizMod.VizNode ? $selected : null;
   $: selectedNodeID = selectedNode?.name ?? null;
+  const toggleSelecteNodeID = (nodeID: string) => {
+    if (selectedNodeID === nodeID) {
+      viz?.selected.set(null);
+    } else {
+      viz?.selected.set(viz.nodes.find(node => node.inner.name === nodeID) ?? null);
+    }
+  };
 
   $: viz?.handleResize(windowWidth, windowHeight);
 
@@ -143,6 +153,7 @@
           {selectedNodeID}
           visibleNodeIDs={$logicAnalyzerVisibleNodeIDs ?? []}
           bind:expanded={logicAnalyzerOpen}
+          {toggleSelecteNodeID}
         />
       {/if}
       {#if selectedNode}

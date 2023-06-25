@@ -272,7 +272,7 @@ export class NodeViz {
   private app: PIXI.Application;
   private viewport: Viewport;
   private graph: RNNGraph;
-  private nodes: VizNode[] = [];
+  public nodes: VizNode[] = [];
   private edges: VizEdge[] = [];
   private destroyed = false;
   public selected: Writable<VizNode | VizEdge | null> = writable(null);

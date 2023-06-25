@@ -1,24 +1,25 @@
-import type { Rank, Tensor } from '@tensorflow/tfjs';
 import type { AmeoActivationIdentifier } from '../../nn/customRNN';
 import { nativeFusedInterpolatedAmeoImplInner } from '../../nn/ameoActivation/native';
 import * as GVB from 'graphviz-builder';
 import { writable, type Writable } from 'svelte/store';
 
 export interface RNNCellWeights {
-  initialState: Tensor<Rank>;
+  initialState: Float32Array;
   stateSize: number;
   outputSize: number;
-  recurrentTreeWeights: Tensor<Rank>;
-  recurrentTreeBias?: Tensor<Rank>;
-  outputTreeWeights: Tensor<Rank>;
-  outputTreeBias?: Tensor<Rank>;
+  recurrentTreeWeights: Float32Array;
+  recurrentTreeBias?: Float32Array;
+  outputTreeWeights: Float32Array;
+  outputTreeBias?: Float32Array;
   outputActivation: AmeoActivationIdentifier;
   recurrentActivation: AmeoActivationIdentifier;
 }
 
 export interface PostLayerWeights {
-  weights: Tensor<Rank>;
-  bias?: Tensor<Rank>;
+  inputDim: number;
+  outputDim: number;
+  weights: Float32Array;
+  bias?: Float32Array;
   activation: AmeoActivationIdentifier | 'linear' | 'tanh';
 }
 
@@ -434,7 +435,7 @@ const buildActivation = (
     case 'interpolatedAmeo':
       return x => nativeFusedInterpolatedAmeoImplInner(id.factor, x, id.leakyness ?? 0);
     default:
-      throw new Error('Unimplemented');
+      throw new Error(`Unknown activation type ${id.type}`);
   }
 };
 
@@ -457,30 +458,17 @@ export class GraphRNNCell implements GraphRNNLayer {
     const layer = new GraphRNNCell(weights.outputSize);
     layer.outputDim = weights.outputSize;
 
-    if (weights.recurrentTreeWeights.shape.length !== 2) {
-      throw new Error('Recurrent tree weights must be 2D');
-    }
-
-    const recurrentWeightsData = clipAndQuantizeWeights(
-      weights.recurrentTreeWeights.dataSync() as Float32Array,
-      params
-    );
+    const recurrentWeightsData = clipAndQuantizeWeights(weights.recurrentTreeWeights, params);
     const recurrentBiasData = weights.recurrentTreeBias
-      ? clipAndQuantizeWeights(weights.recurrentTreeBias.dataSync() as Float32Array, params)
+      ? clipAndQuantizeWeights(weights.recurrentTreeBias, params)
       : null;
 
-    const outputWeightsData = clipAndQuantizeWeights(
-      weights.outputTreeWeights.dataSync() as Float32Array,
-      params
-    );
+    const outputWeightsData = clipAndQuantizeWeights(weights.outputTreeWeights, params);
     const outputBiasData = weights.outputTreeBias
-      ? clipAndQuantizeWeights(weights.outputTreeBias.dataSync() as Float32Array, params)
+      ? clipAndQuantizeWeights(weights.outputTreeBias, params)
       : null;
 
-    const initialStateData = clipAndQuantizeWeights(
-      weights.initialState.dataSync() as Float32Array,
-      params
-    );
+    const initialStateData = clipAndQuantizeWeights(weights.initialState, params);
     if (initialStateData.length !== weights.stateSize) {
       console.error({ weights, initialStateData });
       throw new Error(
@@ -505,13 +493,18 @@ export class GraphRNNCell implements GraphRNNLayer {
       return layer.stateNeurons[stateIx];
     };
 
+    // (input_shape[-1] + self.state_size, self.output_dim)
+    const outputKernelShape = [prevLayer.outputDim + weights.stateSize, weights.outputSize];
+
     for (let outputNeuronIx = 0; outputNeuronIx < weights.outputSize; outputNeuronIx += 1) {
       const weightsForNeuron: SparseWeight[] = [];
-      for (let weightIx = 0; weightIx < weights.outputTreeWeights.shape[0]; weightIx += 1) {
-        const tensorIx = weightIx * weights.outputTreeWeights.shape[1]! + outputNeuronIx;
+      for (let weightIx = 0; weightIx < outputKernelShape[0]; weightIx += 1) {
+        const tensorIx = weightIx * outputKernelShape[1]! + outputNeuronIx;
         const weight = outputWeightsData[tensorIx];
         if (weight === undefined) {
-          throw new Error(`Unexpected undefined weight; tensorIx=${tensorIx}`);
+          throw new Error(
+            `Unexpected undefined weight in output kernel; tensorIx=${tensorIx}. shape=${outputKernelShape}`
+          );
         }
         if (weight === 0) {
           continue;
@@ -537,13 +530,18 @@ export class GraphRNNCell implements GraphRNNLayer {
       layer.outputNeurons[outputNeuronIx] = neuron;
     }
 
+    // (input_shape[-1] + self.state_size, self.state_size)
+    const recurrentKernelShape = [prevLayer.outputDim + weights.stateSize, weights.stateSize];
+
     for (let recurrentNeuronIx = 0; recurrentNeuronIx < weights.stateSize; recurrentNeuronIx += 1) {
       const weightsForNeuron: SparseWeight[] = [];
-      for (let weightIx = 0; weightIx < weights.recurrentTreeWeights.shape[0]; weightIx += 1) {
-        const tensorIx = weightIx * weights.recurrentTreeWeights.shape[1]! + recurrentNeuronIx;
+      for (let weightIx = 0; weightIx < recurrentKernelShape[0]; weightIx += 1) {
+        const tensorIx = weightIx * recurrentKernelShape[1]! + recurrentNeuronIx;
         const weight = recurrentWeightsData[tensorIx];
         if (weight === undefined) {
-          throw new Error(`Unexpected undefined weight; tensorIx=${tensorIx}`);
+          throw new Error(
+            `Unexpected undefined weight in recurrent kernel; tensorIx=${tensorIx}; shape=${recurrentKernelShape}`
+          );
         }
         if (weight === 0) {
           continue;
@@ -751,21 +749,25 @@ export class GraphRNNPostLayer implements GraphRNNLayer {
   ): GraphRNNPostLayer {
     const layer = new GraphRNNPostLayer(outputDim, []);
 
-    const weightsData = clipAndQuantizeWeights(weights.weights.dataSync() as Float32Array, params);
-    const biasData = weights.bias
-      ? clipAndQuantizeWeights(weights.bias?.dataSync() as Float32Array, params)
-      : undefined;
+    const weightsData = clipAndQuantizeWeights(weights.weights, params);
+    const biasData = weights.bias ? clipAndQuantizeWeights(weights.bias, params) : undefined;
 
     const getInputNeuron = (outputIx: number): SparseNeuron | undefined =>
       prevLayer.getNeuron(outputIx);
 
+    // (input_shape[-1] + self.state_size, self.output_dim)
+    const kernelShape = [weights.inputDim, weights.outputDim];
+    console.log({ kernelShape });
+
     for (let outputNeuronIx = 0; outputNeuronIx < outputDim; outputNeuronIx += 1) {
       const weightsForNeuron: SparseWeight[] = [];
-      for (let weightIx = 0; weightIx < weights.weights.shape[0]; weightIx += 1) {
-        const tensorIx = weightIx * weights.weights.shape[1]! + outputNeuronIx;
+      for (let weightIx = 0; weightIx < kernelShape[0]; weightIx += 1) {
+        const tensorIx = weightIx * kernelShape[1]! + outputNeuronIx;
         const weight = weightsData[tensorIx];
         if (weight === undefined) {
-          throw new Error(`Unexpected undefined weight; tensorIx=${tensorIx}`);
+          throw new Error(
+            `Unexpected undefined weight in post layer; tensorIx=${tensorIx}; shape=${kernelShape}`
+          );
         }
         if (weight === 0) {
           continue;
@@ -859,7 +861,7 @@ const clipAndQuantizeWeights = (weights: Float32Array, params: RNNGraphParams): 
 };
 
 export class RNNGraph {
-  private inputLayer: GraphRNNInputLayer;
+  public inputLayer: GraphRNNInputLayer;
   private outputs: GraphRNNOutputs;
   private cells: GraphRNNCell[] = [];
   private postLayers: GraphRNNPostLayer[] = [];
@@ -888,7 +890,6 @@ export class RNNGraph {
     const inputSeq = initialInputSeq ?? [
       new Float32Array(this.inputLayer.inputDim).map(() => (Math.random() > 0.5 ? 1 : -1)),
     ];
-    console.log({ inputSeq });
     this.setInputSequence(inputSeq);
     for (const neuron of this.allConnectedNeuronsByID.values()) {
       this.neuronOutputHistory.set(neuron.name, [neuron.getOutput()]);
@@ -1145,19 +1146,31 @@ export class RNNGraph {
     return g.to_dot();
   }
 
-  private validateOneSeq({
-    inputs,
-    outputs: expectedOuts,
-  }: {
-    inputs: number[][];
-    outputs: number[][];
-  }): { isValid: true } | { isValid: false; expected: number[]; actual: number[] } {
+  /**
+   * If true, separates classes by sign rather than by rounding
+   */
+  private validateOneSeq(
+    {
+      inputs,
+      outputs: expectedOuts,
+    }: {
+      inputs: number[][];
+      outputs: number[][];
+
+      lenient?: boolean;
+    },
+    lenient = false
+  ): { isValid: true } | { isValid: false; expected: number[]; actual: number[] } {
     const f32Inputs = inputs.map(input => Float32Array.from(input));
     const actualOuts = this.evaluate(f32Inputs);
 
     for (let seqIx = 0; seqIx < expectedOuts.length; seqIx += 1) {
       for (let i = 0; i < expectedOuts[seqIx].length; i += 1) {
-        if (Math.round(actualOuts[seqIx][i]) !== Math.round(expectedOuts[seqIx][i])) {
+        const isValid = lenient
+          ? actualOuts[seqIx][i] !== 0 &&
+            Math.sign(actualOuts[seqIx][i]) === Math.sign(expectedOuts[seqIx][i])
+          : Math.round(actualOuts[seqIx][i]) !== Math.round(expectedOuts[seqIx][i]);
+        if (!isValid) {
           return {
             isValid: false,
             expected: expectedOuts[seqIx],
@@ -1170,14 +1183,18 @@ export class RNNGraph {
     return { isValid: true };
   }
 
+  /**
+   * If true, separates classes by sign rather than by rounding
+   */
   public validate(
     oneSeqExamples: () => { inputs: number[][]; outputs: number[][] },
-    iters = 10_000
+    iters = 10_000,
+    lenient = false
   ): boolean {
     for (let i = 0; i < iters; i += 1) {
-      const res = this.validateOneSeq(oneSeqExamples());
+      const res = this.validateOneSeq(oneSeqExamples(), lenient);
       if (!res.isValid) {
-        console.log(`Validation failed on iteration ${i}`);
+        console.log(`Validation failed on iteration ${i}`, { lenient });
         console.log(`Expected: ${res.expected}`);
         console.log(`Actual: ${res.actual}`);
         return false;

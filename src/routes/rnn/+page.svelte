@@ -204,15 +204,28 @@
         initialState: rnn.weights
           // initial states are in reverse order for some reason
           .find(w => w.name.includes(`/initial_state_weights_${cells.length - cellIx - 1}`))!
-          .read(),
+          .read()
+          .dataSync() as Float32Array,
         outputActivation: params.outputActivation,
         recurrentActivation: params.recurrentActivation,
         outputSize: params.outputDim,
-        outputTreeWeights: cell.weights.find(w => w.name.includes('output_tree'))!.read(),
-        recurrentTreeWeights: cell.weights.find(w => w.name.includes('recurrent_tree'))!.read(),
+        outputTreeWeights: cell.weights
+          .find(w => w.name.includes('output_tree'))!
+          .read()
+          .dataSync() as Float32Array,
+        recurrentTreeWeights: cell.weights
+          .find(w => w.name.includes('recurrent_tree'))!
+          .read()
+          .dataSync() as Float32Array,
         stateSize: params.stateSize,
-        outputTreeBias: cell.weights.find(w => w.name.includes('output_bias'))?.read(),
-        recurrentTreeBias: cell.weights.find(w => w.name.includes('recurrent_bias'))?.read(),
+        outputTreeBias: cell.weights
+          .find(w => w.name.includes('output_bias'))
+          ?.read()
+          ?.dataSync() as Float32Array | undefined,
+        recurrentTreeBias: cell.weights
+          .find(w => w.name.includes('recurrent_bias'))
+          ?.read()
+          ?.dataSync() as Float32Array | undefined,
       };
     });
 
@@ -230,8 +243,15 @@
         cellWeights,
         [
           {
-            weights: denseLayer.weights.find(w => w.name.includes('kernel'))!.read(),
-            bias: denseLayer.weights.find(w => w.name.includes('bias'))?.read(),
+            outputDim: denseLayerArgs.units,
+            weights: denseLayer.weights
+              .find(w => w.name.includes('kernel'))!
+              .read()
+              .dataSync() as Float32Array,
+            bias: denseLayer.weights
+              .find(w => w.name.includes('bias'))
+              ?.read()
+              .dataSync() as Float32Array,
             activation: denseLayerArgs.activation,
           },
         ],

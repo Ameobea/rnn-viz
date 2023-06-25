@@ -256,6 +256,21 @@ subgraph "cluster_inputs" {
 //   return { inputs, outputs };
 // };
 
+// passthru input debug
+// export const oneSeqExamples = () => {
+//   const inputs: [number][] = [];
+//   const outputs: [number][] = [];
+
+//   for (let i = 0; i < seqLen; i += 1) {
+//     const input: [1 | -1] = [oneVal()];
+//     const output: [number] = [input[0]];
+//     inputs.push(input);
+//     outputs.push(output);
+//   }
+
+//   return { inputs, outputs };
+// };
+
 // input[0] is control, input[1] is data.  Has an internal "mode" which determines if data is output directly or inverted.
 // Starts out outputting input[1] directly.  When control changes from -1 to 1 or 1 to -1, the mode is inverted.
 //
@@ -530,23 +545,31 @@ export const oneSeqExamples = () => {
   const allModes = [
     Mode.Xor,
     Mode.And,
-    Mode.Or,
-    // Mode.Nor, Mode.Nand, Mode.Xnor
+    // Mode.Or,
+    Mode.Nor,
+    Mode.Nand,
+    // Mode.Xnor
   ];
   let mode = Mode.Xor;
   let modeIndex = 0;
 
   for (let i = 0; i < seqLen; i += 1) {
-    const changeMode = oneVal(0.8);
-    const changeDir = oneVal();
+    const changeMode = oneVal(0.5);
+    // const changeDir = oneVal();
     if (changeMode === 1) {
-      modeIndex += changeDir === 1 ? 1 : -1;
+      // modeIndex += changeDir === 1 ? 1 : -1;
+      modeIndex += 1;
       modeIndex = modeIndex < 0 ? allModes.length - 1 : modeIndex;
       modeIndex = modeIndex >= allModes.length ? 0 : modeIndex;
       mode = allModes[modeIndex];
     }
 
-    const input: [1 | -1, 1 | -1, 1 | -1, 1 | -1] = [changeMode, changeDir, oneVal(), oneVal()];
+    const input: [1 | -1, 1 | -1, 1 | -1] = [
+      changeMode,
+      // changeDir,
+      oneVal(),
+      oneVal(),
+    ];
     const output: [1 | -1] = (() => {
       switch (mode) {
         case Mode.Xor:
