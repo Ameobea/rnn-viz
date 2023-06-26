@@ -1,5 +1,9 @@
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+import os
+import queue
+from typing import Tuple
+
 from custom_rnn import CustomRNNCell, CustomRNN
 import numpy as np
 from tinygrad.tensor import Tensor
@@ -11,10 +15,21 @@ from objective import one_batch_examples
 from validate import validate
 
 
-def data_gen_worker(data_queue, batch_size, seq_len):
+def data_gen_worker(
+    data_queue: queue.Queue[Tuple[np.ndarray, np.ndarray]],
+    done: queue.Queue[bool],
+    batch_size: int,
+    seq_len: int,
+):
     while True:
         x, y = one_batch_examples(batch_size, seq_len)
-        data_queue.put((x, y))
+        while True:
+            try:
+                data_queue.put((x, y), block=True, timeout=0.1)
+                break
+            except queue.Full:
+                if not done.empty():
+                    return
 
 
 if __name__ == "__main__":
@@ -31,7 +46,6 @@ if __name__ == "__main__":
 
     reg = SparseRegularizer(intensity=0.05, threshold=0.025, steepness=25, l1=0.001)
     activation = {"id": "interpolated_ameo", "factor": 0.5, "leakyness": 0.01}
-    # activation = "relu"
 
     rnn = CustomRNN(
         CustomRNNCell(
@@ -76,34 +90,9 @@ if __name__ == "__main__":
             # recurrent_bias_regularizer=reg,
             cell_ix=1,
         ),
-        # CustomRNNCell(
-        #     input_shape=(
-        #         batch_size,
-        #         seq_len,
-        #         12,
-        #     ),
-        #     output_dim=12,
-        #     state_size=12,
-        #     output_activation_id=activation,
-        #     recurrent_activation_id=activation,
-        #     trainable_initial_weights=True,
-        #     use_bias=True,
-        #     output_kernel_regularizer=reg,
-        #     recurrent_kernel_regularizer=reg,
-        #     kernel_initializer="glorot_normal",
-        #     bias_initializer="glorot_normal",
-        #     initial_state_initializer="glorot_normal",
-        #     # output_bias_regularizer=reg,
-        #     # recurrent_bias_regularizer=reg,
-        #     cell_ix=2,
-        # ),
     )
 
-    dense = (
-        Linear(rnn.cells[-1].output_dim, 1, bias=True)
-        if rnn.cells[-1].output_dim != output_dim
-        else None
-    )
+    dense = Linear(rnn.cells[-1].output_dim, 1, bias=True) if rnn.cells[-1].output_dim != output_dim else None
 
     def forward(x: Tensor) -> Tensor:
         y = rnn(x)
@@ -139,16 +128,17 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
 
     data_queue = multiprocessing.Manager().Queue(maxsize=10)
+    done = multiprocessing.Manager().Queue(maxsize=10)
     data_gen_worker_count = 12
 
     # Start data generation in worker threads
     with ProcessPoolExecutor(max_workers=data_gen_worker_count) as executor:
         for _ in range(data_gen_worker_count):
-            executor.submit(data_gen_worker, data_queue, batch_size, seq_len)
+            executor.submit(data_gen_worker, data_queue, done, batch_size, seq_len)
 
         # Training loop
         train_one_batch = mk_train_one_batch()
-        for i in range(8000):
+        for i in range(8):
             if i == 500:
                 reg.intensity *= 0.8
                 opt.lr *= 0.8
@@ -167,7 +157,11 @@ if __name__ == "__main__":
             loss = train_one_batch(x, y)
             print(f"[{i}]: loss: {loss.numpy()}")
 
-        rnn.print_weights(dense)
-        rnn.dump_weights([(dense, "linear")] if dense else [], "/home/casey/Downloads/weights.json")
+        done.put(True)
 
-        validate(one_batch_examples, forward, 40)
+    print("Done training")
+    rnn.print_weights(dense)
+    homedir = os.path.expanduser("~")
+    rnn.dump_weights([(dense, "linear")] if dense else [], f"{homedir}/Downloads/weights.json")
+
+    validate(one_batch_examples, forward, 40)

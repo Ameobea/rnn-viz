@@ -1,73 +1,46 @@
 import numpy as np
 from numba import jit
 
-# def one_batch_examples(batch_size: int, seq_len: int):
-#     # random numbers, either -1 or 1
-#     inputs = np.random.choice([-1, 1], size=(batch_size, seq_len, 1)).astype(np.float32)
-#     # train to return the previous number, or -1 if it's the first number
-#     outputs = np.zeros((batch_size, seq_len, 1), dtype=np.float32)
-#     outputs[:, 1:, :] = inputs[:, :-1, :]
-#     outputs[:, 0, :] = -1
 
-#     return inputs, outputs
-
-
-@jit
+@jit(nopython=True)
 def one_val(prob=0.5):
     return 1 if np.random.random() < prob else -1
 
 
-@jit
+@jit(nopython=True)
 def xor(a, b):
     return 1 if (a == -1 and b == 1) or (a == 1 and b == -1) else -1
 
 
-@jit
+@jit(nopython=True)
 def and_(a, b):
     return 1 if a == 1 and b == 1 else -1
 
 
-@jit
+@jit(nopython=True)
 def or_(a, b):
     return 1 if a == 1 or b == 1 else -1
 
 
-@jit
+@jit(nopython=True)
 def xnor(a, b):
     return 1 if a == b else -1
 
 
-@jit
+@jit(nopython=True)
 def nand(a, b):
     return -1 if a == 1 and b == 1 else 1
 
 
-@jit
+@jit(nopython=True)
 def nor(a, b):
     return -1 if a == 1 or b == 1 else 1
 
 
-@jit
+@jit(nopython=True)
 def one_seq_examples(seq_len: int):
     inputs = np.zeros((seq_len, 3), dtype=np.float32)
     outputs = np.zeros((seq_len, 1), dtype=np.float32)
-
-    # class Mode:
-    #     Xor = -1
-    #     And = 1
-    #     Or = -2
-    #     Nor = 2
-    #     Nand = -3
-    #     Xnor = 3
-
-    # all_modes = [
-    #     Mode.Xor,
-    #     Mode.And,
-    #     Mode.Nor,
-    #     Mode.Nand,
-    # ]  # Mode.Xnor]
-    # mode = Mode.Xor
-    # mode_index = 0
 
     XOR = -1
     AND = 1
@@ -138,7 +111,7 @@ def one_seq_examples(seq_len: int):
 #     return inputs, outputs
 
 
-@jit
+@jit(forceobj=True)
 def one_batch_examples(batch_size: int, seq_len: int):
     inputs = []
     outputs = []
@@ -147,63 +120,3 @@ def one_batch_examples(batch_size: int, seq_len: int):
         inputs.append(x)
         outputs.append(y)
     return np.array(inputs), np.array(outputs)
-
-
-# def one_val_vectorized(prob=0.5, size=None):
-#     return np.where(np.random.random(size) < prob, 1, -1)
-
-
-# def one_seq_examples_v2(seq_len: int):
-#     class Mode:
-#         Xor = -1
-#         And = 1
-#         Or = -2
-#         Nor = 2
-#         Nand = -3
-#         Xnor = 3
-
-#     all_modes = [
-#         Mode.Xor,
-#         Mode.And,
-#         Mode.Nor,
-#         Mode.Nand,
-#     ]
-#     n_modes = len(all_modes)
-
-#     change_mode = one_val_vectorized(0.3, seq_len)
-
-#     mode_indices = (np.where(change_mode == 1)[0] % n_modes).astype(int)
-#     modes = np.full(seq_len, all_modes[0])
-#     modes[np.where(change_mode == 1)] = np.array(all_modes)[mode_indices]
-#     print(modes)
-#     exit(1)
-
-#     inputs = np.column_stack(
-#         [
-#             change_mode,
-#             one_val_vectorized(size=seq_len),
-#             one_val_vectorized(size=seq_len),
-#         ]
-#     )
-
-#     output = np.empty(seq_len)
-#     for mode in all_modes:
-#         mask = modes == mode
-#         a, b = inputs[mask, 1], inputs[mask, 2]
-#         if mode == Mode.Xor:
-#             output[mask] = np.where(a != b, 1, -1)
-#         elif mode == Mode.And:
-#             output[mask] = np.where(np.logical_and(a == 1, b == 1), 1, -1)
-#         elif mode == Mode.Or:
-#             output[mask] = np.where(np.logical_or(a == 1, b == 1), 1, -1)
-#         elif mode == Mode.Nor:
-#             output[mask] = np.where(np.logical_or(a == 1, b == 1), -1, 1)
-#         elif mode == Mode.Nand:
-#             output[mask] = np.where(np.logical_and(a == 1, b == 1), -1, 1)
-
-#     return inputs.astype(np.float32), output.reshape(-1, 1).astype(np.float32)
-
-
-# def one_batch_examples_v2(batch_size: int, seq_len: int):
-#     inputs, outputs = zip(*[one_seq_examples_v2(seq_len) for _ in range(batch_size)])
-#     return np.array(inputs), np.array(outputs)
