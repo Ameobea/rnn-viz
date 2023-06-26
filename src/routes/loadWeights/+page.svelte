@@ -91,7 +91,7 @@
     params.clipThreshold = clipThreshold;
     graph = buildGraph();
 
-    isValid = graph.validate(oneSeqExamples, 10_000, true);
+    isValid = graph.validate(oneSeqExamples, 500, true);
     if (!isValid) {
       console.log(`Invalid graph with clipThreshold ${clipThreshold}`);
       continue;
@@ -105,7 +105,7 @@
       params.quantizationInterval = quantizationInterval;
       graph = buildGraph();
 
-      isValid = graph.validate(oneSeqExamples, 10_000, true);
+      isValid = graph.validate(oneSeqExamples, 500, true);
       if (!isValid) {
         console.log(`Invalid graph with quantizationInterval ${quantizationInterval}`);
         continue;

@@ -1,5 +1,5 @@
 import { writable, type Writable } from 'svelte/store';
-import { PIXI, Viewport, GlowFilter } from '../../viz/RNNViz/pixi';
+import { PIXI, Viewport, GlowFilter } from '../../viz/pixi';
 import {
   StateNeuron,
   type RNNGraph,
@@ -306,7 +306,8 @@ export class NodeViz {
     const { nodes, edges } = parseGraphvizPlainExt(
       graphvizLayoutData,
       Conf.WorldWidth,
-      Conf.WorldHeight
+      Conf.WorldHeight,
+      graph
     );
     const nodesByID = new Map<string, VizNode>();
 
@@ -408,9 +409,26 @@ export class NodeViz {
     this.update();
   }
 
+  public toggleSelecteNodeID(nodeID: string) {
+    const node = this.nodes.find(node => node.name === nodeID);
+    if (!node) {
+      throw new Error(`Node ${nodeID} not found`);
+    }
+    this.selected.update(selected => {
+      if (selected === node) {
+        node.onDeselect();
+        return null;
+      } else {
+        selected?.onDeselect();
+        node.onSelect();
+        return node;
+      }
+    });
+  }
+
   public handleResize(newWidth: number, newHeight: number) {
     this.app.renderer.resize(newWidth, newHeight);
-    this.viewport.resize(newWidth, newHeight);
+    this.viewport.resize(newWidth, newHeight, Conf.WorldWidth, Conf.WorldHeight);
   }
 
   public destroy() {

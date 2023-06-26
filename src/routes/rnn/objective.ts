@@ -1,4 +1,4 @@
-const seqLen = 16;
+const seqLen = 60;
 
 const oneVal = (threshold = 0.5) => (Math.random() > threshold ? 1 : -1);
 
@@ -531,7 +531,7 @@ digraph "RNN" {
  * the modes.
  */
 export const oneSeqExamples = () => {
-  const inputs: [number, number, number, number][] = [];
+  const inputs: [number, number, number][] = [];
   const outputs: [number][] = [];
 
   enum Mode {

@@ -1096,10 +1096,12 @@ export class RNNGraph {
       postLayer.neurons.forEach(neuron => layer.addNode(neuron.name).set('label', 'N'));
     });
 
-    const inputs = g.addCluster('cluster_inputs');
+    const inputs = g.addCluster(params?.clusterInputs === false ? 'inputs' : 'cluster_inputs');
     inputs.setNodeAttribut('shape', 'circle');
     inputs.setNodeAttribut('fontsize', 10);
-    inputs.set('rank', 'source');
+    if (params?.clusterInputs !== false) {
+      inputs.set('rank', 'source');
+    }
     for (let inputIx = 0; inputIx < this.inputLayer.size; inputIx += 1) {
       if (this.inputLayer.getNeuron(inputIx)) {
         inputs.addNode(`input_${inputIx}`, {}).set('label', `IN${inputIx}`);
@@ -1119,9 +1121,7 @@ export class RNNGraph {
         // trim trailing zeros
         label = label.replace(/\.?0+$/, '');
 
-        g.addEdge(inputNeuron.name, neuron.name, {
-          label: params?.edgeLabels === false ? '1' : label,
-        });
+        g.addEdge(inputNeuron.name, neuron.name, params?.edgeLabels === false ? {} : { label });
         addEdges(inputNeuron);
       });
     };
@@ -1136,12 +1136,15 @@ export class RNNGraph {
       g.setEdgeAttribut('arrowhead', 'none');
     }
     g.setNodeAttribut('shape', 'square');
-    g.set('ratio', params?.aspectRatio ?? 0.75);
+    if (params?.aspectRatio) {
+      g.set('ratio', params.aspectRatio);
+    }
     g.set('rankdir', 'TB');
     g.set('center', true);
     g.set('splines', 'spline');
     g.set('overlap', false);
     g.set('nodesep', 0.32);
+    g.set('ranksep', 0.22);
 
     return g.to_dot();
   }
@@ -1239,6 +1242,7 @@ export class RNNGraph {
 interface BuildGraphvizParams {
   arrowhead?: boolean;
   cluster?: boolean;
+  clusterInputs?: boolean;
   aspectRatio?: number;
   edgeLabels?: boolean;
 }

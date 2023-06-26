@@ -1,12 +1,22 @@
 import * as fs from 'fs/promises';
 
-import type { PageLoad } from './$types';
+import type { PageServerLoad } from './$types';
 import type { AmeoActivationIdentifier } from '../../nn/customRNN';
 
 const WEIGHTS_PATH = '/home/casey/Downloads/weights.json';
 
-export const load: PageLoad = async () => {
-  const weightsJSON = await fs.readFile(WEIGHTS_PATH, 'utf-8');
+export const load: PageServerLoad = async ({ url, fetch }) => {
+  const rawWeights = await (async () => {
+    const ameotrackID = url.searchParams.get('ameotrackID');
+    if (ameotrackID) {
+      console.log(`https://i.ameo.link/${ameotrackID}.json`);
+      fetch(`https://i.ameo.link/${ameotrackID}.json`)
+        .then(res => res.text())
+        .then(console.log);
+      return fetch(`https://i.ameo.link/${ameotrackID}.json`).then(res => res.json());
+    }
+    return JSON.parse(await fs.readFile(WEIGHTS_PATH, 'utf-8'));
+  })();
   const weights: {
     input_dim: number;
     output_dim: number;
@@ -28,6 +38,6 @@ export const load: PageLoad = async () => {
       bias: number[];
       activation: AmeoActivationIdentifier;
     }[];
-  } = JSON.parse(weightsJSON);
+  } = rawWeights;
   return { weights };
 };

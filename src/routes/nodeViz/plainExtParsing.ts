@@ -1,3 +1,5 @@
+import type { RNNGraph } from '../rnn/graph';
+
 export interface NodeVizEdge {
   tx: string;
   rx: string;
@@ -19,7 +21,8 @@ export interface NodeVizLayout {
 export const parseGraphvizPlainExt = (
   input: string,
   worldWidth: number,
-  worldHeight: number
+  worldHeight: number,
+  graph: RNNGraph
 ): NodeVizLayout => {
   const nodes = new Map<string, { pos: Point; width: number; height: number; label: string }>();
   const edges: NodeVizEdge[] = [];
@@ -59,7 +62,10 @@ export const parseGraphvizPlainExt = (
         });
       }
 
-      const weight = parseFloat(parts[4 + controlPointCount * 2]);
+      const weight =
+        graph.allConnectedNeuronsByID
+          .get(parts[2])
+          ?.weights.find(w => w.inputNeuron.name === parts[1])?.weight ?? 0;
       const labelPosition = {
         x: parseFloat(parts[4 + controlPointCount * 2 + 1]) * scale,
         y: (graphHeight - parseFloat(parts[4 + controlPointCount * 2 + 2])) * scale,

@@ -44,7 +44,7 @@ if __name__ == "__main__":
     init = "glorot_normal"
     # init = {"id": "uniform", "low": -1, "high": 1}
 
-    reg = SparseRegularizer(intensity=0.05, threshold=0.025, steepness=25, l1=0.001)
+    reg = SparseRegularizer(intensity=0.1, threshold=0.025, steepness=25, l1=0.001)
     activation = {"id": "interpolated_ameo", "factor": 0.5, "leakyness": 0.01}
 
     rnn = CustomRNN(
@@ -54,8 +54,8 @@ if __name__ == "__main__":
                 seq_len,
                 input_dim,
             ),
-            output_dim=12,
-            state_size=6,
+            output_dim=16,
+            state_size=10,
             output_activation_id=activation,
             recurrent_activation_id=activation,
             trainable_initial_weights=True,
@@ -73,10 +73,10 @@ if __name__ == "__main__":
             input_shape=(
                 batch_size,
                 seq_len,
-                12,
+                16,
             ),
-            output_dim=12,
-            state_size=6,
+            output_dim=16,
+            state_size=10,
             output_activation_id=activation,
             recurrent_activation_id=activation,
             trainable_initial_weights=True,
@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
         # Training loop
         train_one_batch = mk_train_one_batch()
-        for i in range(8):
+        for i in range(25000):
             if i == 500:
                 reg.intensity *= 0.8
                 opt.lr *= 0.8

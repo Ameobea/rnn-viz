@@ -12,6 +12,14 @@
     | { type: 'loaded'; layoutData: string };
 
   const buildPlainExtLayout = async (graphDotviz: string): Promise<string> => {
+    // check if we have a cached version
+    if (
+      localStorage.getItem('lastGraphDotviz') === graphDotviz &&
+      localStorage.getItem('lastGraphPlainExt')
+    ) {
+      return localStorage.getItem('lastGraphPlainExt') ?? '';
+    }
+
     const res = await fetch('https://dot-server-mi7imxlw6a-uw.a.run.app/dot_to_plainext', {
       method: 'POST',
       headers: {
@@ -23,6 +31,11 @@
       throw await res.text();
     }
     const data = await res.text();
+
+    // cache the result
+    localStorage.setItem('lastGraphDotviz', graphDotviz);
+    localStorage.setItem('lastGraphPlainExt', data);
+
     return data;
   };
 </script>
@@ -44,7 +57,8 @@
       ? graph.buildGraphviz({
           arrowhead: false,
           cluster: false,
-          // edgeLabels: false,
+          edgeLabels: false,
+          clusterInputs: false,
           aspectRatio:
             window.innerWidth && window.innerHeight
               ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)
@@ -76,17 +90,15 @@
   let viz: NodeViz | null = null;
   let logicAnalyzerOpen = false;
   $: selected = viz?.selected;
-  const logicAnalyzerVisibleNodeIDs: Writable<string[]> = writable([]);
+  const logicAnalyzerVisibleNodeIDs: Writable<string[]> = writable(
+    [...graph.neuronOutputHistory.keys()].filter(
+      nodeID => nodeID.startsWith('input') || nodeID.startsWith('output')
+    )
+  );
   $: selectedNode =
     NodeVizMod && selected && $selected instanceof NodeVizMod.VizNode ? $selected : null;
   $: selectedNodeID = selectedNode?.name ?? null;
-  const toggleSelecteNodeID = (nodeID: string) => {
-    if (selectedNodeID === nodeID) {
-      viz?.selected.set(null);
-    } else {
-      viz?.selected.set(viz.nodes.find(node => node.inner.name === nodeID) ?? null);
-    }
-  };
+  const toggleSelecteNodeID = (nodeID: string) => viz?.toggleSelecteNodeID(nodeID);
 
   $: viz?.handleResize(windowWidth, windowHeight);
 
@@ -143,7 +155,11 @@
   {:else if layoutDataState.type === 'error'}
     <p>Error: {layoutDataState.error}</p>
   {:else if layoutDataState.type === 'loaded'}
-    <canvas use:useNodeViz width={windowWidth} height={windowHeight} />
+    <canvas
+      use:useNodeViz
+      width={windowWidth * window.devicePixelRatio}
+      height={windowHeight * window.devicePixelRatio}
+    />
     {#if viz}
       <NodeVizControls {viz} />
       {#if !isMobile}
@@ -151,7 +167,7 @@
           currentTimestep={$currentTimestep}
           neuronOutputHistory={graph.neuronOutputHistory}
           {selectedNodeID}
-          visibleNodeIDs={$logicAnalyzerVisibleNodeIDs ?? []}
+          visibleNodeIDs={logicAnalyzerVisibleNodeIDs}
           bind:expanded={logicAnalyzerOpen}
           {toggleSelecteNodeID}
         />

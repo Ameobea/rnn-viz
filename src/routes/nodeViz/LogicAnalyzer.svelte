@@ -52,6 +52,8 @@
 </script>
 
 <script lang="ts">
+  import type { Writable } from 'svelte/store';
+
   import UPlot from 'uplot';
   import 'uplot/dist/uPlot.min.css';
 
@@ -59,14 +61,11 @@
   export let neuronOutputHistory: Map<string, number[]>;
   export let selectedNodeID: string | null;
   export let toggleSelecteNodeID: (nodeID: string) => void;
-  export let visibleNodeIDs: string[];
+  export let visibleNodeIDs: Writable<string[]>;
   export let expanded = false;
 
   $: nodeIDsToRender = [...neuronOutputHistory.keys()]
-    .filter(
-      nodeID =>
-        nodeID.startsWith('input') || nodeID.startsWith('output') || visibleNodeIDs.includes(nodeID)
-    )
+    .filter(nodeID => $visibleNodeIDs.includes(nodeID))
     .sort((a, b) => {
       // first input_n
       // then layer_n_state_n
@@ -108,27 +107,57 @@
       return aNum - bNum;
     });
 
-  const uPlotInsts: { nodeID: string; inst: UPlot }[] = [];
+  const uPlotInstsByNodeID: Map<string, UPlot> = new Map();
 
-  $: for (const { inst, nodeID } of uPlotInsts) {
+  const getDataForInst = (
+    nodeID: string,
+    currentTimestep: number,
+    neuronOutputHistory: Map<string, number[]>
+  ) => {
     const xs = new Array<number>(20).fill(currentTimestep).map((_, i) => i);
     const ys: (number | null)[] = (neuronOutputHistory.get(nodeID) ?? [])
       .slice(-19)
       .map(y => clamp(-1, 1, y));
     ys.push(null);
+    return { xs, ys };
+  };
+
+  $: for (const [nodeID, inst] of uPlotInstsByNodeID.entries()) {
+    const { xs, ys } = getDataForInst(nodeID, currentTimestep, neuronOutputHistory);
     inst.setData([xs, ys]);
   }
 
   const renderChart = (container: HTMLDivElement, nodeID: string) => {
-    const inst = buildInst(nodeID);
-    uPlotInsts.push({ nodeID, inst });
+    const inst =
+      uPlotInstsByNodeID.get(nodeID) ??
+      (() => {
+        const inst = buildInst(nodeID);
+        uPlotInstsByNodeID.set(nodeID, inst);
+        return inst;
+      })();
     container.appendChild(inst.root);
+
+    const { xs, ys } = getDataForInst(nodeID, currentTimestep, neuronOutputHistory);
+    inst.setData([xs, ys]);
+
+    return {
+      destroy: () => {
+        container.removeChild(inst.root);
+        inst.destroy();
+        uPlotInstsByNodeID.delete(nodeID);
+      },
+      update: (newNodeID: string) => {
+        if (newNodeID !== nodeID) {
+          throw new Error('should never happen in keyed each');
+        }
+      },
+    };
   };
 </script>
 
 {#if expanded}
   <div class="root">
-    {#each nodeIDsToRender as nodeID}
+    {#each nodeIDsToRender as nodeID (nodeID)}
       <div
         class={`node-output-chart-container${
           selectedNodeID === nodeID ? ' node-output-graph-selected' : ''
@@ -145,9 +174,7 @@
         <div class="last-output-value">
           <button
             class="remove-chart-button"
-            on:click={() => {
-              // TODO
-            }}
+            on:click={() => visibleNodeIDs.update(nodeIDs => nodeIDs.filter(id => id !== nodeID))}
           >
             ✕
           </button>
@@ -214,6 +241,10 @@
     display: flex;
     position: relative;
     padding-right: 4px;
+  }
+
+  .chart-container {
+    cursor: pointer;
   }
 
   .node-output-chart-label {
