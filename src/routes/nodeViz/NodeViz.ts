@@ -271,6 +271,7 @@ export class VizNode {
 export class NodeViz {
   private app: PIXI.Application;
   private viewport: Viewport;
+  private didSetInitialZoom = false;
   private graph: RNNGraph;
   public nodes: VizNode[] = [];
   private edges: VizEdge[] = [];
@@ -347,12 +348,15 @@ export class NodeViz {
       this.edges.push(vizEdge);
     }
 
+    const container = new PIXI.Container();
+    this.viewport.addChild(container);
+
     // Add edges first so that they are behind nodes
     for (const edge of this.edges) {
-      this.viewport.addChild(edge.graphics);
+      container.addChild(edge.graphics);
     }
     for (const node of this.nodes) {
-      this.viewport.addChild(node.graphics);
+      container.addChild(node.graphics);
     }
   }
 
@@ -429,6 +433,20 @@ export class NodeViz {
   public handleResize(newWidth: number, newHeight: number) {
     this.app.renderer.resize(newWidth, newHeight);
     this.viewport.resize(newWidth, newHeight, Conf.WorldWidth, Conf.WorldHeight);
+
+    // Need to do this here since apparently resizing right away clobbers the zoom
+    if (!this.didSetInitialZoom) {
+      this.didSetInitialZoom = true;
+      const container = this.viewport.children[0];
+      const bbox = container.getLocalBounds();
+      const center = new PIXI.Point(bbox.x + bbox.width / 2, bbox.y + bbox.height / 2);
+      const zoom =
+        Math.min(this.viewport.worldWidth / bbox.width, this.viewport.worldHeight / bbox.height) *
+        0.7;
+      console.log({ container, bbox, zoom, center });
+      this.viewport.setZoom(zoom, true);
+      this.viewport.moveCenter(center);
+    }
   }
 
   public destroy() {

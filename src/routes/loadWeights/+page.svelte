@@ -122,7 +122,6 @@
   }
 
   const finalGraph = graph ?? buildGraph();
-  console.log(finalGraph);
 
   const inputSeq = [
     new Float32Array(finalGraph.inputLayer.inputDim).map(() => (Math.random() > 0.5 ? 1 : -1)),
