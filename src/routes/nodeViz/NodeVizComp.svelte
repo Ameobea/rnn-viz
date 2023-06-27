@@ -47,6 +47,7 @@
   import { writable, type Writable } from 'svelte/store';
 
   export let serializedRNNGraph: string | RNNGraph;
+  export let excludedNodeIDs: string[] = [];
 
   const { graph, graphDotviz }: { graph: RNNGraph; graphDotviz: string } = (() => {
     const graph =
@@ -58,11 +59,12 @@
           arrowhead: false,
           cluster: false,
           edgeLabels: false,
-          clusterInputs: false,
-          aspectRatio:
-            window.innerWidth && window.innerHeight
-              ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)
-              : undefined,
+          // clusterInputs: false,
+          // aspectRatio:
+          //   window.innerWidth && window.innerHeight
+          //     ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)
+          //     : undefined,
+          excludedNodeIDs,
         })
       : '';
     return { graph, graphDotviz };

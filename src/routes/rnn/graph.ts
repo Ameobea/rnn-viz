@@ -1065,6 +1065,9 @@ export class RNNGraph {
   public buildGraphviz(params?: BuildGraphvizParams): string {
     // Work around bug in `graphviz-builder`: https://github.com/prantlf/graphviz-builder/issues/1
     (window as any).l = undefined;
+    const excludedNodeIDs = params?.excludedNodeIDs
+      ? new Set(params.excludedNodeIDs)
+      : new Set<string>();
 
     const g = GVB.digraph('RNN');
     const clusterPrefix = params?.cluster === false ? '' : 'cluster_';
@@ -1074,6 +1077,9 @@ export class RNNGraph {
     outputs.setNodeAttribut('fontsize', 10);
     for (let outputIx = 0; outputIx < this.outputs.size; outputIx += 1) {
       const neuron = this.outputs.getNeuron(outputIx)!;
+      if (excludedNodeIDs.has(neuron.name)) {
+        continue;
+      }
       outputs.addNode(neuron.name).set('label', `OUT${outputIx}`);
     }
 
@@ -1082,18 +1088,26 @@ export class RNNGraph {
 
       const state = layer.addCluster(`${clusterPrefix}state`);
       state.setNodeAttribut('shape', 'circle');
-      cell.stateNeurons.forEach(neuron => state.addNode(neuron.name).set('label', 'S'));
+      cell.stateNeurons
+        .filter(n => !excludedNodeIDs.has(n.name))
+        .forEach(neuron => state.addNode(neuron.name).set('label', 'S'));
 
       const recurrent = layer.addCluster(`${clusterPrefix}recurrent`);
-      cell.recurrentNeurons.forEach(neuron => recurrent.addNode(neuron.name).set('label', 'N'));
+      cell.recurrentNeurons
+        .filter(n => !excludedNodeIDs.has(n.name))
+        .forEach(neuron => recurrent.addNode(neuron.name).set('label', 'N'));
 
       const output = layer.addCluster(`${clusterPrefix}output`);
-      cell.outputNeurons.forEach(neuron => output.addNode(neuron.name).set('label', 'N'));
+      cell.outputNeurons
+        .filter(n => !excludedNodeIDs.has(n.name))
+        .forEach(neuron => output.addNode(neuron.name).set('label', 'N'));
     });
 
     this.postLayers.forEach((postLayer, layerIx) => {
       const layer = g.addCluster(`${clusterPrefix}post_layer_${layerIx}`);
-      postLayer.neurons.forEach(neuron => layer.addNode(neuron.name).set('label', 'N'));
+      postLayer.neurons
+        .filter(n => !excludedNodeIDs.has(n.name))
+        .forEach(neuron => layer.addNode(neuron.name).set('label', 'N'));
     });
 
     const inputs = g.addCluster(params?.clusterInputs === false ? 'inputs' : 'cluster_inputs');
@@ -1103,8 +1117,9 @@ export class RNNGraph {
       inputs.set('rank', 'source');
     }
     for (let inputIx = 0; inputIx < this.inputLayer.size; inputIx += 1) {
-      if (this.inputLayer.getNeuron(inputIx)) {
-        inputs.addNode(`input_${inputIx}`, {}).set('label', `IN${inputIx}`);
+      const inputNeuron = this.inputLayer.getNeuron(inputIx);
+      if (inputNeuron && !excludedNodeIDs.has(inputNeuron.name)) {
+        inputs.addNode(inputNeuron.name, {}).set('label', `IN${inputIx}`);
       }
     }
 
@@ -1117,11 +1132,13 @@ export class RNNGraph {
       processedNodes.add(neuron.name);
 
       neuron.weights.forEach(({ inputNeuron, weight }) => {
-        let label = weight.toFixed(3);
-        // trim trailing zeros
-        label = label.replace(/\.?0+$/, '');
+        if (!excludedNodeIDs.has(inputNeuron.name) && !excludedNodeIDs.has(neuron.name)) {
+          let label = weight.toFixed(3);
+          // trim trailing zeros
+          label = label.replace(/\.?0+$/, '');
 
-        g.addEdge(inputNeuron.name, neuron.name, params?.edgeLabels === false ? {} : { label });
+          g.addEdge(inputNeuron.name, neuron.name, params?.edgeLabels === false ? {} : { label });
+        }
         addEdges(inputNeuron);
       });
     };
@@ -1245,6 +1262,7 @@ interface BuildGraphvizParams {
   clusterInputs?: boolean;
   aspectRatio?: number;
   edgeLabels?: boolean;
+  excludedNodeIDs?: string[] | Set<string>;
 }
 
 interface SerializedRNNGraph {

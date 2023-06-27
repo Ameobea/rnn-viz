@@ -129,4 +129,21 @@
   finalGraph.reset(inputSeq);
 </script>
 
-<NodeVizComp serializedRNNGraph={finalGraph} />
+<NodeVizComp
+  serializedRNNGraph={finalGraph}
+  excludedNodeIDs={[
+    'layer_0_output_12',
+    'layer_0_output_0',
+    'layer_0_output_7',
+    'input_2',
+    'input_1',
+    'layer_0_output_14',
+    'layer_0_output_5',
+    'layer_0_output_10',
+    'layer_0_recurrent_8',
+    'layer_1_output_11',
+    'layer_1_output_9',
+    'post_layer_output_0',
+    'output_0',
+  ]}
+/>
