@@ -37,7 +37,7 @@ if __name__ == "__main__":
     seq_len = 40
     input_dim = one_batch_examples(1, seq_len)[0].shape[-1]
     output_dim = one_batch_examples(1, seq_len)[1].shape[-1]
-    batch_size = 1024 * 4
+    batch_size = 1024 * 2
 
     np.set_printoptions(suppress=True)
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 input_dim,
             ),
             output_dim=16,
-            state_size=10,
+            state_size=16,
             output_activation_id=activation,
             recurrent_activation_id=activation,
             trainable_initial_weights=True,
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             initial_state_initializer=init,
             # output_bias_regularizer=reg,
             # recurrent_bias_regularizer=reg,
-            cell_ix=0,
+            fedback_final_state_size=16,
         ),
         CustomRNNCell(
             input_shape=(
@@ -76,7 +76,7 @@ if __name__ == "__main__":
                 16,
             ),
             output_dim=16,
-            state_size=10,
+            state_size=16,
             output_activation_id=activation,
             recurrent_activation_id=activation,
             trainable_initial_weights=True,
@@ -88,11 +88,15 @@ if __name__ == "__main__":
             initial_state_initializer="glorot_normal",
             # output_bias_regularizer=reg,
             # recurrent_bias_regularizer=reg,
-            cell_ix=1,
         ),
+        feedback_final_cell_state=True,
     )
 
-    dense = Linear(rnn.cells[-1].output_dim, 1, bias=True) if rnn.cells[-1].output_dim != output_dim else None
+    dense = (
+        Linear(rnn.cells[-1].output_dim, 1, bias=True)
+        if rnn.cells[-1].output_dim != output_dim
+        else None
+    )
 
     def forward(x: Tensor) -> Tensor:
         y = rnn(x)

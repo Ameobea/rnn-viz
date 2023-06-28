@@ -96,6 +96,7 @@ def nor(a, b):
 
 #     return inputs, outputs
 
+
 # 1 input, 1 output.
 #
 # Trained to estimate sin(2 * pi * x) for x in [-1, 1]
@@ -108,57 +109,71 @@ def nor(a, b):
 
 #     return inputs, outputs
 
+
 # asm interpreter
 @jit(nopython=True)
 def one_seq_examples(seq_len: int):
     # inputs are instructions.
     # instruction format:
-    # bit 0: opcode
-    #          -1: store
-    #          1: mov
-    # bit 1: rx register
-    # bit 2: tx register or immediate in the case of store
-    # output is the value written to the rx register
+    # bits [0,1]: opcode
+    #             [-1,-1]: mov
+    #             [-1, 1]: xor
+    #             [ 1,-1]: and
+    #             [ 1, 1]: or
+    # bit 2: rx register
+    # bit 3: immediate flag
+    # bit 4: tx register or immediate if immediate flag is set
+    # output is the value of each register after executing the instruction
+
+    MOV = 0
+    XOR = 1
+    AND = 2
+    OR = 3
+
+    inputs = np.empty((seq_len, 5), dtype=np.float32)
+    outputs = np.empty((seq_len, 2), dtype=np.float32)
+
+    tx_regs = np.random.choice(np.array([-1, 1]), seq_len)
+    rx_regs = np.random.choice(np.array([-1, 1]), seq_len)
+    opcodes = np.random.choice(np.array([0, 1, 2, 3]), seq_len)
+    immediate_flags = np.random.choice(np.array([-1, 1]), seq_len)
+    txs = np.random.choice(np.array([-1, 1]), seq_len)
 
     reg0 = -1
     reg1 = -1
 
-    inputs = np.empty((seq_len, 3), dtype=np.float32)
-    outputs = np.empty((seq_len, 1), dtype=np.float32)
-
-    tx_regs = np.random.choice(np.array([-1, 1]), seq_len)
-    rx_regs = np.random.choice(np.array([-1, 1]), seq_len)
-    opcodes = np.random.choice(np.array([-1, 1]), seq_len)
-    immediates = np.random.choice(np.array([-1, 1]), seq_len)
-
     for i in range(seq_len):
         opcode = opcodes[i]
         rx = rx_regs[i]
-        tx = tx_regs[i]
-
-        if opcode == -1:
-            # store
-            imm = immediates[i]
-            if rx == -1:
-                reg0 = imm
-            else:
-                reg1 = imm
-            inputs[i] = np.array([opcode, rx, imm])
-            outputs[i][0] = imm
+        is_immediate = immediate_flags[i] == 1
+        tx_val = 0
+        if is_immediate:
+            tx_val = txs[i]
         else:
-            # mov
-            val = reg0 if rx == -1 else reg1
-            if tx == -1:
-                reg0 = val
-            else:
-                reg1 = val
-            inputs[i] = np.array([opcode, rx, tx])
-            outputs[i][0] = val
+            tx_val = reg0 if tx_regs[i] == -1 else reg1
+        rx_val = 0
+
+        if opcode == MOV:
+            rx_val = tx_val
+        elif opcode == XOR:
+            rx_val = xor(rx_val, tx_val)
+        elif opcode == AND:
+            rx_val = and_(rx_val, tx_val)
+        elif opcode == OR:
+            rx_val = or_(rx_val, tx_val)
+
+        if rx == -1:
+            reg0 = rx_val
+        else:
+            reg1 = rx_val
+
+        inputs[i] = np.array([opcode, rx, is_immediate, tx_val, rx_val])
+        outputs[i] = np.array([reg0, reg1])
 
     return inputs, outputs
 
 
-# # debug: passthru inputs
+# debug: passthru inputs
 # def one_seq_examples(seq_len):
 #     inputs = []
 #     outputs = []

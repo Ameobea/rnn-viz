@@ -81,8 +81,7 @@ class CustomRNNCell:
         recurrent_kernel_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
         recurrent_bias_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
         trainable_initial_weights=False,
-        cell_ix=0,
-        **kwargs,
+        fedback_final_state_size: Optional[int] = None,
     ):
         self.trainable_weights: List[Tensor] = []
 
@@ -106,17 +105,21 @@ class CustomRNNCell:
 
         self.trainable_initial_weights = trainable_initial_weights
 
+        input_size = (
+            input_shape[-1]
+            + self.state_size
+            + (fedback_final_state_size if fedback_final_state_size is not None else 0)
+        )
+
         self.output_kernel = self.add_weight(
-            shape=(input_shape[-1] + self.state_size, self.output_dim),
+            shape=(input_size, self.output_dim),
             initializer=self.kernel_initializer,
-            name=f"cell{cell_ix}_output_kernel",
         )
 
         self.recurrent_kernel = (
             self.add_weight(
-                shape=(input_shape[-1] + self.state_size, self.state_size),
+                shape=(input_size, self.state_size),
                 initializer=self.recurrent_initializer,
-                name=f"cell{cell_ix}_recurrent_kernel",
             )
             if self.state_size > 0
             else None
@@ -126,14 +129,12 @@ class CustomRNNCell:
             self.output_bias = self.add_weight(
                 shape=(self.output_dim,),
                 initializer=self.bias_initializer,
-                name=f"cell{cell_ix}_output_bias",
             )
 
             self.recurrent_bias = (
                 self.add_weight(
                     shape=(self.state_size,),
                     initializer=self.bias_initializer,
-                    name=f"cell{cell_ix}_recurrent_bias",
                 )
                 if self.state_size > 0
                 else None
@@ -146,7 +147,6 @@ class CustomRNNCell:
             self.add_weight(
                 shape=(self.state_size,),
                 initializer=self.initial_state_initializer,
-                name=f"cell{cell_ix}_initial_state",
                 trainable=self.trainable_initial_weights,
             )
             if self.state_size > 0
@@ -159,7 +159,6 @@ class CustomRNNCell:
         self,
         shape,
         initializer: Callable[[List[int]], Tensor],
-        name,
         trainable=True,
     ) -> Tensor:
         t = initializer(shape)
@@ -167,12 +166,16 @@ class CustomRNNCell:
             self.trainable_weights.append(t)
         return t
 
-    def __call__(self, inputs: Tensor, prev_state: Tensor):
+    def __call__(self, inputs: Tensor, prev_state: Tensor, extra_state: Tensor):
         if prev_state is not None and len(prev_state.shape) == 1:
             raise "prev_state must be a batch of states"
             # prev_state = prev_state.unsqueeze(0).repeat([inputs.shape[0], 1])
 
-        combined_inputs = inputs.cat(prev_state, dim=-1) if prev_state is not None else inputs
+        combined_inputs = (
+            inputs.cat(*[t for t in [prev_state, extra_state] if t is not None], dim=-1)
+            if prev_state is not None or extra_state is not None
+            else inputs
+        )
         output = combined_inputs.linear(self.output_kernel, self.output_bias)
         output = self.output_activation(output)
 
@@ -205,11 +208,18 @@ class CustomRNNCell:
 
 
 class CustomRNN:
-    def __init__(self, *cells: CustomRNNCell, return_sequences=True, return_state=False, **kwargs):
+    def __init__(
+        self,
+        *cells: CustomRNNCell,
+        return_sequences=True,
+        return_state=False,
+        feedback_final_cell_state=False,
+    ):
         CustomRNN.validate_cells(cells)
         self.cells = cells
         self.return_sequences = return_sequences
         self.return_state = return_state
+        self.feedback_final_cell_state = feedback_final_cell_state
 
     def __call__(self, inputs: Tensor):
         batch_size, seq_len = (inputs.shape[0], inputs.shape[1])
@@ -218,8 +228,14 @@ class CustomRNN:
         for seq_ix in range(seq_len):
             inputs_for_timestep = inputs[:, seq_ix, :]
             new_states = []
-            for cell, state in zip(self.cells, states):
-                output, new_state = cell(inputs_for_timestep, state)
+            for cell_ix, cell, state in zip(range(len(self.cells)), self.cells, states):
+                output, new_state = cell(
+                    inputs_for_timestep,
+                    state
+                    if not self.feedback_final_cell_state or cell_ix != len(self.cells) - 1
+                    else Tensor.zeros_like(state),
+                    states[-1] if self.feedback_final_cell_state and cell_ix == 0 else None,
+                )
                 inputs_for_timestep = output
                 new_states.append(new_state)
             outputs.append(inputs_for_timestep)
@@ -241,7 +257,7 @@ class CustomRNN:
             trainable_params.extend(cell.trainable_weights)
         return trainable_params
 
-    def get_regularization_loss(self):
+    def get_regularization_loss(self) -> Tensor:
         return reduce(
             lambda a, b: a + b, [cell.get_regularization_cost() for cell in self.cells], Tensor(0.0)
         )
