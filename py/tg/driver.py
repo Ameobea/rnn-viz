@@ -33,19 +33,22 @@ def data_gen_worker(
 
 
 if __name__ == "__main__":
-    learning_rate = 0.004
-    seq_len = 40
+    learning_rate = 0.01
+    seq_len = 16
     input_dim = one_batch_examples(1, seq_len)[0].shape[-1]
     output_dim = one_batch_examples(1, seq_len)[1].shape[-1]
-    batch_size = 1024 * 2
+    batch_size = 1024 * 1
 
     np.set_printoptions(suppress=True)
 
     init = "glorot_normal"
     # init = {"id": "uniform", "low": -1, "high": 1}
 
-    reg = SparseRegularizer(intensity=0.1, threshold=0.025, steepness=25, l1=0.001)
-    activation = {"id": "interpolated_ameo", "factor": 0.5, "leakyness": 0.01}
+    # reg = SparseRegularizer(intensity=0.1, threshold=0.025, steepness=25, l1=0.001)
+    reg = None
+    # activation = {"id": "interpolated_ameo", "factor": 0.5, "leakyness": 0.01}
+    activation = "tanh"
+    # activation = "linear"
 
     rnn = CustomRNN(
         CustomRNNCell(
@@ -54,11 +57,11 @@ if __name__ == "__main__":
                 seq_len,
                 input_dim,
             ),
-            output_dim=16,
+            output_dim=32,
             state_size=16,
             output_activation_id=activation,
             recurrent_activation_id=activation,
-            trainable_initial_weights=True,
+            trainable_initial_state=True,
             use_bias=True,
             output_kernel_regularizer=reg,
             recurrent_kernel_regularizer=reg,
@@ -67,19 +70,39 @@ if __name__ == "__main__":
             initial_state_initializer=init,
             # output_bias_regularizer=reg,
             # recurrent_bias_regularizer=reg,
-            fedback_final_state_size=16,
+            # fedback_final_state_size=32,
         ),
         CustomRNNCell(
             input_shape=(
                 batch_size,
                 seq_len,
-                16,
+                32,
             ),
-            output_dim=16,
+            output_dim=32,
             state_size=16,
             output_activation_id=activation,
             recurrent_activation_id=activation,
-            trainable_initial_weights=True,
+            trainable_initial_state=True,
+            use_bias=True,
+            output_kernel_regularizer=reg,
+            recurrent_kernel_regularizer=reg,
+            kernel_initializer=init,
+            bias_initializer=init,
+            initial_state_initializer=init,
+            # output_bias_regularizer=reg,
+            # recurrent_bias_regularizer=reg,
+        ),
+        CustomRNNCell(
+            input_shape=(
+                batch_size,
+                seq_len,
+                32,
+            ),
+            output_dim=32,
+            state_size=16,
+            output_activation_id=activation,
+            recurrent_activation_id=activation,
+            trainable_initial_state=True,
             use_bias=True,
             output_kernel_regularizer=reg,
             recurrent_kernel_regularizer=reg,
@@ -88,15 +111,12 @@ if __name__ == "__main__":
             initial_state_initializer="glorot_normal",
             # output_bias_regularizer=reg,
             # recurrent_bias_regularizer=reg,
+            # feeding_back_state=True,
         ),
-        feedback_final_cell_state=True,
+        # feedback_final_cell_state=True,
     )
 
-    dense = (
-        Linear(rnn.cells[-1].output_dim, 1, bias=True)
-        if rnn.cells[-1].output_dim != output_dim
-        else None
-    )
+    dense = Linear(rnn.cells[-1].output_dim, 1, bias=True) if rnn.cells[-1].output_dim != output_dim else None
 
     def forward(x: Tensor) -> Tensor:
         y = rnn(x)
@@ -118,7 +138,7 @@ if __name__ == "__main__":
         def train_one_batch(x: Tensor, y: Tensor) -> Tensor:
             y_pred = forward(x)
             raw_loss = compute_loss(y_pred, y)
-            reg_loss = rnn.get_regularization_loss() + reg(dense.weight)
+            reg_loss = rnn.get_regularization_loss() + (reg(dense.weight) if reg and dense else 0)
             loss = raw_loss + reg_loss
 
             opt.zero_grad()
@@ -144,11 +164,13 @@ if __name__ == "__main__":
         train_one_batch = mk_train_one_batch()
         for i in range(5000):
             if i == 500:
-                reg.intensity *= 0.8
+                if reg:
+                    reg.intensity *= 0.8
                 opt.lr *= 0.8
                 train_one_batch = mk_train_one_batch()
             if i == 1000:
-                reg.intensity *= 0.6
+                if reg:
+                    reg.intensity *= 0.6
                 opt.lr *= 0.6
                 train_one_batch = mk_train_one_batch()
             if i == 2500:
@@ -157,6 +179,7 @@ if __name__ == "__main__":
                 train_one_batch = mk_train_one_batch()
 
             x, y = data_queue.get()
+            print(x[0], y[0])
             x, y = Tensor(x), Tensor(y)
             loss = train_one_batch(x, y)
             print(f"[{i}]: loss: {loss.numpy()}")

@@ -129,14 +129,16 @@ def one_seq_examples(seq_len: int):
     XOR = 1
     AND = 2
     OR = 3
+    # available_ops = np.array([MOV, XOR, AND, OR])
+    available_ops = np.array([MOV])
 
-    inputs = np.empty((seq_len, 5), dtype=np.float32)
+    # inputs = np.empty((seq_len, 5), dtype=np.float32)
+    inputs = np.empty((seq_len, 2), dtype=np.float32)
     outputs = np.empty((seq_len, 2), dtype=np.float32)
 
-    tx_regs = np.random.choice(np.array([-1, 1]), seq_len)
-    rx_regs = np.random.choice(np.array([-1, 1]), seq_len)
-    opcodes = np.random.choice(np.array([0, 1, 2, 3]), seq_len)
-    immediate_flags = np.random.choice(np.array([-1, 1]), seq_len)
+    rx_regs = np.random.choice(np.array([-1]), seq_len)
+    opcodes = np.random.choice(available_ops, seq_len)
+    immediate_flags = np.random.choice(np.array([1]), seq_len)
     txs = np.random.choice(np.array([-1, 1]), seq_len)
 
     reg0 = -1
@@ -144,31 +146,55 @@ def one_seq_examples(seq_len: int):
 
     for i in range(seq_len):
         opcode = opcodes[i]
-        rx = rx_regs[i]
+        rx_reg = rx_regs[i]
         is_immediate = immediate_flags[i] == 1
         tx_val = 0
         if is_immediate:
             tx_val = txs[i]
         else:
-            tx_val = reg0 if tx_regs[i] == -1 else reg1
+            tx_val = reg0 if txs[i] == -1 else reg1
         rx_val = 0
 
+        opcode_bit_0 = -1
+        opcode_bit_1 = -1
         if opcode == MOV:
             rx_val = tx_val
+            opcode_bit_0 = -1
+            opcode_bit_1 = -1
         elif opcode == XOR:
             rx_val = xor(rx_val, tx_val)
+            opcode_bit_0 = -1
+            opcode_bit_1 = 1
         elif opcode == AND:
             rx_val = and_(rx_val, tx_val)
+            opcode_bit_0 = 1
+            opcode_bit_1 = -1
         elif opcode == OR:
             rx_val = or_(rx_val, tx_val)
+            opcode_bit_0 = 1
+            opcode_bit_1 = 1
 
-        if rx == -1:
+        if rx_reg == -1:
             reg0 = rx_val
         else:
             reg1 = rx_val
 
-        inputs[i] = np.array([opcode, rx, is_immediate, tx_val, rx_val])
+        # inputs[i] = np.array([opcode_bit_0, opcode_bit_1, rx_reg, immediate_flags[i], txs[i]])
+        inputs[i] = np.array([rx_reg, txs[i]])
         outputs[i] = np.array([reg0, reg1])
+
+    # make sure this thing is actually solvable
+    reg0 = -1
+    reg1 = -1
+    for i in range(seq_len):
+        imm = inputs[i][1]
+        if inputs[i][0] == -1:
+            reg0 = imm
+        else:
+            reg1 = imm
+
+        if outputs[i][0] != reg0 or outputs[i][1] != reg1:
+            raise Exception("unsolvable")
 
     return inputs, outputs
 
@@ -184,6 +210,19 @@ def one_seq_examples(seq_len: int):
 #         outputs.append(output_val)
 #     inputs = np.array(inputs)
 #     outputs = np.array(outputs)
+#     return inputs, outputs
+
+# debug: 1-ago (return previous value, or -1 if it's the first value)
+# @jit(nopython=True)
+# def one_seq_examples(seq_len):
+#     inputs = np.empty((seq_len, 1), dtype=np.float32)
+#     outputs = np.empty((seq_len, 1), dtype=np.float32)
+#     prev_val = -1
+#     for i in range(seq_len):
+#         val = one_val()
+#         inputs[i][0] = val
+#         outputs[i][0] = prev_val
+#         prev_val = val
 #     return inputs, outputs
 
 

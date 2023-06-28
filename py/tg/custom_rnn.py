@@ -50,13 +50,9 @@ def build_initializer(id) -> Callable[[List[int]], Tensor]:
     elif isinstance(id, dict):
         id_type = id["id"]
         if id_type == "normal":
-            return lambda shape: Tensor(
-                np.random.normal(id["mean"], id["std"], shape).astype(np.float32)
-            )
+            return lambda shape: Tensor(np.random.normal(id["mean"], id["std"], shape).astype(np.float32))
         elif id_type == "uniform":
-            return lambda shape: Tensor(
-                np.random.uniform(id["low"], id["high"], shape).astype(np.float32)
-            )
+            return lambda shape: Tensor(np.random.uniform(id["low"], id["high"], shape).astype(np.float32))
         else:
             raise ValueError(f"Unknown initializer: {id}")
     else:
@@ -80,8 +76,9 @@ class CustomRNNCell:
         output_bias_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
         recurrent_kernel_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
         recurrent_bias_regularizer: Optional[Callable[[Tensor], Tensor]] = None,
-        trainable_initial_weights=False,
+        trainable_initial_state=False,
         fedback_final_state_size: Optional[int] = None,
+        feeding_back_state=False,
     ):
         self.trainable_weights: List[Tensor] = []
 
@@ -103,10 +100,11 @@ class CustomRNNCell:
         self.recurrent_kernel_regularizer = recurrent_kernel_regularizer
         self.recurrent_bias_regularizer = recurrent_bias_regularizer
 
-        self.trainable_initial_weights = trainable_initial_weights
+        self.trainable_initial_state = trainable_initial_state
 
         input_size = (
             input_shape[-1]
+            # + (self.state_size if not feeding_back_state else 0)
             + self.state_size
             + (fedback_final_state_size if fedback_final_state_size is not None else 0)
         )
@@ -147,12 +145,12 @@ class CustomRNNCell:
             self.add_weight(
                 shape=(self.state_size,),
                 initializer=self.initial_state_initializer,
-                trainable=self.trainable_initial_weights,
+                trainable=self.trainable_initial_state,
             )
             if self.state_size > 0
             else None
         )
-        if self.initial_state is not None and not self.trainable_initial_weights:
+        if self.initial_state is not None and not self.trainable_initial_state:
             self.initial_state.requires_grad = False
 
     def add_weight(
@@ -176,6 +174,13 @@ class CustomRNNCell:
             if prev_state is not None or extra_state is not None
             else inputs
         )
+        # print(
+        #     inputs.shape,
+        #     prev_state.shape if prev_state is not None else None,
+        #     extra_state.shape if extra_state is not None else None,
+        #     combined_inputs.shape,
+        #     self.output_kernel.shape,
+        # )
         output = combined_inputs.linear(self.output_kernel, self.output_bias)
         output = self.output_activation(output)
 
@@ -186,6 +191,49 @@ class CustomRNNCell:
         new_state = self.recurrent_activation(new_state)
 
         return output, new_state
+
+        # def __call__(self, inputs: Tensor, prev_state: Tensor, extra_state: Tensor):
+        #     if prev_state is not None and len(prev_state.shape) == 1:
+        #         raise "prev_state must be a batch of states"
+        #         # prev_state = prev_state.unsqueeze(0).repeat([inputs.shape[0], 1])
+
+        #     input_dim = inputs.shape[-1]
+        #     prev_state_dim = prev_state.shape[-1] if prev_state is not None else 0
+
+        #     output_kernel_inputs = (
+        #         self.output_kernel[:input_dim] if input_dim < self.output_kernel.shape[0] else self.output_kernel
+        #     )
+        #     output = inputs.dot(output_kernel_inputs)
+
+        #     if prev_state is not None:
+        #         output_kernel_prev_state = self.output_kernel[input_dim : input_dim + prev_state_dim]
+        #         output = output + prev_state.dot(output_kernel_prev_state)
+        #     if extra_state is not None:
+        #         output_kernel_extra_state = self.output_kernel[input_dim + prev_state_dim :]
+        #         output = output + extra_state.dot(output_kernel_extra_state)
+
+        #     output = output.add(self.output_bias) if self.output_bias is not None else output
+        #     output = self.output_activation(output)
+
+        #     if self.state_size == 0:
+        #         return output, None
+
+        #     recurrent_kernel_inputs = (
+        #         self.recurrent_kernel[:input_dim] if input_dim < self.recurrent_kernel.shape[0] else self.recurrent_kernel
+        #     )
+        #     new_state = inputs.dot(recurrent_kernel_inputs)
+
+        #     if prev_state is not None:
+        #         recurrent_kernel_prev_state = self.recurrent_kernel[input_dim : input_dim + prev_state_dim]
+        #         new_state = new_state + prev_state.dot(recurrent_kernel_prev_state)
+        #     if extra_state is not None:
+        #         recurrent_kernel_extra_state = self.recurrent_kernel[input_dim + prev_state_dim :]
+        #         new_state = new_state + extra_state.dot(recurrent_kernel_extra_state)
+
+        #     new_state = new_state.add(self.recurrent_bias) if self.recurrent_bias is not None else new_state
+        #     new_state = self.recurrent_activation(new_state)
+
+        #     return output, new_state
 
     def get_initial_state(self, batch_size, dtype=None) -> Tensor:
         if self.initial_state is None:
@@ -231,9 +279,8 @@ class CustomRNN:
             for cell_ix, cell, state in zip(range(len(self.cells)), self.cells, states):
                 output, new_state = cell(
                     inputs_for_timestep,
-                    state
-                    if not self.feedback_final_cell_state or cell_ix != len(self.cells) - 1
-                    else Tensor.zeros_like(state),
+                    # state if not self.feedback_final_cell_state or cell_ix != len(self.cells) - 1 else None,
+                    state,
                     states[-1] if self.feedback_final_cell_state and cell_ix == 0 else None,
                 )
                 inputs_for_timestep = output
@@ -258,9 +305,7 @@ class CustomRNN:
         return trainable_params
 
     def get_regularization_loss(self) -> Tensor:
-        return reduce(
-            lambda a, b: a + b, [cell.get_regularization_cost() for cell in self.cells], Tensor(0.0)
-        )
+        return reduce(lambda a, b: a + b, [cell.get_regularization_cost() for cell in self.cells], Tensor(0.0))
 
     def validate_cells(cells: List[CustomRNNCell]):
         if len(cells) == 0:
@@ -273,9 +318,7 @@ class CustomRNN:
                 continue
 
             if cell.input_dim != input_dim:
-                raise ValueError(
-                    f"cell {i} has input_dim {cell.input_dim} but expected {input_dim}"
-                )
+                raise ValueError(f"cell {i} has input_dim {cell.input_dim} but expected {input_dim}")
             input_dim = cell.output_dim
 
     def print_weights(self, dense: Optional[Linear] = None):
@@ -305,9 +348,7 @@ class CustomRNN:
 
         data = {
             "input_dim": self.cells[0].input_dim,
-            "output_dim": post_layers[-1][0].weight.shape[0]
-            if len(post_layers) > 0
-            else self.cells[-1].output_dim,
+            "output_dim": post_layers[-1][0].weight.shape[0] if len(post_layers) > 0 else self.cells[-1].output_dim,
             "cells": [
                 {
                     "state_size": cell.state_size,
