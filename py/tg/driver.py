@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
         # Training loop
         train_one_batch = mk_train_one_batch()
-        for i in range(25000):
+        for i in range(5000):
             if i == 500:
                 reg.intensity *= 0.8
                 opt.lr *= 0.8

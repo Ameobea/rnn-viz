@@ -757,7 +757,6 @@ export class GraphRNNPostLayer implements GraphRNNLayer {
 
     // (input_shape[-1] + self.state_size, self.output_dim)
     const kernelShape = [weights.inputDim, weights.outputDim];
-    console.log({ kernelShape });
 
     for (let outputNeuronIx = 0; outputNeuronIx < outputDim; outputNeuronIx += 1) {
       const weightsForNeuron: SparseWeight[] = [];

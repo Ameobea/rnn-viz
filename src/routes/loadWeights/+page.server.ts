@@ -3,9 +3,14 @@ import * as fs from 'fs/promises';
 import type { PageServerLoad } from './$types';
 import type { AmeoActivationIdentifier } from '../../nn/customRNN';
 
-const WEIGHTS_PATH = '/home/casey/Downloads/weights.json';
+// const WEIGHTS_PATH = '/home/casey/Downloads/weights.json';
 
 export const load: PageServerLoad = async ({ url, fetch }) => {
+  const homeDir = process.env.HOME;
+  if (!homeDir) {
+    throw new Error('No home dir');
+  }
+  const weightsPath = `${homeDir}/Downloads/weights.json`;
   const rawWeights = await (async () => {
     const ameotrackID = url.searchParams.get('ameotrackID');
     if (ameotrackID) {
@@ -15,7 +20,7 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
         .then(console.log);
       return fetch(`https://i.ameo.link/${ameotrackID}.json`).then(res => res.json());
     }
-    return JSON.parse(await fs.readFile(WEIGHTS_PATH, 'utf-8'));
+    return JSON.parse(await fs.readFile(weightsPath, 'utf-8'));
   })();
   const weights: {
     input_dim: number;

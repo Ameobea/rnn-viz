@@ -59,7 +59,7 @@
           arrowhead: false,
           cluster: false,
           edgeLabels: false,
-          // clusterInputs: false,
+          clusterInputs: false,
           // aspectRatio:
           //   window.innerWidth && window.innerHeight
           //     ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)

@@ -389,7 +389,7 @@ export class NodeViz {
       const val: 1 | -1 = Math.random() > 0.5 ? 1 : -1;
       input[i] = val;
     }
-    input[0] = -1;
+    // input[0] = -1;
     return [input];
   }
 
