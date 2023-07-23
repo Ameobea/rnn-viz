@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
   }
   const weightsPath = `${homeDir}/Downloads/weights.json`;
   const rawWeights = await (async () => {
-    const ameotrackID = url.searchParams.get('ameotrackID');
+    const ameotrackID = 'b9i'; //  url.searchParams.get('ameotrackID');
     if (ameotrackID) {
       console.log(`https://i.ameo.link/${ameotrackID}.json`);
       fetch(`https://i.ameo.link/${ameotrackID}.json`)

@@ -48,20 +48,24 @@
     <div class="info-item">
       Initial state:
       <span class="output-display" style={`color: ${colorToCSS(getColor(stateNode.initialState))}`}>
-        {stateNode.initialState}
+        {stateNode.initialState.toFixed(3)}
       </span>
     </div>
   {/if}
   <div class="info-item">
     Current {stateNode ? 'state' : 'output'}:
-    <span class="output-display" style={`color: ${colorToCSS(curOutputColor)}`}>{curOutput}</span>
-  </div>
-  <div class="info-item">
-    Bias:
-    <span class="output-display" style={`color: ${colorToCSS(getColor(node.inner.bias))}`}
-      >{node.inner.bias}</span
+    <span class="output-display" style={`color: ${colorToCSS(curOutputColor)}`}
+      >{curOutput.toFixed(3)}</span
     >
   </div>
+  {#if !stateNode}
+    <div class="info-item">
+      Bias:
+      <span class="output-display" style={`color: ${colorToCSS(getColor(node.inner.bias))}`}
+        >{node.inner.bias.toFixed(3)}</span
+      >
+    </div>
+  {/if}
   {#if !isInLogicAnalyzer}
     <div class="add-to-logic-analyzer">
       <button on:click={addToLogicAnalyzer}>Add to logic analyzer</button>
@@ -73,7 +77,7 @@
   .root {
     display: flex;
     flex-direction: column;
-    width: calc(min(400px, 50vw));
+    width: calc(min(200px, 50vw));
     position: absolute;
     bottom: 0;
     background-color: #111;

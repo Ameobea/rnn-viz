@@ -1,5 +1,4 @@
 import { writable, type Writable } from 'svelte/store';
-import { PIXI, Viewport, GlowFilter } from '../../viz/pixi';
 import {
   StateNeuron,
   type RNNGraph,
@@ -10,21 +9,31 @@ import {
 import { getColor } from './ColorScale';
 import { parseGraphvizPlainExt, type Point } from './plainExtParsing';
 
+import * as d3 from './d3';
+
+const hexColorToCSS = (color: number): string => {
+  const r = (color >> 16) & 0xff;
+  const g = (color >> 8) & 0xff;
+  const b = color & 0xff;
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
 const Conf = {
-  LabelColor: 0xffffff,
-  NodeLabelFontSize: 30,
+  LabelColor: '#ffffff',
+  NodeLabelFontSize: 34,
   EdgeLabelFontSize: 20,
   WorldWidth: 2000,
   WorldHeight: 2000,
-  EdgeWidth: 3,
+  EdgeWidth: 5,
   ArrowheadSize: 20,
   ArrowheadHeightRatio: 0.65,
   TextResolution: 4,
+  PaddingPercent: 0.02,
+  NodeBorderWidth: 4,
 };
 
 class VizEdge {
-  public graphics: PIXI.Graphics;
-  private labelText: PIXI.Text;
+  public group: d3.Selection<SVGGElement, undefined, null, undefined>;
   private controlPoints: Point[];
   private txNode: VizNode;
   private color: number;
@@ -36,67 +45,26 @@ class VizEdge {
     txNode: VizNode,
     onSelect: (edge: VizEdge) => void
   ) {
-    this.graphics = new PIXI.Graphics();
+    this.group = d3.create('svg:g');
     this.controlPoints = controlPoints;
     this.txNode = txNode;
     this.weight = label.weight;
     this.color = getColor(txNode.inner.getOutput() * label.weight);
 
-    this.labelText = new PIXI.Text(
-      label.text,
-      new PIXI.TextStyle({ fontSize: label.fontSize, fill: Conf.LabelColor })
-    );
-    this.labelText.resolution = Conf.TextResolution;
-    this.labelText.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-    // Label position is center, but we want top left
-    const labelX = label.position.x - this.labelText.width / 2;
-    const labelY = label.position.y - label.fontSize / 2;
-    this.labelText.position.set(labelX, labelY);
-    this.graphics.addChild(this.labelText);
+    if (label.text && !Number.isNaN(label.position.x) && !Number.isNaN(label.position.y)) {
+      this.group
+        .append('text')
+        .text(label.text)
+        .attr('x', label.position.x)
+        .attr('y', label.position.y)
+        .attr('font-size', label.fontSize)
+        .attr('fill', Conf.LabelColor)
+        .attr('text-anchor', 'middle');
+    }
 
-    this.graphics.interactive = true;
-    this.graphics.cursor = 'pointer';
-    this.graphics.on('pointerdown', evt => {
-      onSelect(this);
-      evt.stopPropagation();
-    });
+    this.group.on('click', () => onSelect(this));
 
     this.drawSpline(this.color);
-
-    // Adapted from excellent solution by @SignDawn / @oushu1liangqi1:
-    // https://github.com/pixijs/pixijs/issues/7058#issuecomment-1385224212
-    let linePoly: PIXI.Polygon | undefined;
-    let arrowheadPoly: PIXI.Polygon | undefined;
-    this.graphics.hitArea = {
-      contains: (x: number, y: number) => {
-        if (!this.graphics.geometry.points.length) {
-          return false;
-        }
-
-        if (!linePoly || !arrowheadPoly) {
-          const points = this.graphics.geometry.points;
-          const odd: { x: number; y: number; z: number }[] = [];
-          const even: { x: number; y: number; z: number }[] = [];
-
-          for (let index = 0; index * 2 < points.length - 6; index++) {
-            const x = points[index * 2];
-            const y = points[index * 2 + 1];
-            const z = points[index * 2 + 2];
-            if (index % 2 === 0) {
-              odd.push({ x, y, z });
-            } else {
-              even.push({ x, y, z });
-            }
-          }
-          linePoly = new PIXI.Polygon([...odd, ...even.reverse()]);
-
-          const arrowheadPoints = points.slice(-6);
-          arrowheadPoly = new PIXI.Polygon(arrowheadPoints);
-        }
-
-        return linePoly.contains(x, y) || arrowheadPoly.contains(x, y);
-      },
-    };
   }
 
   private drawSpline(color: number): void {
@@ -108,22 +76,29 @@ class VizEdge {
       throw new Error('Invalid number of control points; expected 3n + 1');
     }
 
-    this.graphics.clear();
-    this.graphics.lineStyle(Conf.EdgeWidth, color);
-
     const start = this.controlPoints[0];
-    this.graphics.moveTo(start.x, start.y);
 
-    const startPoint = this.controlPoints[0];
-    this.graphics.moveTo(startPoint.x, startPoint.y);
+    const path = d3.path();
+    path.moveTo(start.x, start.y);
 
     let p1: Point, p2: Point, p3: Point;
     for (let i = 1; i < this.controlPoints.length; i += 3) {
       p1 = this.controlPoints[i];
       p2 = this.controlPoints[i + 1];
       p3 = this.controlPoints[i + 2];
-      this.graphics.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+      path.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     }
+
+    this.group
+      .append('path')
+      .attr('stroke', hexColorToCSS(color))
+      .attr('stroke-width', Conf.EdgeWidth)
+      .attr('fill', 'none')
+      .attr('d', path.toString())
+      .attr('stroke-linecap', 'round')
+      .attr('stroke-linejoin', 'round')
+      .attr('shape-rendering', 'geometricPrecision')
+      .attr('cursor', 'pointer');
 
     this.drawArrowHead(p3!, p2!, p1!, this.color);
   }
@@ -144,44 +119,43 @@ class VizEdge {
       y: end.y - Conf.ArrowheadSize * Math.sin(angle + (Math.PI / 6) * Conf.ArrowheadHeightRatio),
     };
 
-    this.graphics.lineStyle(0, color);
-    this.graphics.beginFill(color);
-    this.graphics.drawPolygon([end.x, end.y, point1.x, point1.y, point2.x, point2.y]);
-    const poly = new PIXI.Polygon([end.x, end.y, point1.x, point1.y, point2.x, point2.y]);
-    this.graphics.drawPolygon(poly);
-    this.graphics.endFill();
+    this.group
+      .append('path')
+      .attr('d', `M ${end.x} ${end.y} L ${point1.x} ${point1.y} L ${point2.x} ${point2.y} Z`)
+      .attr('fill', hexColorToCSS(color))
+      .attr('stroke', hexColorToCSS(color))
+      .attr('stroke-width', 3)
+      .attr('cursor', 'pointer')
+      .attr('shape-rendering', 'geometricPrecision')
+      .attr('class', 'arrowhead');
   }
 
   public update(): void {
     this.color = getColor(this.txNode.inner.getOutput() * this.weight);
-    this.drawSpline(this.color);
+    this.group.selectAll('path').attr('stroke', hexColorToCSS(this.color));
+    this.group.selectAll('.arrowhead').attr('fill', hexColorToCSS(this.color));
   }
 
   public onSelect() {
-    // Add a glow effect
-    this.graphics.filters = [
-      new GlowFilter({
-        alpha: 0.7,
-        color: 0xffffff,
-        distance: 40,
-        outerStrength: 4,
-      }),
-    ];
+    this.group
+      .select('path')
+      .attr('stroke-width', Conf.EdgeWidth * 1.5)
+      .attr('filter', 'url(#sofGlow)');
   }
 
   public onDeselect() {
-    this.graphics.filters = [];
+    this.group.select('path').attr('stroke-width', Conf.EdgeWidth).attr('filter', null);
   }
 }
 
 export class VizNode {
+  public group: d3.Selection<SVGGElement, undefined, null, undefined>;
   public name: string;
   public x: number;
   public y: number;
   public width: number;
   public height: number;
   public inner: SparseNeuron;
-  public graphics: PIXI.Graphics = new PIXI.Graphics();
 
   constructor(
     name: string,
@@ -200,27 +174,7 @@ export class VizNode {
     this.height = height;
     this.inner = inner;
 
-    const label = new PIXI.Text(
-      labelText,
-      new PIXI.TextStyle({ fontSize: Conf.NodeLabelFontSize, fill: Conf.LabelColor })
-    );
-    label.resolution = Conf.TextResolution;
-    label.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-    label.position.set(x + width / 2 - label.width / 2, y + height / 2 - label.height / 2);
-    this.graphics.addChild(label);
-    this.graphics.interactive = true;
-    this.graphics.cursor = 'pointer';
-    this.graphics.on('pointerdown', evt => {
-      onSelect(this);
-      evt.stopPropagation();
-    });
-    this.update();
-  }
-
-  public update() {
-    this.graphics.clear();
-    const value = this.inner.getOutput();
-    const color = getColor(value);
+    this.group = d3.create('svg:g');
 
     const shape: 'circle' | 'square' = (() => {
       if (
@@ -233,18 +187,53 @@ export class VizNode {
       return 'square';
     })();
 
-    this.graphics.lineStyle(2, 0xffffff);
+    let elem:
+      | d3.Selection<SVGRectElement, undefined, null, undefined>
+      | d3.Selection<SVGCircleElement, undefined, null, undefined>;
     if (shape === 'square') {
-      this.graphics.beginFill(color);
-      this.graphics.drawRect(this.x, this.y, this.width, this.height);
-      this.graphics.endFill();
+      elem = this.group
+        .append('rect')
+        .attr('x', this.x)
+        .attr('y', this.y)
+        .attr('width', this.width)
+        .attr('height', this.height);
     } else if (shape === 'circle') {
-      this.graphics.beginFill(color);
-      this.graphics.drawCircle(this.x + this.width / 2, this.y + this.height / 2, this.width / 2);
-      this.graphics.endFill();
+      elem = this.group
+        .append('circle')
+        .attr('cx', this.x + this.width / 2)
+        .attr('cy', this.y + this.height / 2)
+        .attr('r', this.width / 2);
     } else {
       throw new Error('Invalid shape: ' + shape);
     }
+
+    elem.attr('stroke', 'white');
+    elem.attr('stroke-width', Conf.NodeBorderWidth);
+    elem.attr('cursor', 'pointer');
+    elem.attr('shape-rendering', 'geometricPrecision');
+    elem.on('click', () => onSelect(this));
+
+    this.group
+      .append('text')
+      .attr('pointer-events', 'none')
+      .text(labelText)
+      .attr('x', x + width / 2)
+      .attr('y', y + height / 2)
+      .attr('font-size', Conf.NodeLabelFontSize)
+      .attr('fill', Conf.LabelColor)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .attr('font-family', 'sans-serif');
+
+    this.update();
+  }
+
+  public update() {
+    const value = this.inner.getOutput();
+    const color = getColor(value);
+
+    this.group.selectAll('rect').attr('fill', hexColorToCSS(color));
+    this.group.selectAll('circle').attr('fill', hexColorToCSS(color));
   }
 
   public getColor(): number {
@@ -252,57 +241,31 @@ export class VizNode {
   }
 
   public onSelect() {
-    // Add a glow effect
-    this.graphics.filters = [
-      new GlowFilter({
-        alpha: 0.8,
-        color: 0xffffff,
-        distance: this.width,
-        outerStrength: 1.8,
-      }),
-    ];
+    this.group.select('rect').attr('filter', 'url(#sofGlow)');
+    this.group.select('circle').attr('filter', 'url(#sofGlow)');
   }
 
   public onDeselect() {
-    this.graphics.filters = [];
+    this.group.select('rect').attr('filter', null);
+    this.group.select('circle').attr('filter', null);
   }
 }
 
 export class NodeViz {
-  private app: PIXI.Application;
-  private viewport: Viewport;
-  private didSetInitialZoom = false;
+  private svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   private graph: RNNGraph;
   public nodes: VizNode[] = [];
   private edges: VizEdge[] = [];
-  private destroyed = false;
   public selected: Writable<VizNode | VizEdge | null> = writable(null);
 
-  constructor(canvas: HTMLCanvasElement, graphvizLayoutData: string, graph: RNNGraph) {
+  constructor(svg: SVGSVGElement, graphvizLayoutData: string, graph: RNNGraph) {
     this.graph = graph;
-    this.app = new PIXI.Application({
-      antialias: true,
-      resolution: window.devicePixelRatio,
-      autoDensity: true,
-      view: canvas,
-      height: canvas.height,
-      width: canvas.width,
-      backgroundColor: 0,
+    this.svg = d3.select(svg).on('click', evt => {
+      if (evt.target === svg) {
+        this.handleBackgroundClick();
+      }
     });
-    this.viewport = new Viewport({
-      screenWidth: canvas.width,
-      screenHeight: canvas.height,
-      worldWidth: Conf.WorldWidth,
-      worldHeight: Conf.WorldHeight,
-      events: this.app.renderer.events,
-    });
-    this.viewport.drag().pinch().wheel();
-    this.app.stage.addChild(this.viewport);
-
-    // Handle background clicks
-    this.viewport.interactive = true;
-    this.viewport.cursor = 'default';
-    this.viewport.on('pointerdown', () => void this.handleBackgroundClick());
+    const container = this.svg.append('g');
 
     const { nodes, edges } = parseGraphvizPlainExt(
       graphvizLayoutData,
@@ -310,6 +273,7 @@ export class NodeViz {
       Conf.WorldHeight,
       graph
     );
+
     const nodesByID = new Map<string, VizNode>();
 
     for (const [nodeID, { pos, width, height, label }] of nodes) {
@@ -348,16 +312,34 @@ export class NodeViz {
       this.edges.push(vizEdge);
     }
 
-    const container = new PIXI.Container();
-    this.viewport.addChild(container);
-
     // Add edges first so that they are behind nodes
     for (const edge of this.edges) {
-      container.addChild(edge.graphics);
+      container.node()!.appendChild(edge.group.node()!);
     }
     for (const node of this.nodes) {
-      container.addChild(node.graphics);
+      container.node()!.appendChild(node.group.node()!);
     }
+
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .on('zoom', evt => void container.attr('transform', evt.transform));
+    this.svg.call(zoom);
+
+    // Set initial zoom + pan so the entire viz is visible and centered
+    const bbox = container.node()!.getBBox();
+    const bboxCenterX = bbox.x + bbox.width / 2;
+    const bboxCenterY = bbox.y + bbox.height / 2;
+    const paddingX = Conf.PaddingPercent * svg.clientWidth;
+    const paddingY = Conf.PaddingPercent * svg.clientHeight;
+    const paddedWidth = bbox.width + 2 * paddingX;
+    const paddedHeight = bbox.height + 2 * paddingY;
+    const scale = Math.min(
+      (svg.clientWidth - 2 * paddingX) / paddedWidth,
+      (svg.clientHeight - 2 * paddingY) / paddedHeight
+    );
+    const translateX = svg.clientWidth / 2 - scale * (bboxCenterX + paddingX);
+    const translateY = svg.clientHeight / 2 - scale * (bboxCenterY + paddingY);
+    zoom.transform(this.svg, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
   }
 
   private handleNodeSelect(node: VizNode) {
@@ -429,33 +411,5 @@ export class NodeViz {
         return node;
       }
     });
-  }
-
-  public handleResize(newWidth: number, newHeight: number) {
-    this.app.renderer.resize(newWidth, newHeight);
-    this.viewport.resize(newWidth, newHeight, Conf.WorldWidth, Conf.WorldHeight);
-
-    // Need to do this here since apparently resizing right away clobbers the zoom
-    if (!this.didSetInitialZoom) {
-      this.didSetInitialZoom = true;
-      const container = this.viewport.children[0];
-      const bbox = container.getLocalBounds();
-      const center = new PIXI.Point(bbox.x + bbox.width / 2, bbox.y + bbox.height / 2);
-      const zoom =
-        Math.min(this.viewport.worldWidth / bbox.width, this.viewport.worldHeight / bbox.height) *
-        0.7;
-      console.log({ container, bbox, zoom, center });
-      this.viewport.setZoom(zoom, true);
-      this.viewport.moveCenter(center);
-    }
-  }
-
-  public destroy() {
-    if (this.destroyed) {
-      console.warn('NodeViz already destroyed');
-      return;
-    }
-    this.destroyed = true;
-    this.app.destroy(false, { children: true, texture: true, baseTexture: true });
   }
 }

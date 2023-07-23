@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  import { onDestroy, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { RNNGraph } from '../rnn/graph';
   import { browser } from '$app/environment';
   import type { NodeViz } from './NodeViz';
@@ -48,6 +48,7 @@
 
   export let serializedRNNGraph: string | RNNGraph;
   export let excludedNodeIDs: string[] = [];
+  export let aspectRatio: number | undefined = undefined;
 
   const { graph, graphDotviz }: { graph: RNNGraph; graphDotviz: string } = (() => {
     const graph =
@@ -60,10 +61,11 @@
           cluster: false,
           edgeLabels: false,
           clusterInputs: false,
-          // aspectRatio:
-          //   window.innerWidth && window.innerHeight
-          //     ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)
-          //     : undefined,
+          aspectRatio:
+            aspectRatio ??
+            (window.innerWidth && window.innerHeight
+              ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)
+              : undefined),
           excludedNodeIDs,
         })
       : '';
@@ -72,7 +74,6 @@
   const currentTimestep = graph.currentTimestep;
 
   let windowWidth = browser ? window.innerWidth : 0;
-  let windowHeight = browser ? window.innerHeight : 0;
   $: isMobile = windowWidth < 600;
 
   let layoutDataState: FetchLayoutState = { type: 'notFetched' };
@@ -102,8 +103,6 @@
   $: selectedNodeID = selectedNode?.name ?? null;
   const toggleSelecteNodeID = (nodeID: string) => viz?.toggleSelecteNodeID(nodeID);
 
-  $: viz?.handleResize(windowWidth, windowHeight);
-
   onMount(() => {
     if (!browser) {
       return;
@@ -114,7 +113,7 @@
     });
   });
 
-  const useNodeViz = (canvas: HTMLCanvasElement) => {
+  const useNodeViz = (svg: SVGSVGElement) => {
     if (!browser) {
       return;
     }
@@ -125,10 +124,7 @@
       throw new Error('NodeViz module not loaded');
     }
 
-    if (viz) {
-      viz.destroy();
-    }
-    viz = new NodeVizMod.NodeViz(canvas, layoutDataState.layoutData, graph);
+    viz = new NodeVizMod.NodeViz(svg, layoutDataState.layoutData, graph);
   };
 
   const useColorScaleLegend = (node: HTMLDivElement) => {
@@ -146,22 +142,39 @@
     legend.style.right = '10px';
     node.appendChild(legend);
   };
-
-  onDestroy(() => void viz?.destroy());
 </script>
 
-<svelte:window bind:innerWidth={windowWidth} bind:innerHeight={windowHeight} />
+<svelte:window bind:innerWidth={windowWidth} />
 <div class="root" use:useColorScaleLegend>
   {#if !NodeVizMod || layoutDataState.type === 'loading'}
     <p>Loading...</p>
   {:else if layoutDataState.type === 'error'}
     <p>Error: {layoutDataState.error}</p>
   {:else if layoutDataState.type === 'loaded'}
-    <canvas
-      use:useNodeViz
-      width={windowWidth * window.devicePixelRatio}
-      height={windowHeight * window.devicePixelRatio}
-    />
+    <svg use:useNodeViz>
+      <!-- FROM: https://codepen.io/dipscom/pen/mVYjPw -->
+      <defs>
+        <filter id="sofGlow" height="300%" width="300%" x="-75%" y="-75%">
+          <!-- Thicken out the original shape -->
+          <feMorphology operator="dilate" radius="10" in="SourceAlpha" result="thicken" />
+
+          <!-- Use a gaussian blur to create the soft blurriness of the glow -->
+          <feGaussianBlur in="thicken" stdDeviation="10" result="blurred" />
+
+          <!-- Change the colour -->
+          <feFlood flood-color="rgb(160,160,160)" result="glowColor" />
+
+          <!-- Color in the glows -->
+          <feComposite in="glowColor" in2="blurred" operator="in" result="softGlow_colored" />
+
+          <!--	Layer the effects together -->
+          <feMerge>
+            <feMergeNode in="softGlow_colored" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
     {#if viz}
       <NodeVizControls {viz} />
       {#if !isMobile}
@@ -199,5 +212,12 @@
   .root {
     display: flex;
     flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
   }
 </style>
