@@ -218,7 +218,12 @@
 
   button {
     font-family: monospace;
-    font-size: 14px;
+    font-size: 15px;
+    padding: 4px 0px;
+    border-radius: 0;
+    outline: none;
+    border: 1px solid #444;
+    cursor: pointer;
   }
 
   .collapsed {

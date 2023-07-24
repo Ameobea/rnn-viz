@@ -20,4 +20,9 @@
   ];
 </script>
 
-<NodeVizComp serializedRNNGraph={serializedGraph} {excludedNodeIDs} aspectRatio={1.5} />
+<NodeVizComp
+  serializedRNNGraph={serializedGraph}
+  {excludedNodeIDs}
+  aspectRatio={1.5}
+  labelFontSizeOverride={50}
+/>

@@ -42,7 +42,7 @@
   $: isInLogicAnalyzer = isMobile || logicAnalyzerVisibleNodeIDs.includes(node.name);
 </script>
 
-<div class="root" style="left: {left}">
+<div class="root" style="left: {left}; visibility: {isMobile ? 'hidden' : 'unset'}">
   <h3>{node.name}</h3>
   {#if stateNode}
     <div class="info-item">

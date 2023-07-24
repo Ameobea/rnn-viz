@@ -20,7 +20,7 @@ const hexColorToCSS = (color: number): string => {
 
 const Conf = {
   LabelColor: '#ffffff',
-  NodeLabelFontSize: 34,
+  NodeLabelFontSize: 46,
   EdgeLabelFontSize: 20,
   WorldWidth: 2000,
   WorldHeight: 2000,
@@ -165,7 +165,8 @@ export class VizNode {
     height: number,
     labelText: string,
     inner: SparseNeuron,
-    onSelect: (node: VizNode) => void
+    onSelect: (node: VizNode) => void,
+    labelFontSizeOverride?: number
   ) {
     this.name = name;
     this.x = x;
@@ -213,19 +214,34 @@ export class VizNode {
     elem.attr('shape-rendering', 'geometricPrecision');
     elem.on('click', () => onSelect(this));
 
+    const labelFontSize = labelFontSizeOverride ?? Conf.NodeLabelFontSize;
     this.group
       .append('text')
       .attr('pointer-events', 'none')
       .text(labelText)
       .attr('x', x + width / 2)
-      .attr('y', y + height / 2)
-      .attr('font-size', Conf.NodeLabelFontSize)
-      .attr('fill', Conf.LabelColor)
+      .attr('y', y + height / 2 + 2)
+      .attr('font-size', labelText.length <= 1 ? labelFontSize : labelFontSize * 0.8)
+      .attr('font-weight', '500')
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('font-family', 'sans-serif');
 
     this.update();
+  }
+
+  private computeLabelColor(nodeColor: number): number {
+    const r = (nodeColor >> 16) & 0xff;
+    const g = (nodeColor >> 8) & 0xff;
+    const b = nodeColor & 0xff;
+
+    // Gamma correction
+    const rLinear = (r / 255) ** 2.2;
+    const gLinear = (g / 255) ** 2.2;
+    const bLinear = (b / 255) ** 2.2;
+
+    const luminance = 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+    return luminance > 0.5 ? 0x000000 : 0xffffff;
   }
 
   public update() {
@@ -234,6 +250,9 @@ export class VizNode {
 
     this.group.selectAll('rect').attr('fill', hexColorToCSS(color));
     this.group.selectAll('circle').attr('fill', hexColorToCSS(color));
+
+    const labelColor = this.computeLabelColor(color);
+    this.group.selectAll('text').attr('fill', hexColorToCSS(labelColor));
   }
 
   public getColor(): number {
@@ -258,7 +277,12 @@ export class NodeViz {
   private edges: VizEdge[] = [];
   public selected: Writable<VizNode | VizEdge | null> = writable(null);
 
-  constructor(svg: SVGSVGElement, graphvizLayoutData: string, graph: RNNGraph) {
+  constructor(
+    svg: SVGSVGElement,
+    graphvizLayoutData: string,
+    graph: RNNGraph,
+    labelFontSizeOverride?: number
+  ) {
     this.graph = graph;
     this.svg = d3.select(svg).on('click', evt => {
       if (evt.target === svg) {
@@ -282,8 +306,16 @@ export class NodeViz {
         throw new Error(`Node ${nodeID} not found in graph`);
       }
 
-      const vizNode = new VizNode(nodeID, pos.x, pos.y, width, height, label, node, node =>
-        this.handleNodeSelect(node)
+      const vizNode = new VizNode(
+        nodeID,
+        pos.x,
+        pos.y,
+        width,
+        height,
+        label,
+        node,
+        node => this.handleNodeSelect(node),
+        labelFontSizeOverride
       );
       this.nodes.push(vizNode);
       nodesByID.set(nodeID, vizNode);

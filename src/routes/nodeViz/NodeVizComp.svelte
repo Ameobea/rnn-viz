@@ -49,6 +49,7 @@
   export let serializedRNNGraph: string | RNNGraph;
   export let excludedNodeIDs: string[] = [];
   export let aspectRatio: number | undefined = undefined;
+  export let labelFontSizeOverride: number | undefined = undefined;
 
   const { graph, graphDotviz }: { graph: RNNGraph; graphDotviz: string } = (() => {
     const graph =
@@ -124,7 +125,7 @@
       throw new Error('NodeViz module not loaded');
     }
 
-    viz = new NodeVizMod.NodeViz(svg, layoutDataState.layoutData, graph);
+    viz = new NodeVizMod.NodeViz(svg, layoutDataState.layoutData, graph, labelFontSizeOverride);
   };
 
   const useColorScaleLegend = (node: HTMLDivElement) => {
