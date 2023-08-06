@@ -148,6 +148,12 @@ class VizEdge {
   }
 }
 
+export abstract class InputSeqGenerator {
+  abstract reset(): void;
+
+  abstract next(): Float32Array;
+}
+
 export class VizNode {
   public group: d3.Selection<SVGGElement, undefined, null, undefined>;
   public name: string;
@@ -397,18 +403,21 @@ export class NodeViz {
     });
   }
 
-  private buildOneInputSeq(): Float32Array[] {
+  private buildOneInput(): Float32Array {
+    if (this.graph.inputSeqGenerator) {
+      return this.graph.inputSeqGenerator.next();
+    }
+
     const input = new Float32Array(this.graph.inputDim);
     for (let i = 0; i < input.length; i++) {
       const val: 1 | -1 = Math.random() > 0.5 ? 1 : -1;
       input[i] = val;
     }
-    // input[0] = -1;
-    return [input];
+    return input;
   }
 
   public reset() {
-    this.graph.reset(this.buildOneInputSeq());
+    this.graph.reset([this.buildOneInput()]);
     this.update();
   }
 
@@ -422,8 +431,8 @@ export class NodeViz {
   }
 
   public progressTimestep() {
-    const nextInput = this.buildOneInputSeq();
-    this.graph.advanceSequence(nextInput);
+    const nextInput = this.buildOneInput();
+    this.graph.advanceSequence([nextInput]);
     this.graph.evaluateOneTimestep();
     this.update();
   }

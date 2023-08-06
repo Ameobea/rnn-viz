@@ -75,36 +75,34 @@
       // then output_n
       //
       // All sorted secondarily by n
-      const aParts = a.split('_');
-      const bParts = b.split('_');
-      const aType = aParts[0];
-      const bType = bParts[0];
 
-      const partWeight = (part: string) => {
-        if (part.startsWith('input')) {
-          return 0;
-        } else if (part.startsWith('layer')) {
-          return 1;
-        } else if (part.startsWith('post')) {
-          return 2;
-        } else if (part.startsWith('output')) {
-          return 3;
-        } else {
-          return 4;
-        }
-      };
-
-      const aPartWeight = partWeight(aType);
-      const bPartWeight = partWeight(bType);
-
-      if (aPartWeight !== bPartWeight) {
-        return aPartWeight - bPartWeight;
+      const [aType, aNum] = a.split('_');
+      const [bType, bNum] = b.split('_');
+      if (aType === 'input' && bType !== 'input') {
+        return -1;
+      }
+      if (aType !== 'input' && bType === 'input') {
+        return 1;
+      }
+      if (aType === 'output' && bType !== 'output') {
+        return 1;
+      }
+      if (aType !== 'output' && bType === 'output') {
+        return -1;
       }
 
-      const aNum = parseInt(aParts[aParts.length - 1]);
-      const bNum = parseInt(bParts[bParts.length - 1]);
+      const [aLayer, aSubType, aSubNum] = aNum.split('_');
+      const [bLayer, bSubType, bSubNum] = bNum.split('_');
 
-      return aNum - bNum;
+      if (aLayer !== bLayer) {
+        return parseInt(aLayer) - parseInt(bLayer);
+      }
+
+      if (aSubType !== bSubType) {
+        return aSubType.localeCompare(bSubType);
+      }
+
+      return parseInt(aSubNum) - parseInt(bSubNum);
     });
 
   const uPlotInstsByNodeID: Map<string, UPlot> = new Map();

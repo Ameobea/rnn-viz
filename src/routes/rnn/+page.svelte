@@ -243,6 +243,7 @@
         cellWeights,
         [
           {
+            inputDim: cells[cells.length - 1].outputDim,
             outputDim: denseLayerArgs.units,
             weights: denseLayer.weights
               .find(w => w.name.includes('kernel'))!

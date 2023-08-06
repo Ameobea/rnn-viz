@@ -109,51 +109,81 @@ def nor(a, b):
 #     return inputs, outputs
 
 # asm interpreter
+# @jit(nopython=True)
+# def one_seq_examples(seq_len: int):
+#     # inputs are instructions.
+#     # instruction format:
+#     # bit 0: opcode
+#     #          -1: store
+#     #          1: mov
+#     # bit 1: rx register
+#     # bit 2: tx register or immediate in the case of store
+#     # output is the value written to the rx register
+
+#     reg0 = -1
+#     reg1 = -1
+
+#     inputs = np.empty((seq_len, 3), dtype=np.float32)
+#     outputs = np.empty((seq_len, 1), dtype=np.float32)
+
+#     tx_regs = np.random.choice(np.array([-1, 1]), seq_len)
+#     rx_regs = np.random.choice(np.array([-1, 1]), seq_len)
+#     opcodes = np.random.choice(np.array([-1, 1]), seq_len)
+#     immediates = np.random.choice(np.array([-1, 1]), seq_len)
+
+#     for i in range(seq_len):
+#         opcode = opcodes[i]
+#         rx = rx_regs[i]
+#         tx = tx_regs[i]
+
+#         if opcode == -1:
+#             # store
+#             imm = immediates[i]
+#             if rx == -1:
+#                 reg0 = imm
+#             else:
+#                 reg1 = imm
+#             inputs[i] = np.array([opcode, rx, imm])
+#             outputs[i][0] = imm
+#         else:
+#             # mov
+#             val = reg0 if rx == -1 else reg1
+#             if tx == -1:
+#                 reg0 = val
+#             else:
+#                 reg1 = val
+#             inputs[i] = np.array([opcode, rx, tx])
+#             outputs[i][0] = val
+
+#     return inputs, outputs
+
+
 @jit(nopython=True)
-def one_seq_examples(seq_len: int):
-    # inputs are instructions.
-    # instruction format:
-    # bit 0: opcode
-    #          -1: store
-    #          1: mov
-    # bit 1: rx register
-    # bit 2: tx register or immediate in the case of store
-    # output is the value written to the rx register
+def one_seq_examples(seq_len: int, max_depth: int = 8):
+    # Inputs are sequences of parentheses.
+    # '(' is represented as -1, ')' is represented as 1.
+    # Outputs are binary sequences indicating whether each prefix of the
+    # input sequence is properly parenthesized.
 
-    reg0 = -1
-    reg1 = -1
-
-    inputs = np.empty((seq_len, 3), dtype=np.float32)
+    inputs = np.empty((seq_len, 1), dtype=np.float32)
     outputs = np.empty((seq_len, 1), dtype=np.float32)
 
-    tx_regs = np.random.choice(np.array([-1, 1]), seq_len)
-    rx_regs = np.random.choice(np.array([-1, 1]), seq_len)
-    opcodes = np.random.choice(np.array([-1, 1]), seq_len)
-    immediates = np.random.choice(np.array([-1, 1]), seq_len)
+    depth = 0  # Current parentheses depth
 
     for i in range(seq_len):
-        opcode = opcodes[i]
-        rx = rx_regs[i]
-        tx = tx_regs[i]
-
-        if opcode == -1:
-            # store
-            imm = immediates[i]
-            if rx == -1:
-                reg0 = imm
-            else:
-                reg1 = imm
-            inputs[i] = np.array([opcode, rx, imm])
-            outputs[i][0] = imm
+        # Choose next character. Generate '(' if depth < max_depth
+        # and either depth is 0 (so we can't close yet) or with probability 0.5.
+        # Otherwise, generate ')'.
+        if depth < max_depth and (depth == 0 or np.random.choice(np.array([0, 1])) == 0):
+            inputs[i] = -1  # '('
+            depth += 1
         else:
-            # mov
-            val = reg0 if rx == -1 else reg1
-            if tx == -1:
-                reg0 = val
-            else:
-                reg1 = val
-            inputs[i] = np.array([opcode, rx, tx])
-            outputs[i][0] = val
+            inputs[i] = 1  # ')'
+            depth -= 1
+
+        # Check if the prefix up to this point is valid (properly parenthesized).
+        # It's valid if depth >= 0 (every ')' had a matching '(').
+        outputs[i] = 1 if depth == 0 else -1
 
     return inputs, outputs
 

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { RNNGraph } from '../rnn/graph';
   import { browser } from '$app/environment';
-  import type { NodeViz } from './NodeViz';
+  import type { InputSeqGenerator, NodeViz } from './NodeViz';
   import { ColorScaleLegend, getColor } from './ColorScale';
 
   type FetchLayoutState =
@@ -12,14 +12,6 @@
     | { type: 'loaded'; layoutData: string };
 
   const buildPlainExtLayout = async (graphDotviz: string): Promise<string> => {
-    // check if we have a cached version
-    if (
-      localStorage.getItem('lastGraphDotviz') === graphDotviz &&
-      localStorage.getItem('lastGraphPlainExt')
-    ) {
-      return localStorage.getItem('lastGraphPlainExt') ?? '';
-    }
-
     const res = await fetch('https://dot-server-mi7imxlw6a-uw.a.run.app/dot_to_plainext', {
       method: 'POST',
       headers: {
@@ -31,10 +23,6 @@
       throw await res.text();
     }
     const data = await res.text();
-
-    // cache the result
-    localStorage.setItem('lastGraphDotviz', graphDotviz);
-    localStorage.setItem('lastGraphPlainExt', data);
 
     return data;
   };
@@ -50,11 +38,14 @@
   export let excludedNodeIDs: string[] = [];
   export let aspectRatio: number | undefined = undefined;
   export let labelFontSizeOverride: number | undefined = undefined;
+  export let inputSeqGenerator: InputSeqGenerator | undefined = undefined;
+  export let defaultLogicAnalyzerOpen = false;
+  export let defaultLogicAnalyzerVisibleNodeIDs: string[] | 'ALL' = [];
 
   const { graph, graphDotviz }: { graph: RNNGraph; graphDotviz: string } = (() => {
     const graph =
       typeof serializedRNNGraph === 'string'
-        ? RNNGraph.deserialize(JSON.parse(serializedRNNGraph))
+        ? RNNGraph.deserialize(JSON.parse(serializedRNNGraph), inputSeqGenerator)
         : serializedRNNGraph;
     const graphDotviz = browser
       ? graph.buildGraphviz({
@@ -92,13 +83,38 @@
 
   let NodeVizMod: typeof import('./NodeViz') | null = null;
   let viz: NodeViz | null = null;
-  let logicAnalyzerOpen = false;
+  let logicAnalyzerOpen = defaultLogicAnalyzerOpen;
   $: selected = viz?.selected;
   const logicAnalyzerVisibleNodeIDs: Writable<string[]> = writable(
-    [...graph.neuronOutputHistory.keys()].filter(
-      nodeID => nodeID.startsWith('input') || nodeID.startsWith('output')
-    )
+    [...graph.neuronOutputHistory.keys()]
+      .filter(nodeID => {
+        if (defaultLogicAnalyzerVisibleNodeIDs === 'ALL') {
+          return true;
+        }
+        if (
+          defaultLogicAnalyzerVisibleNodeIDs &&
+          Array.isArray(defaultLogicAnalyzerVisibleNodeIDs)
+        ) {
+          return defaultLogicAnalyzerVisibleNodeIDs.includes(nodeID);
+        }
+        return nodeID.startsWith('input') || nodeID.startsWith('output');
+      })
+      .sort((a, b) => {
+        // Inputs first, then everything else sorted alphabetically, then outputs
+        if (a.startsWith('input') && !b.startsWith('input')) {
+          return -1;
+        } else if (!a.startsWith('input') && b.startsWith('input')) {
+          return 1;
+        } else if (a.startsWith('output') && !b.startsWith('output')) {
+          return 1;
+        } else if (!a.startsWith('output') && b.startsWith('output')) {
+          return -1;
+        } else {
+          return a.localeCompare(b);
+        }
+      })
   );
+  $: console.log($logicAnalyzerVisibleNodeIDs);
   $: selectedNode =
     NodeVizMod && selected && $selected instanceof NodeVizMod.VizNode ? $selected : null;
   $: selectedNodeID = selectedNode?.name ?? null;
@@ -168,7 +184,7 @@
           <!-- Color in the glows -->
           <feComposite in="glowColor" in2="blurred" operator="in" result="softGlow_colored" />
 
-          <!--	Layer the effects together -->
+          <!-- Layer the effects together -->
           <feMerge>
             <feMergeNode in="softGlow_colored" />
             <feMergeNode in="SourceGraphic" />

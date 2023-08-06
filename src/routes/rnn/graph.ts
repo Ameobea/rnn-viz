@@ -2,6 +2,7 @@ import type { AmeoActivationIdentifier } from '../../nn/customRNN';
 import { nativeFusedInterpolatedAmeoImplInner } from '../../nn/ameoActivation/native';
 import * as GVB from 'graphviz-builder';
 import { writable, type Writable } from 'svelte/store';
+import type { InputSeqGenerator } from '../nodeViz/NodeViz';
 
 export interface RNNCellWeights {
   initialState: Float32Array;
@@ -392,6 +393,10 @@ export class GraphRNNOutputs implements GraphRNNLayer {
 
   public advanceSequence(): void {
     this.neurons.forEach(neuron => neuron.advanceSequence());
+  }
+
+  public reset(): void {
+    this.neurons.forEach(neuron => neuron.reset());
   }
 
   public serialize(): SerializedRNNOutputLayer {
@@ -870,25 +875,31 @@ export class RNNGraph {
    */
   public neuronOutputHistory: Map<string, number[]> = new Map();
   public currentTimestep: Writable<number> = writable(0);
+  public inputSeqGenerator: InputSeqGenerator | null = null;
 
   constructor(
     inputLayer: GraphRNNInputLayer,
     outputs: GraphRNNOutputs,
     cells: GraphRNNCell[],
     postLayers: GraphRNNPostLayer[],
-    initialInputSeq?: Float32Array[]
+    initialInputSeq?: Float32Array[] | InputSeqGenerator
   ) {
     this.inputLayer = inputLayer;
     this.outputs = outputs;
     this.cells = cells;
     this.postLayers = postLayers;
     this.allConnectedNeuronsByID = new Map();
+    if (initialInputSeq && !Array.isArray(initialInputSeq)) {
+      this.inputSeqGenerator = initialInputSeq;
+    }
 
     this.pruneUnconnectedNeurons();
 
-    const inputSeq = initialInputSeq ?? [
-      new Float32Array(this.inputLayer.inputDim).map(() => (Math.random() > 0.5 ? 1 : -1)),
-    ];
+    const inputSeq = initialInputSeq
+      ? Array.isArray(initialInputSeq)
+        ? initialInputSeq
+        : [initialInputSeq.next()]
+      : [new Float32Array(this.inputLayer.inputDim).map(() => (Math.random() > 0.5 ? 1 : -1))];
     this.setInputSequence(inputSeq);
     for (const neuron of this.allConnectedNeuronsByID.values()) {
       this.neuronOutputHistory.set(neuron.name, [neuron.getOutput()]);
@@ -992,6 +1003,11 @@ export class RNNGraph {
   }
 
   public reset(newInputSeq: Float32Array[]): void {
+    if (this.inputSeqGenerator) {
+      this.inputSeqGenerator.reset();
+      newInputSeq = [this.inputSeqGenerator.next()];
+    }
+    this.outputs.reset();
     this.cells.forEach(cell => cell.reset());
     this.postLayers.forEach(postLayer => postLayer.reset());
     this.neuronOutputHistory.clear();
@@ -1072,7 +1088,6 @@ export class RNNGraph {
     const clusterPrefix = params?.cluster === false ? '' : 'cluster_';
 
     const outputs = g.addCluster('cluster_outputs');
-    outputs.set('rank', 'sink');
     outputs.setNodeAttribut('fontsize', 10);
     for (let outputIx = 0; outputIx < this.outputs.size; outputIx += 1) {
       const neuron = this.outputs.getNeuron(outputIx)!;
@@ -1112,9 +1127,7 @@ export class RNNGraph {
     const inputs = g.addCluster(params?.clusterInputs === false ? 'inputs' : 'cluster_inputs');
     inputs.setNodeAttribut('shape', 'circle');
     inputs.setNodeAttribut('fontsize', 10);
-    if (params?.clusterInputs !== false) {
-      inputs.set('rank', 'source');
-    }
+
     for (let inputIx = 0; inputIx < this.inputLayer.size; inputIx += 1) {
       const inputNeuron = this.inputLayer.getNeuron(inputIx);
       if (inputNeuron && !excludedNodeIDs.has(inputNeuron.name)) {
@@ -1214,8 +1227,6 @@ export class RNNGraph {
       const res = this.validateOneSeq(oneSeqExamples(), lenient);
       if (!res.isValid) {
         console.log(`Validation failed on iteration ${i}`, { lenient });
-        console.log(`Expected: ${res.expected}`);
-        console.log(`Actual: ${res.actual}`);
         return false;
       }
     }
@@ -1234,7 +1245,7 @@ export class RNNGraph {
 
   public static deserialize(
     serialized: SerializedRNNGraph,
-    initialInputSeq?: Float32Array[]
+    initialInputSeq?: Float32Array[] | InputSeqGenerator
   ): RNNGraph {
     const inputLayer = GraphRNNInputLayer.deserialize(serialized.inputLayer);
     let prevLayer: GraphRNNLayer = inputLayer;

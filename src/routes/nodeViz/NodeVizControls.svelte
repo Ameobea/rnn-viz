@@ -62,11 +62,7 @@
       />
     </svg>
   </button>
-  <button
-    on:click={() => {
-      togglePlaying();
-    }}
-  >
+  <button on:click={() => void togglePlaying()}>
     {#if playState.isPlaying}
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" height="24" width="24">
         <path

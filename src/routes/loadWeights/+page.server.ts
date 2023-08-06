@@ -3,8 +3,6 @@ import * as fs from 'fs/promises';
 import type { PageServerLoad } from './$types';
 import type { AmeoActivationIdentifier } from '../../nn/customRNN';
 
-// const WEIGHTS_PATH = '/home/casey/Downloads/weights.json';
-
 export const load: PageServerLoad = async ({ url, fetch }) => {
   const homeDir = process.env.HOME;
   if (!homeDir) {
@@ -12,7 +10,8 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
   }
   const weightsPath = `${homeDir}/Downloads/weights.json`;
   const rawWeights = await (async () => {
-    const ameotrackID = 'b9i'; //  url.searchParams.get('ameotrackID');
+    // const ameotrackID = 'b9i';
+    const ameotrackID = url.searchParams.get('ameotrackID');
     if (ameotrackID) {
       console.log(`https://i.ameo.link/${ameotrackID}.json`);
       fetch(`https://i.ameo.link/${ameotrackID}.json`)

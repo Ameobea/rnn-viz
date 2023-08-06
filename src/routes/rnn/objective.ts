@@ -530,64 +530,88 @@ digraph "RNN" {
  * (gate which switches modes when high) and the second determines whether to move forward or backward through
  * the modes.
  */
+// export const oneSeqExamples = () => {
+//   const inputs: [number, number, number][] = [];
+//   const outputs: [number][] = [];
+
+//   enum Mode {
+//     Xor = -1,
+//     And = 1,
+//     Or = -2,
+//     Nor = 2,
+//     Nand = -3,
+//     Xnor = 3,
+//   }
+//   const allModes = [
+//     Mode.Xor,
+//     Mode.And,
+//     // Mode.Or,
+//     Mode.Nor,
+//     Mode.Nand,
+//     // Mode.Xnor
+//   ];
+//   let mode = Mode.Xor;
+//   let modeIndex = 0;
+
+//   for (let i = 0; i < seqLen; i += 1) {
+//     const changeMode = oneVal(0.5);
+//     // const changeDir = oneVal();
+//     if (changeMode === 1) {
+//       // modeIndex += changeDir === 1 ? 1 : -1;
+//       modeIndex += 1;
+//       modeIndex = modeIndex < 0 ? allModes.length - 1 : modeIndex;
+//       modeIndex = modeIndex >= allModes.length ? 0 : modeIndex;
+//       mode = allModes[modeIndex];
+//     }
+
+//     const input: [1 | -1, 1 | -1, 1 | -1] = [
+//       changeMode,
+//       // changeDir,
+//       oneVal(),
+//       oneVal(),
+//     ];
+//     const output: [1 | -1] = (() => {
+//       switch (mode) {
+//         case Mode.Xor:
+//           return [xor(input[1], input[2])];
+//         case Mode.And:
+//           return [and(input[1], input[2])];
+//         case Mode.Or:
+//           return [or(input[1], input[2])];
+//         case Mode.Nor:
+//           return [nor(input[1], input[2])];
+//         case Mode.Nand:
+//           return [nand(input[1], input[2])];
+//         case Mode.Xnor:
+//           return [xnor(input[1], input[2])];
+//         default:
+//           throw new Error('Invalid mode');
+//       }
+//     })();
+//     inputs.push(input);
+//     outputs.push(output);
+//   }
+
+//   return { inputs, outputs };
+// };
+
 export const oneSeqExamples = () => {
-  const inputs: [number, number, number][] = [];
+  const inputs: [number][] = [];
   const outputs: [number][] = [];
 
-  enum Mode {
-    Xor = -1,
-    And = 1,
-    Or = -2,
-    Nor = 2,
-    Nand = -3,
-    Xnor = 3,
-  }
-  const allModes = [
-    Mode.Xor,
-    Mode.And,
-    // Mode.Or,
-    Mode.Nor,
-    Mode.Nand,
-    // Mode.Xnor
-  ];
-  let mode = Mode.Xor;
-  let modeIndex = 0;
+  let depth = 0;
 
   for (let i = 0; i < seqLen; i += 1) {
-    const changeMode = oneVal(0.5);
-    // const changeDir = oneVal();
-    if (changeMode === 1) {
-      // modeIndex += changeDir === 1 ? 1 : -1;
-      modeIndex += 1;
-      modeIndex = modeIndex < 0 ? allModes.length - 1 : modeIndex;
-      modeIndex = modeIndex >= allModes.length ? 0 : modeIndex;
-      mode = allModes[modeIndex];
-    }
-
-    const input: [1 | -1, 1 | -1, 1 | -1] = [
-      changeMode,
-      // changeDir,
-      oneVal(),
-      oneVal(),
-    ];
-    const output: [1 | -1] = (() => {
-      switch (mode) {
-        case Mode.Xor:
-          return [xor(input[1], input[2])];
-        case Mode.And:
-          return [and(input[1], input[2])];
-        case Mode.Or:
-          return [or(input[1], input[2])];
-        case Mode.Nor:
-          return [nor(input[1], input[2])];
-        case Mode.Nand:
-          return [nand(input[1], input[2])];
-        case Mode.Xnor:
-          return [xnor(input[1], input[2])];
-        default:
-          throw new Error('Invalid mode');
+    const input: [1 | -1] = (() => {
+      if (depth < 8 && (depth === 0 || Math.random() > 0.5)) {
+        depth += 1;
+        return [-1];
+      } else {
+        depth -= 1;
+        return [1];
       }
     })();
+    const output: [1 | -1] = [depth == 0 ? 1 : -1];
     inputs.push(input);
     outputs.push(output);
   }

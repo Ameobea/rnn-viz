@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import queue
 from typing import Tuple
+import json
 
 from custom_rnn import CustomRNNCell, CustomRNN
 import numpy as np
@@ -32,20 +33,28 @@ def data_gen_worker(
                     return
 
 
+class NumpyArrayEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
 if __name__ == "__main__":
-    learning_rate = 0.004
-    seq_len = 40
+    learning_rate = 0.01
+    seq_len = 20
     input_dim = one_batch_examples(1, seq_len)[0].shape[-1]
     output_dim = one_batch_examples(1, seq_len)[1].shape[-1]
-    batch_size = 1024 * 4
+    batch_size = 1024 * 1
 
     np.set_printoptions(suppress=True)
 
-    init = "glorot_normal"
+    # init = "glorot_normal"
     # init = {"id": "uniform", "low": -1, "high": 1}
+    init = {"id": "normal", "mean": 0, "std": 1}
 
-    reg = SparseRegularizer(intensity=0.1, threshold=0.025, steepness=25, l1=0.001)
-    activation = {"id": "interpolated_ameo", "factor": 0.5, "leakyness": 0.01}
+    reg = SparseRegularizer(intensity=0.05, threshold=0.025, steepness=10, l1=0.001)
+    activation = {"id": "interpolated_ameo", "factor": 1, "leakyness": 1}
 
     rnn = CustomRNN(
         CustomRNNCell(
@@ -54,8 +63,8 @@ if __name__ == "__main__":
                 seq_len,
                 input_dim,
             ),
-            output_dim=16,
-            state_size=10,
+            output_dim=8,
+            state_size=1,
             output_activation_id=activation,
             recurrent_activation_id=activation,
             trainable_initial_weights=True,
@@ -73,10 +82,10 @@ if __name__ == "__main__":
             input_shape=(
                 batch_size,
                 seq_len,
-                16,
+                8,
             ),
-            output_dim=16,
-            state_size=10,
+            output_dim=4,
+            state_size=1,
             output_activation_id=activation,
             recurrent_activation_id=activation,
             trainable_initial_weights=True,
@@ -92,7 +101,11 @@ if __name__ == "__main__":
         ),
     )
 
-    dense = Linear(rnn.cells[-1].output_dim, 1, bias=True) if rnn.cells[-1].output_dim != output_dim else None
+    dense = (
+        Linear(rnn.cells[-1].output_dim, 1, bias=True)
+        if rnn.cells[-1].output_dim != output_dim
+        else None
+    )
 
     def forward(x: Tensor) -> Tensor:
         y = rnn(x)
@@ -138,7 +151,8 @@ if __name__ == "__main__":
 
         # Training loop
         train_one_batch = mk_train_one_batch()
-        for i in range(5000):
+        losses = []
+        for i in range(24000):
             if i == 500:
                 reg.intensity *= 0.8
                 opt.lr *= 0.8
@@ -154,8 +168,9 @@ if __name__ == "__main__":
 
             x, y = data_queue.get()
             x, y = Tensor(x), Tensor(y)
-            loss = train_one_batch(x, y)
-            print(f"[{i}]: loss: {loss.numpy()}")
+            loss = train_one_batch(x, y).numpy()
+            print(f"[{i}]: loss: {loss}")
+            losses.append(loss)
 
         done.put(True)
 
@@ -163,5 +178,10 @@ if __name__ == "__main__":
     rnn.print_weights(dense)
     homedir = os.path.expanduser("~")
     rnn.dump_weights([(dense, "linear")] if dense else [], f"{homedir}/Downloads/weights.json")
+    # Dump weights as JSON for easily rendering loss plots
+    losses_json = json.dumps(np.array(losses), cls=NumpyArrayEncoder)
+    with open(f"{homedir}/Downloads/losses.json", "w") as f:
+        f.write(losses_json)
+    print(f"Saved losses to {homedir}/Downloads/losses.json")
 
     validate(one_batch_examples, forward, 40)

@@ -2,6 +2,7 @@ from tinygrad.tensor import Tensor, Function
 from tinygrad.lazy import LazyBuffer, Device, create_lazybuffer, LazyOp
 from tinygrad.ops import BinaryOps, ASTRunner, LoadOps
 from tinygrad.helpers import dtypes, prod
+from tinygrad.shape.shapetracker import ShapeTracker
 
 
 def where_raw(cond: LazyBuffer, input_: LazyBuffer, other: LazyBuffer):
@@ -109,7 +110,7 @@ def mk_leaky_ameo(leakyness: float = 0.1) -> Function:
                 (x.contiguous(),),
                 {"GPU": mk_leaky_ameo_gpu(leakyness)}[x.device],
             )
-            return create_lazybuffer(x.device, x.shape, LoadOps, ast, x.dtype)
+            return create_lazybuffer(x.device, ShapeTracker(x.shape), LoadOps, ast, x.dtype)
 
         def backward(self, grad: LazyBuffer) -> LazyBuffer:
             if not self.needs_input_grad[0]:
@@ -125,7 +126,11 @@ def mk_leaky_ameo(leakyness: float = 0.1) -> Function:
                 {"GPU": mk_leaky_ameo_grad_gpu(leakyness)}[self.x.device],
             )
             return create_lazybuffer(
-                self.x.device, self.x.shape, LoadOps, ast, max(self.x.dtype, grad.dtype)
+                self.x.device,
+                ShapeTracker(self.x.shape),
+                LoadOps,
+                ast,
+                max(self.x.dtype, grad.dtype),
             )
 
     return LeakyAmeo
@@ -256,7 +261,7 @@ def mk_interpolated_ameo(factor: float, leakyness: float = 0.1) -> Function:
                 (x.contiguous(),),
                 {"GPU": mk_interpolated_ameo_gpu(factor, leakyness)}[x.device],
             )
-            return create_lazybuffer(x.device, x.shape, LoadOps, ast, x.dtype)
+            return create_lazybuffer(x.device, ShapeTracker(x.shape), LoadOps, ast, x.dtype)
 
         def backward(self, grad: LazyBuffer) -> LazyBuffer:
             if not self.needs_input_grad[0]:
@@ -272,7 +277,11 @@ def mk_interpolated_ameo(factor: float, leakyness: float = 0.1) -> Function:
                 {"GPU": mk_interpolated_ameo_grad_gpu(factor, leakyness)}[self.x.device],
             )
             return create_lazybuffer(
-                self.x.device, self.x.shape, LoadOps, ast, max(self.x.dtype, grad.dtype)
+                self.x.device,
+                ShapeTracker(self.x.shape),
+                LoadOps,
+                ast,
+                max(self.x.dtype, grad.dtype),
             )
 
     return InterpolatedAmeo

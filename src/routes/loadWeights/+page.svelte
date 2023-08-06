@@ -76,9 +76,11 @@
     })),
   };
 
+  const attemptQuantization = false;
   const params: Partial<RNNGraphParams> = { clipThreshold: 0.001, quantizationInterval: 0 };
   const clipThresholds = [
-    0.7, 0.5, 0.25, 0.1, 0.05, 0.04, 0.03, 0.02, 0.015, 0.01, 0.005, 0.001, 0.0005, 0.0001, 0,
+    0.7, 0.5, 0.4, 0.3, 0.2, 0.25, 0.22, 0.2, 0.18, 0.17, 0.16, 0.15, 0.14, 0.13, 0.12, 0.11, 0.1,
+    0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.015, 0.01, 0.005, 0.001, 0.0005, 0.0001, 0,
   ];
   let graph: RNNGraph | undefined;
   let isValid = false;
@@ -98,11 +100,15 @@
 
     isValid = graph.validate(oneSeqExamples, 500, true);
     if (!isValid) {
-      console.log(`Invalid graph with clipThreshold ${clipThreshold}`);
+      console.log(`%cInvalid graph with clipThreshold ${clipThreshold}`, 'color: orange');
       continue;
     }
 
-    console.log(`Valid graph with clipThreshold ${clipThreshold}`);
+    console.log(`%cValid graph with clipThreshold ${clipThreshold}`, 'color: green');
+
+    if (!attemptQuantization) {
+      break;
+    }
 
     // Try progressively finer quantization until we get a valid graph
     const quantizationIntervals = [1, 0.5, 0.5, 0.25, 0.2, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005];
@@ -112,11 +118,17 @@
 
       isValid = graph.validate(oneSeqExamples, 500, true);
       if (!isValid) {
-        console.log(`Invalid graph with quantizationInterval ${quantizationInterval}`);
+        console.log(
+          `%cInvalid graph with quantizationInterval ${quantizationInterval}`,
+          'color: orange'
+        );
         continue;
       }
 
-      console.log(`Valid graph with quantizationInterval ${quantizationInterval}`);
+      console.log(
+        `%cValid graph with quantizationInterval ${quantizationInterval}`,
+        'color: green'
+      );
       break;
     }
     break;
