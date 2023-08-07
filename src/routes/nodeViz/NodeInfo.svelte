@@ -29,9 +29,9 @@
   }
 
   $: left = (() => {
-    if (isMobile) {
-      return 0;
-    }
+    // if (isMobile) {
+    //   return 0;
+    // }
     if (logicAnalyzerOpen) {
       return '640px';
     }
@@ -39,10 +39,10 @@
   })();
 
   // logic analyzer is not enabled on mobile
-  $: isInLogicAnalyzer = isMobile || logicAnalyzerVisibleNodeIDs.includes(node.name);
+  $: isInLogicAnalyzer = /* isMobile || */ logicAnalyzerVisibleNodeIDs.includes(node.name);
 </script>
 
-<div class="root" style="left: {left}; visibility: {isMobile ? 'hidden' : 'unset'}">
+<div class="root" style="left: {left}; visibility: {isMobile && false ? 'hidden' : 'unset'}">
   <h3>{node.name}</h3>
   {#if stateNode}
     <div class="info-item">

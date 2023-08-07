@@ -158,34 +158,34 @@ def nor(a, b):
 #     return inputs, outputs
 
 
-@jit(nopython=True)
-def one_seq_examples(seq_len: int, max_depth: int = 8):
-    # Inputs are sequences of parentheses.
-    # '(' is represented as -1, ')' is represented as 1.
-    # Outputs are binary sequences indicating whether each prefix of the
-    # input sequence is properly parenthesized.
+# @jit(nopython=True)
+# def one_seq_examples(seq_len: int, max_depth: int = 8):
+#     # Inputs are sequences of parentheses.
+#     # '(' is represented as -1, ')' is represented as 1.
+#     # Outputs are binary sequences indicating whether each prefix of the
+#     # input sequence is properly parenthesized.
 
-    inputs = np.empty((seq_len, 1), dtype=np.float32)
-    outputs = np.empty((seq_len, 1), dtype=np.float32)
+#     inputs = np.empty((seq_len, 1), dtype=np.float32)
+#     outputs = np.empty((seq_len, 1), dtype=np.float32)
 
-    depth = 0  # Current parentheses depth
+#     depth = 0  # Current parentheses depth
 
-    for i in range(seq_len):
-        # Choose next character. Generate '(' if depth < max_depth
-        # and either depth is 0 (so we can't close yet) or with probability 0.5.
-        # Otherwise, generate ')'.
-        if depth < max_depth and (depth == 0 or np.random.choice(np.array([0, 1])) == 0):
-            inputs[i] = -1  # '('
-            depth += 1
-        else:
-            inputs[i] = 1  # ')'
-            depth -= 1
+#     for i in range(seq_len):
+#         # Choose next character. Generate '(' if depth < max_depth
+#         # and either depth is 0 (so we can't close yet) or with probability 0.5.
+#         # Otherwise, generate ')'.
+#         if depth < max_depth and (depth == 0 or np.random.choice(np.array([0, 1])) == 0):
+#             inputs[i] = -1  # '('
+#             depth += 1
+#         else:
+#             inputs[i] = 1  # ')'
+#             depth -= 1
 
-        # Check if the prefix up to this point is valid (properly parenthesized).
-        # It's valid if depth >= 0 (every ')' had a matching '(').
-        outputs[i] = 1 if depth == 0 else -1
+#         # Check if the prefix up to this point is valid (properly parenthesized).
+#         # It's valid if depth >= 0 (every ')' had a matching '(').
+#         outputs[i] = 1 if depth == 0 else -1
 
-    return inputs, outputs
+#     return inputs, outputs
 
 
 # # debug: passthru inputs
@@ -200,6 +200,65 @@ def one_seq_examples(seq_len: int, max_depth: int = 8):
 #     inputs = np.array(inputs)
 #     outputs = np.array(outputs)
 #     return inputs, outputs
+
+
+# y_n =
+#   -1 if n = 0
+#   x_{n-1} otherwise
+# def one_seq_examples(seq_len):
+#     inputs = []
+#     outputs = []
+#     for i in range(seq_len):
+#         input_val = np.array([one_val()]).astype(np.float32)
+#         output_val = np.array([-1]).astype(np.float32) if i == 0 else inputs[-1]
+#         inputs.append(input_val)
+#         outputs.append(output_val)
+#     inputs = np.array(inputs)
+#     outputs = np.array(outputs)
+#     return inputs, outputs
+
+
+# y_n =
+#   -1 if n < 2
+#   x_{n-2} otherwise
+# def one_seq_examples(seq_len):
+#     inputs = []
+#     outputs = []
+#     for i in range(seq_len):
+#         input_val = np.array([one_val()]).astype(np.float32)
+#         output_val = np.array([-1]).astype(np.float32) if i == 0 or i == 1 else inputs[-2]
+#         inputs.append(input_val)
+#         outputs.append(output_val)
+#     inputs = np.array(inputs)
+#     outputs = np.array(outputs)
+#     return inputs, outputs
+
+
+# replace '1'->'111'
+# Training input  : -1, -1, 1, -1, -1, -1, 1
+# Expected outout : -1, -1, 1,  1,  1, -1, 1
+def one_seq_examples(seq_len):
+    inputs = []
+    outputs = []
+    replace_count = 0
+
+    for i in range(seq_len):
+        input_val = np.array([one_val()]).astype(np.float32)
+        output_val = input_val
+
+        if input_val == 1:
+            replace_count = 3
+
+        if replace_count > 0:
+            output_val = np.array([1]).astype(np.float32)
+            replace_count -= 1
+
+        inputs.append(input_val)
+        outputs.append(output_val)
+
+    inputs = np.array(inputs)
+    outputs = np.array(outputs)
+    return inputs, outputs
 
 
 @jit(forceobj=True)

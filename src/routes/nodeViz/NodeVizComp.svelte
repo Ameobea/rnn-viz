@@ -33,6 +33,7 @@
   import LogicAnalyzer from './LogicAnalyzer.svelte';
   import NodeVizControls from './NodeVizControls.svelte';
   import { writable, type Writable } from 'svelte/store';
+  import { getSentry } from '../../sentry';
 
   export let serializedRNNGraph: string | RNNGraph;
   export let excludedNodeIDs: string[] = [];
@@ -40,7 +41,9 @@
   export let labelFontSizeOverride: number | undefined = undefined;
   export let inputSeqGenerator: InputSeqGenerator | undefined = undefined;
   export let defaultLogicAnalyzerOpen = false;
-  export let defaultLogicAnalyzerVisibleNodeIDs: string[] | 'ALL' = [];
+  export let defaultLogicAnalyzerVisibleNodeIDs: string[] | 'ALL' | undefined = undefined;
+  export let rankdir: 'TB' | 'LR' | undefined = undefined;
+  export let dashSize: string | undefined = undefined;
 
   const { graph, graphDotviz }: { graph: RNNGraph; graphDotviz: string } = (() => {
     const graph =
@@ -59,6 +62,7 @@
               ? Math.min(Math.max(window.innerHeight / window.innerWidth, 0.65), 1.5)
               : undefined),
           excludedNodeIDs,
+          rankdir,
         })
       : '';
     return { graph, graphDotviz };
@@ -95,7 +99,12 @@
           defaultLogicAnalyzerVisibleNodeIDs &&
           Array.isArray(defaultLogicAnalyzerVisibleNodeIDs)
         ) {
-          return defaultLogicAnalyzerVisibleNodeIDs.includes(nodeID);
+          if (defaultLogicAnalyzerVisibleNodeIDs.includes(nodeID)) {
+            return true;
+          }
+        }
+        if (excludedNodeIDs.includes(nodeID)) {
+          return false;
         }
         return nodeID.startsWith('input') || nodeID.startsWith('output');
       })
@@ -114,7 +123,6 @@
         }
       })
   );
-  $: console.log($logicAnalyzerVisibleNodeIDs);
   $: selectedNode =
     NodeVizMod && selected && $selected instanceof NodeVizMod.VizNode ? $selected : null;
   $: selectedNodeID = selectedNode?.name ?? null;
@@ -141,7 +149,13 @@
       throw new Error('NodeViz module not loaded');
     }
 
-    viz = new NodeVizMod.NodeViz(svg, layoutDataState.layoutData, graph, labelFontSizeOverride);
+    viz = new NodeVizMod.NodeViz(
+      svg,
+      layoutDataState.layoutData,
+      graph,
+      labelFontSizeOverride,
+      dashSize
+    );
   };
 
   const useColorScaleLegend = (node: HTMLDivElement) => {
@@ -194,16 +208,17 @@
     </svg>
     {#if viz}
       <NodeVizControls {viz} />
-      {#if !isMobile}
-        <LogicAnalyzer
-          currentTimestep={$currentTimestep}
-          neuronOutputHistory={graph.neuronOutputHistory}
-          {selectedNodeID}
-          visibleNodeIDs={logicAnalyzerVisibleNodeIDs}
-          bind:expanded={logicAnalyzerOpen}
-          {toggleSelecteNodeID}
-        />
-      {/if}
+      <!-- {#if !isMobile} -->
+      <LogicAnalyzer
+        currentTimestep={$currentTimestep}
+        neuronOutputHistory={graph.neuronOutputHistory}
+        {selectedNodeID}
+        visibleNodeIDs={logicAnalyzerVisibleNodeIDs}
+        bind:expanded={logicAnalyzerOpen}
+        {toggleSelecteNodeID}
+        {isMobile}
+      />
+      <!-- {/if} -->
       {#if selectedNode}
         <NodeInfo
           node={selectedNode}
@@ -213,6 +228,9 @@
                 return ids;
               }
               return [...ids, selectedNode.name];
+            });
+            getSentry()?.captureMessage('Added node to logic analyzer', {
+              extra: { nodeID: selectedNode?.name ?? 'unknown' },
             });
           }}
           {isMobile}
@@ -226,11 +244,16 @@
 </div>
 
 <style lang="css">
+  :global(html) {
+    overflow: hidden;
+  }
+
   .root {
     display: flex;
     flex-direction: column;
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
   }
 
   svg {

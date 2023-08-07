@@ -49,12 +49,12 @@ if __name__ == "__main__":
 
     np.set_printoptions(suppress=True)
 
-    # init = "glorot_normal"
+    init = "glorot_normal"
     # init = {"id": "uniform", "low": -1, "high": 1}
-    init = {"id": "normal", "mean": 0, "std": 1}
+    # init = {"id": "normal", "mean": 0, "std": 1}
 
     reg = SparseRegularizer(intensity=0.05, threshold=0.025, steepness=10, l1=0.001)
-    activation = {"id": "interpolated_ameo", "factor": 1, "leakyness": 1}
+    activation = {"id": "interpolated_ameo", "factor": 0.5, "leakyness": 0.1}
 
     rnn = CustomRNN(
         CustomRNNCell(
@@ -63,8 +63,8 @@ if __name__ == "__main__":
                 seq_len,
                 input_dim,
             ),
-            output_dim=8,
-            state_size=1,
+            output_dim=4,
+            state_size=2,
             output_activation_id=activation,
             recurrent_activation_id=activation,
             trainable_initial_weights=True,
@@ -78,27 +78,27 @@ if __name__ == "__main__":
             # recurrent_bias_regularizer=reg,
             cell_ix=0,
         ),
-        CustomRNNCell(
-            input_shape=(
-                batch_size,
-                seq_len,
-                8,
-            ),
-            output_dim=4,
-            state_size=1,
-            output_activation_id=activation,
-            recurrent_activation_id=activation,
-            trainable_initial_weights=True,
-            use_bias=True,
-            output_kernel_regularizer=reg,
-            recurrent_kernel_regularizer=reg,
-            kernel_initializer="glorot_normal",
-            bias_initializer="glorot_normal",
-            initial_state_initializer="glorot_normal",
-            # output_bias_regularizer=reg,
-            # recurrent_bias_regularizer=reg,
-            cell_ix=1,
-        ),
+        # CustomRNNCell(
+        #     input_shape=(
+        #         batch_size,
+        #         seq_len,
+        #         16,
+        #     ),
+        #     output_dim=4,
+        #     state_size=8,
+        #     output_activation_id=activation,
+        #     recurrent_activation_id=activation,
+        #     trainable_initial_weights=True,
+        #     use_bias=True,
+        #     output_kernel_regularizer=reg,
+        #     recurrent_kernel_regularizer=reg,
+        #     kernel_initializer="glorot_normal",
+        #     bias_initializer="glorot_normal",
+        #     initial_state_initializer="glorot_normal",
+        #     # output_bias_regularizer=reg,
+        #     # recurrent_bias_regularizer=reg,
+        #     cell_ix=1,
+        # ),
     )
 
     dense = (
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         # Training loop
         train_one_batch = mk_train_one_batch()
         losses = []
-        for i in range(24000):
+        for i in range(5000):
             if i == 500:
                 reg.intensity *= 0.8
                 opt.lr *= 0.8

@@ -206,7 +206,7 @@
   echarts.use([LineChart, GridComponent, SVGRenderer, LegendComponent]);
 
   let variant: VariantParams = { type: 'interpolated', factor: 1, leaky: true };
-  let ameoActivationMod: typeof import('../../nn/ameoActivation') | null = null;
+  const ameoActivationMod: typeof import('../../nn/ameoActivation') | null = null;
   let engine: typeof import('../../engineComp/engine') | null = null;
   let chartContainer: HTMLDivElement | null = null;
   let chartInst: echarts.ECharts | null = null;
@@ -228,7 +228,13 @@
     } else if (searchParams.has('gcu')) {
       variant = { type: 'gcu' };
     } else if (searchParams.has('interpolatedAmeo')) {
-      variant = { type: 'interpolated', factor: 0.1, leaky: true };
+      variant = {
+        type: 'interpolated',
+        factor: searchParams.has('defaultInterpolationFactor')
+          ? +searchParams.get('defaultInterpolationFactor')!
+          : 0.1,
+        leaky: true,
+      };
     }
 
     if (!chartContainer) {

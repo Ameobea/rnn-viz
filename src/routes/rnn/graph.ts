@@ -1168,7 +1168,7 @@ export class RNNGraph {
     if (params?.aspectRatio) {
       g.set('ratio', params.aspectRatio);
     }
-    g.set('rankdir', 'TB');
+    g.set('rankdir', params?.rankdir ?? 'TB');
     g.set('center', true);
     g.set('splines', 'spline');
     g.set('overlap', false);
@@ -1273,6 +1273,7 @@ interface BuildGraphvizParams {
   aspectRatio?: number;
   edgeLabels?: boolean;
   excludedNodeIDs?: string[] | Set<string>;
+  rankdir?: 'TB' | 'LR';
 }
 
 interface SerializedRNNGraph {

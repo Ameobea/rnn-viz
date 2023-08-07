@@ -79,8 +79,9 @@
   const attemptQuantization = false;
   const params: Partial<RNNGraphParams> = { clipThreshold: 0.001, quantizationInterval: 0 };
   const clipThresholds = [
-    0.7, 0.5, 0.4, 0.3, 0.2, 0.25, 0.22, 0.2, 0.18, 0.17, 0.16, 0.15, 0.14, 0.13, 0.12, 0.11, 0.1,
-    0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.015, 0.01, 0.005, 0.001, 0.0005, 0.0001, 0,
+    0.7, 0.5, 0.4, 0.3, 0.25, 0.24, 0.23, 0.22, 0.2, 0.18, 0.17, 0.16, 0.15, 0.14, 0.13, 0.12, 0.11,
+    0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.015, 0.01, 0.005, 0.001, 0.0005, 0.0001,
+    0.00001, 0.000001, 0,
   ];
   let graph: RNNGraph | undefined;
   let isValid = false;
@@ -98,7 +99,7 @@
     params.clipThreshold = clipThreshold;
     graph = buildGraph();
 
-    isValid = graph.validate(oneSeqExamples, 500, true);
+    isValid = graph.validate(oneSeqExamples, 5000, true);
     if (!isValid) {
       console.log(`%cInvalid graph with clipThreshold ${clipThreshold}`, 'color: orange');
       continue;
@@ -116,7 +117,7 @@
       params.quantizationInterval = quantizationInterval;
       graph = buildGraph();
 
-      isValid = graph.validate(oneSeqExamples, 500, true);
+      isValid = graph.validate(oneSeqExamples, 5000, true);
       if (!isValid) {
         console.log(
           `%cInvalid graph with quantizationInterval ${quantizationInterval}`,

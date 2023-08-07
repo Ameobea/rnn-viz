@@ -56,6 +56,7 @@
 
   import UPlot from 'uplot';
   import 'uplot/dist/uPlot.min.css';
+  import { getSentry } from '../../sentry';
 
   export let currentTimestep: number;
   export let neuronOutputHistory: Map<string, number[]>;
@@ -63,6 +64,7 @@
   export let toggleSelecteNodeID: (nodeID: string) => void;
   export let visibleNodeIDs: Writable<string[]>;
   export let expanded = false;
+  export let isMobile: boolean;
 
   $: nodeIDsToRender = [...neuronOutputHistory.keys()]
     .filter(nodeID => $visibleNodeIDs.includes(nodeID))
@@ -154,7 +156,7 @@
 </script>
 
 {#if expanded}
-  <div class="root">
+  <div class="root" style={isMobile ? 'max-height: 243px' : undefined}>
     {#each nodeIDsToRender as nodeID (nodeID)}
       <div
         class={`node-output-chart-container${
@@ -183,6 +185,7 @@
   </div>
   <button
     class="collapse"
+    style={isMobile ? 'bottom: 243px; font-size: 12px' : undefined}
     on:click={() => {
       expanded = false;
     }}
@@ -192,8 +195,10 @@
 {:else}
   <button
     class="collapsed"
+    style={isMobile ? 'font-size: 12px; height: 20px; line-height: 0' : undefined}
     on:click={() => {
       expanded = true;
+      getSentry()?.captureMessage('"Open Logic Analyzer" clicked');
     }}
   >
     Open Logic Analyzer

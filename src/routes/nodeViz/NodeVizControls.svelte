@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getSentry } from '../../sentry';
   import type { NodeViz } from './NodeViz';
 
   const PlayInterval = 500;
@@ -45,6 +46,7 @@
     on:click={() => {
       stopPlaying();
       viz.reset();
+      getSentry()?.captureMessage('Node viz "reset" button clicked');
     }}
   >
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" height="24" width="24">
@@ -54,7 +56,13 @@
       />
     </svg>
   </button>
-  <button disabled={playState.isPlaying} on:click={() => viz.progressTimestep()}>
+  <button
+    disabled={playState.isPlaying}
+    on:click={() => {
+      viz.progressTimestep();
+      getSentry()?.captureMessage('Node viz "step" button clicked');
+    }}
+  >
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" height="24" width="24">
       <path
         fill="#fff"
@@ -62,7 +70,12 @@
       />
     </svg>
   </button>
-  <button on:click={() => void togglePlaying()}>
+  <button
+    on:click={() => {
+      togglePlaying();
+      getSentry()?.captureMessage('Node viz "play/pause" button clicked');
+    }}
+  >
     {#if playState.isPlaying}
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" height="24" width="24">
         <path

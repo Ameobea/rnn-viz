@@ -36,20 +36,26 @@ class VizEdge {
   public group: d3.Selection<SVGGElement, undefined, null, undefined>;
   private controlPoints: Point[];
   private txNode: VizNode;
+  private rxNode: VizNode;
   private color: number;
   private weight: number;
+  private dashSize?: string;
 
   constructor(
     controlPoints: Point[],
     label: { text: string; position: Point; fontSize: number; weight: number },
     txNode: VizNode,
-    onSelect: (edge: VizEdge) => void
+    rxNode: VizNode,
+    onSelect: (edge: VizEdge) => void,
+    dashSize?: string
   ) {
     this.group = d3.create('svg:g');
     this.controlPoints = controlPoints;
     this.txNode = txNode;
+    this.rxNode = rxNode;
     this.weight = label.weight;
     this.color = getColor(txNode.inner.getOutput() * label.weight);
+    this.dashSize = dashSize;
 
     if (label.text && !Number.isNaN(label.position.x) && !Number.isNaN(label.position.y)) {
       this.group
@@ -99,6 +105,13 @@ class VizEdge {
       .attr('stroke-linejoin', 'round')
       .attr('shape-rendering', 'geometricPrecision')
       .attr('cursor', 'pointer');
+
+    // Path is dashed if it has a state neuron as output since those connections aren't evaluated
+    // until the next timestep
+    const isDashed = this.rxNode.inner instanceof StateNeuron;
+    if (isDashed) {
+      this.group.attr('stroke-dasharray', this.dashSize ?? '20, 20');
+    }
 
     this.drawArrowHead(p3!, p2!, p1!, this.color);
   }
@@ -287,7 +300,8 @@ export class NodeViz {
     svg: SVGSVGElement,
     graphvizLayoutData: string,
     graph: RNNGraph,
-    labelFontSizeOverride?: number
+    labelFontSizeOverride?: number,
+    dashSize?: string
   ) {
     this.graph = graph;
     this.svg = d3.select(svg).on('click', evt => {
@@ -335,6 +349,10 @@ export class NodeViz {
       if (!txNode) {
         throw new Error(`Node ${edge.tx} not found in graph`);
       }
+      const rxNode = nodesByID.get(edge.rx);
+      if (!rxNode) {
+        throw new Error(`Node ${edge.rx} not found in graph`);
+      }
 
       const vizEdge = new VizEdge(
         edge.controlPoints,
@@ -345,7 +363,9 @@ export class NodeViz {
           weight: edge.weight,
         },
         txNode,
-        edge => this.handleEdgeSelect(edge)
+        rxNode,
+        edge => this.handleEdgeSelect(edge),
+        dashSize
       );
       this.edges.push(vizEdge);
     }
